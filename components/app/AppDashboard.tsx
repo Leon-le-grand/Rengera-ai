@@ -1,8 +1,10 @@
 'use client';
-
 import { useState } from 'react';
 import Sidebar, { AppView } from './Sidebar';
-import ChatInterface from './ChatInterface';
+import ChatInterface from "./ChatInterface";
+import LawLibrary from "./LawLibrary";
+import Complaints from "./Complaints";
+import Emergency from "./Emergency";
 import BusinessDashboard from './BusinessDashboard';
 import AdminDashboard from './AdminDashboard';
 import { Menu } from 'lucide-react';
@@ -54,9 +56,12 @@ export default function AppDashboard({ onExit }: AppDashboardProps) {
               className="h-full"
             >
               {currentView === 'chat' && <ChatInterface />}
+              {currentView === 'library' && <LawLibrary />}
+              {currentView === 'complaints' && <Complaints />}
+              {currentView === 'emergency' && <Emergency />}
               {currentView === 'business' && <BusinessDashboard />}
               {currentView === 'admin' && <AdminDashboard />}
-              {['library', 'bookmarks', 'emergency', 'complaints', 'settings'].includes(currentView) && (
+              {['bookmarks', 'settings'].includes(currentView) && (
                 <div className="p-8 h-full flex flex-col items-center justify-center text-center max-w-md mx-auto">
                    <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-6">
                      <span className="text-2xl text-slate-500 capitalize">{currentView[0]}</span>
