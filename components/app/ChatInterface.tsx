@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Bot, User, Loader2, Download, Scale } from 'lucide-react';
+import { Send, Bot, User, Loader2, Download, Scale, ArrowRight } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { generateLegalAdvice } from '@/app/actions';
 import { cn } from '@/lib/utils';
@@ -18,14 +18,15 @@ const INITIAL_MESSAGE: Message = {
   role: 'assistant',
   content: `Muraho! I am Rengera, your legal assistant. 
 
-How can I help you understand your rights today? You can ask me questions about:
-- Employment and Labour
-- Rent and Housing
-- Family and Marriage
-- Business Compliance
-
-*Note: I provide legal education based on Rwandan laws, not formal legal advice.*`
+How can I help you understand your rights today? You can type your situation below, or select a common scenario:`
 };
+
+const SCENARIOS = [
+  { id: 'tenant', label: 'Tenant problem', prompt: 'My landlord locked me out. What are my rights?' },
+  { id: 'employment', label: 'Employment', prompt: 'My employer refuses to pay me for overtime. What should I do?' },
+  { id: 'privacy', label: 'Privacy', prompt: 'Someone shared my private photos without my consent. Is this illegal?' },
+  { id: 'traffic', label: 'Traffic', prompt: 'The police stopped me and asked for a bribe. What are my rights?' },
+];
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
@@ -42,27 +43,31 @@ export default function ChatInterface() {
     }
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  const handleSubmit = async (e?: React.FormEvent, presetPrompt?: string) => {
+    if (e) e.preventDefault();
+    const query = presetPrompt || input.trim();
+    if (!query || isLoading) return;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       role: 'user',
-      content: input.trim()
+      content: query
     };
 
     setMessages(prev => [...prev, userMessage]);
-    setInput('');
+    if (!presetPrompt) setInput('');
     setIsLoading(true);
 
     try {
       // Simulate network delay for UX
       await new Promise(r => setTimeout(r, 600));
-      const responseText = await generateLegalAdvice(userMessage.content);
+      
+      const history = messages.filter(m => m.id !== 'msg-0').map(m => ({ role: m.role === 'user' ? 'user' : 'model', content: m.content })) as { role: 'user'|'model', content: string }[];
+      
+      const responseText = await generateLegalAdvice(userMessage.content, history);
       
       const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: crypto.randomUUID(),
         role: 'assistant',
         content: responseText || "I couldn't generate a response. Please try again."
       };
@@ -106,7 +111,7 @@ export default function ChatInterface() {
         <div className="max-w-3xl mx-auto flex flex-col gap-8 pb-10">
           
           <AnimatePresence initial={false}>
-            {messages.map((msg) => (
+            {messages.map((msg, index) => (
               <motion.div
                 key={msg.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -138,6 +143,21 @@ export default function ChatInterface() {
                   ) : (
                     <div>
                       {renderMarkdown(msg.content)}
+                      
+                      {msg.id === 'msg-0' && messages.length === 1 && (
+                        <div className="mt-4 flex flex-col gap-2">
+                          {SCENARIOS.map(scenario => (
+                            <button
+                              key={scenario.id}
+                              onClick={() => handleSubmit(undefined, scenario.prompt)}
+                              className="text-left w-full px-4 py-3 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-slate-700 transition-colors flex items-center justify-between group"
+                            >
+                              <span className="font-medium text-[15px]">{scenario.label}</span>
+                              <ArrowRight size={16} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       
                       {msg.id !== 'msg-0' && (
                         <div className="mt-6 pt-4 border-t border-slate-100 flex flex-wrap gap-2">
@@ -180,7 +200,7 @@ export default function ChatInterface() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Describe your legal situation..."
-              className="w-full bg-transparent border-none resize-none px-4 py-3 text-[15px] text-slate-900 placeholder:text-slate-500 focus:outline-none min-h-[56px] max-h-32"
+              className="w-full bg-transparent border-none resize-none px-4 py-3 text-[15px] text-slate-900 placeholder:text-slate-500 focus:outline-none min-h-[56px] max-h-32 scrollbar-hide"
               rows={1}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {

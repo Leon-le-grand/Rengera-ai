@@ -83,7 +83,7 @@ export default function InteractiveDemo() {
                     className="flex justify-end"
                   >
                     <div className="bg-emerald-600 text-white rounded-2xl rounded-tr-sm px-5 py-3 max-w-[85%]">
-                      My employer fired me without notice and refused to pay my last month's salary.
+                      My employer fired me without notice and refused to pay my last month&apos;s salary.
                     </div>
                   </motion.div>
                 )}

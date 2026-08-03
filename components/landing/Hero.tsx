@@ -26,7 +26,7 @@ export default function Hero({ onEnterApp }: { onEnterApp: () => void }) {
               <span>Know Your Rights. Protect Your Future.</span>
             </div>
             <h1 className="text-5xl md:text-7xl font-bold text-slate-900 tracking-tight leading-[1.1] mb-6">
-              Understand Rwanda's Laws in <span className="text-gradient">Minutes</span>, Not Hours.
+              Understand Rwanda&apos;s Laws in <span className="text-gradient">Minutes</span>, Not Hours.
             </h1>
             <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
               Rengera transforms complex legal language into simple, practical guidance that every citizen can understand. Empowering you with AI-driven clarity.
@@ -77,7 +77,7 @@ export default function Hero({ onEnterApp }: { onEnterApp: () => void }) {
                   transition={{ delay: 1, duration: 0.5 }}
                   className="self-end bg-slate-700 text-white rounded-2xl rounded-tr-sm px-5 py-3 max-w-[85%] text-sm"
                 >
-                  My landlord locked me out because I'm 2 days late on rent. Is this legal?
+                  My landlord locked me out because I&apos;m 2 days late on rent. Is this legal?
                 </motion.div>
 
                 <motion.div 
