@@ -19,7 +19,7 @@ You MUST structure EVERY response using the following exact markdown headings:
 (Name the specific Rwandan law provided in the context, e.g., Law N° 66/2018 of 30/08/2018 regulating labour in Rwanda)
 
 ### Official Article
-(Cite the exact article number(s) and a brief quote or summary of the article)
+(Cite the exact article number(s), official source URL, and a brief quote or summary of the article)
 
 ### Your Rights
 (Bullet points of the citizen's rights in this situation based on the context)
@@ -86,7 +86,9 @@ export async function generateLegalAdvice(query: string, chatHistory: { role: 'u
     let contextText = "No relevant laws found in the database.";
     if (queryEmbedding.length > 0) {
       const db = await getDb();
-      const similarities = db.articles.map(article => {
+      const similarities = db.articles
+        .filter(article => article.status !== 'repealed')
+        .map(article => {
         const sim = cosineSimilarity(queryEmbedding, article.embedding);
         return { article, sim };
       });
@@ -97,7 +99,22 @@ export async function generateLegalAdvice(query: string, chatHistory: { role: 'u
       if (topArticles.length > 0) {
         contextText = topArticles.map(s => {
           const law = db.laws.find(l => l.id === s.article.lawId);
-          return `Law: ${law?.title || 'Unknown Law'}\nArticle ${s.article.articleNumber}: ${s.article.title}\nContent: ${s.article.content}`;
+          const amendmentNotes = db.amendments
+            .filter(amendment => amendment.originalLawId === law?.id && amendment.affectedArticle === s.article.articleNumber)
+            .map(amendment => {
+              const amendingLaw = db.laws.find(item => item.id === amendment.amendingLawId);
+              return `${amendment.amendmentType.toUpperCase()} by ${amendingLaw?.title || 'unknown amending law'} (${amendingLaw?.lawNumber || 'no number'})`;
+            });
+
+          return [
+            `Law: ${law?.title || 'Unknown Law'}`,
+            `Law number: ${law?.lawNumber || 'Unknown'}`,
+            `Article ${s.article.articleNumber}: ${s.article.title}`,
+            `Citation: ${s.article.citation}`,
+            `Source URL: ${s.article.sourceUrl || law?.sourceUrl || 'Unknown source'}`,
+            amendmentNotes.length ? `Amendment notes: ${amendmentNotes.join('; ')}` : '',
+            `Official text: ${s.article.text}`,
+          ].filter(Boolean).join('\n');
         }).join('\n\n---\n\n');
       }
     }
