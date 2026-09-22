@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Bot, User, Loader2, Download, Scale, ArrowRight } from 'lucide-react';
+import { Send, Bot, User, Loader2, Download, Scale, ArrowRight, ShieldAlert, Phone } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { generateLegalAdvice } from '@/app/actions';
 import { cn } from '@/lib/utils';
+import { detectEmergencyRisk } from '@/lib/safety';
 
 interface Message {
   id: string;
@@ -33,6 +34,7 @@ export default function ChatInterface() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const emergencyRisk = detectEmergencyRisk(input);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -195,6 +197,29 @@ export default function ChatInterface() {
       {/* Input Area */}
       <div className="p-4 bg-white border-t border-slate-200 shrink-0">
         <div className="max-w-3xl mx-auto relative">
+          {emergencyRisk.level === 'urgent' && (
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-red-950 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-red-600 text-white">
+                  <ShieldAlert size={18} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-bold">{emergencyRisk.title}</p>
+                    <span className="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
+                      <Phone size={12} /> Police 112
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
+                      RIB 166
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs leading-5 text-red-800">
+                    If someone is in immediate danger, contact official emergency services before continuing the chat.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="relative flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-3xl p-2 shadow-sm focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 transition-all">
             <textarea
               value={input}

@@ -1,7 +1,8 @@
 'use server';
 
 import { GoogleGenAI } from '@google/genai';
-import { getDb, Article, Law } from '@/lib/db';
+import { getDb } from '@/lib/db';
+import { buildEmergencyMarkdown, detectEmergencyRisk } from '@/lib/safety';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -57,6 +58,11 @@ function cosineSimilarity(a: number[], b: number[]) {
 
 export async function generateLegalAdvice(query: string, chatHistory: { role: 'user' | 'model', content: string }[] = []) {
   try {
+    const emergencyRisk = detectEmergencyRisk(query);
+    if (emergencyRisk.level === 'urgent') {
+      return buildEmergencyMarkdown(emergencyRisk);
+    }
+
     const history = chatHistory.map(msg => ({
       role: msg.role,
       parts: [{ text: msg.content }]
@@ -119,4 +125,3 @@ export async function generateLegalAdvice(query: string, chatHistory: { role: 'u
     return "I am currently unable to access the legal database. Please try again later.";
   }
 }
-
