@@ -1,6 +1,6 @@
 'use client';
 
-import { Scale } from 'lucide-react';
+import RengeraLogo from '@/components/brand/RengeraLogo';
 
 export default function Footer() {
   return (
@@ -10,9 +10,7 @@ export default function Footer() {
           
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-2 text-white mb-6">
-              <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-lg">
-                <Scale size={20} strokeWidth={2.5} />
-              </div>
+              <RengeraLogo size={40} animated />
               <span className="font-bold text-2xl tracking-tight">Rengera</span>
             </div>
             <p className="text-slate-400 max-w-sm leading-relaxed">

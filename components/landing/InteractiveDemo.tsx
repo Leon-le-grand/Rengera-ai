@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Bot, Send, ShieldCheck, FileText, Download, Building, ArrowRight } from 'lucide-react';
+import { Send, ShieldCheck, FileText, Download, Building, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import RengeraLogo from '@/components/brand/RengeraLogo';
 
 export default function InteractiveDemo() {
   const [step, setStep] = useState(0);
@@ -64,8 +65,8 @@ export default function InteractiveDemo() {
             <div className="bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden">
               {/* Header */}
               <div className="bg-slate-800/50 border-b border-slate-700 p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white">
-                  <Bot size={20} />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500">
+                  <RengeraLogo size={28} animated label="" />
                 </div>
                 <div>
                   <h3 className="text-white font-medium">Rengera Assistant</h3>
@@ -94,8 +95,8 @@ export default function InteractiveDemo() {
                     animate={{ opacity: 1 }}
                     className="flex justify-start gap-3"
                   >
-                    <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center shrink-0 text-slate-300">
-                      <Bot size={16} />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-700">
+                      <RengeraLogo size={22} label="" />
                     </div>
                     <div className="bg-slate-700 rounded-2xl rounded-tl-sm px-5 py-4 max-w-[90%] text-slate-200">
                       {step === 2 ? (

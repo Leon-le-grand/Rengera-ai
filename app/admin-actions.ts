@@ -13,7 +13,8 @@ import {
 
 const geminiApiKey =
   process.env.GEMINI_API_KEY?.trim() || process.env.SPACE_BUNNY_API_KEY?.trim() || '';
-const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+const embeddingModel = process.env.GEMINI_EMBEDDING_MODEL?.trim() || 'gemini-embedding-001';
+const ai = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
 
 type ProcessLawResult = {
   success: boolean;
@@ -27,6 +28,13 @@ export async function processNewLaw(formData: FormData): Promise<ProcessLawResul
   const adminSession = await getAdminSession();
   if (!adminSession) {
     return { success: false, error: 'Your administrator session has expired. Please sign in again.' };
+  }
+
+  if (!ai) {
+    return {
+      success: false,
+      error: 'AI is not configured. Add GEMINI_API_KEY (or SPACE_BUNNY_API_KEY) in Vercel and redeploy.',
+    };
   }
 
   try {
@@ -75,7 +83,7 @@ export async function processNewLaw(formData: FormData): Promise<ProcessLawResul
     for (const article of extractedArticles) {
       try {
         const embedResponse = await ai.models.embedContent({
-          model: 'gemini-embedding-2-preview',
+          model: embeddingModel,
           contents: `Law: ${newLaw.title}\nCitation: ${article.citation}\n${article.text}`,
         });
 

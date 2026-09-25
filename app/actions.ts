@@ -6,7 +6,9 @@ import { buildEmergencyMarkdown, detectEmergencyRisk } from '@/lib/safety';
 
 const geminiApiKey =
   process.env.GEMINI_API_KEY?.trim() || process.env.SPACE_BUNNY_API_KEY?.trim() || '';
-const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+const generativeModel = process.env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash';
+const embeddingModel = process.env.GEMINI_EMBEDDING_MODEL?.trim() || 'gemini-embedding-001';
+const ai = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
 
 const SYSTEM_PROMPT = `You are Rengera, an expert legal AI assistant for Rwanda. 
 Your goal is to explain Rwandan laws simply to citizens and businesses.
@@ -65,6 +67,10 @@ export async function generateLegalAdvice(query: string, chatHistory: { role: 'u
       return buildEmergencyMarkdown(emergencyRisk);
     }
 
+    if (!ai) {
+      return 'AI is not configured. Add GEMINI_API_KEY (or SPACE_BUNNY_API_KEY) in Vercel and redeploy.';
+    }
+
     const history = chatHistory.map(msg => ({
       role: msg.role,
       parts: [{ text: msg.content }]
@@ -74,7 +80,7 @@ export async function generateLegalAdvice(query: string, chatHistory: { role: 'u
     let queryEmbedding: number[] = [];
     try {
       const embedResponse = await ai.models.embedContent({
-        model: 'gemini-embedding-2-preview',
+        model: embeddingModel,
         contents: query
       });
       if (embedResponse.embeddings && embedResponse.embeddings[0]?.values) {
@@ -130,7 +136,7 @@ export async function generateLegalAdvice(query: string, chatHistory: { role: 'u
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.1-pro-preview",
+      model: generativeModel,
       contents: [
         { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
         { role: 'model', parts: [{ text: 'Understood. I will strictly follow the instructions, structure all responses with the requested headings, and only use the provided retrieved context.' }] },
@@ -140,7 +146,18 @@ export async function generateLegalAdvice(query: string, chatHistory: { role: 'u
     });
     return response.text;
   } catch (error) {
-    console.error("Gemini Error:", error);
-    return "I am currently unable to access the legal database. Please try again later.";
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Gemini Error:', {
+      model: generativeModel,
+      embeddingModel,
+      keyConfigured: Boolean(geminiApiKey),
+      message: errorMessage,
+    });
+
+    if (!geminiApiKey) {
+      return 'AI is not configured. Add GEMINI_API_KEY (or SPACE_BUNNY_API_KEY) in Vercel and redeploy.';
+    }
+
+    return `The AI provider could not complete the request. Check that the API key is valid and that GEMINI_MODEL (${generativeModel}) is available, then try again.`;
   }
 }

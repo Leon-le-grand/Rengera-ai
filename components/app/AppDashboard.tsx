@@ -44,7 +44,7 @@ export default function AppDashboard({
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 lg:relative lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`print:hidden fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 lg:relative lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <Sidebar
           onLogout={onLogout}
           onLogin={onLogin}
@@ -58,7 +58,7 @@ export default function AppDashboard({
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-dvh overflow-hidden relative bg-slate-100">
-        <header className="h-16 border-b border-slate-200 flex items-center px-4 lg:hidden bg-white shrink-0 shadow-sm z-10">
+        <header className="print:hidden h-16 border-b border-slate-200 flex items-center px-4 lg:hidden bg-white shrink-0 shadow-sm z-10">
           <button 
             onClick={() => setSidebarOpen(true)}
             className="p-2 -ml-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"

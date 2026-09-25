@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useScroll, useMotionValueEvent } from 'motion/react';
-import { Scale, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import RengeraLogo from '@/components/brand/RengeraLogo';
 
 interface NavbarProps {
   onEnterApp: () => void;
@@ -28,9 +29,7 @@ export default function Navbar({ onEnterApp, onLogin }: NavbarProps) {
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         <div className="flex items-center gap-2 text-slate-900">
-          <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/20">
-            <Scale size={20} strokeWidth={2.5} />
-          </div>
+          <RengeraLogo size={40} animated className="drop-shadow-md" />
           <span className="font-bold text-xl tracking-tight">Rengera</span>
         </div>
 

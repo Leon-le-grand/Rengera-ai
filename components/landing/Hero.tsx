@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { ArrowRight, ShieldCheck, FileText, Scale } from 'lucide-react';
+import { ArrowRight, ShieldCheck, FileText } from 'lucide-react';
+import RengeraLogo from '@/components/brand/RengeraLogo';
 
 export default function Hero({ onStartFree }: { onStartFree: () => void }) {
   return (
@@ -66,9 +67,7 @@ export default function Hero({ onStartFree }: { onStartFree: () => void }) {
               <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 rounded-full blur-[80px]" />
               
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
-                  <Scale size={24} />
-                </div>
+                <RengeraLogo size={48} animated />
                 <div>
                   <div className="text-white font-semibold">Rengera AI</div>
                   <div className="text-emerald-400 text-sm">Legal Assistant</div>

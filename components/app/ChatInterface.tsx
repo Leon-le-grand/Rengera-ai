@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Bot, User, Loader2, Download, Scale, ArrowRight, ShieldAlert, Phone } from 'lucide-react';
+import { Send, User, Loader2, Download, ArrowRight, ShieldAlert, Phone } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import RengeraLogo from '@/components/brand/RengeraLogo';
 import { generateLegalAdvice } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { detectEmergencyRisk } from '@/lib/safety';
@@ -33,6 +34,7 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [printStatus, setPrintStatus] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const emergencyRisk = detectEmergencyRisk(input);
 
@@ -82,6 +84,14 @@ export default function ChatInterface() {
     }
   };
 
+  const handleSaveAsPdf = () => {
+    setPrintStatus('Opening the print dialog… choose “Save as PDF”.');
+    window.setTimeout(() => {
+      window.print();
+      setPrintStatus('');
+    }, 50);
+  };
+
   const renderMarkdown = (content: string) => {
     return (
       <div className="markdown-body">
@@ -106,7 +116,7 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white relative">
+    <div className="chat-print-area flex flex-col h-full bg-white relative">
       
       {/* Chat Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 scrollbar-hide">
@@ -130,7 +140,7 @@ export default function ChatInterface() {
                     ? "bg-slate-100 text-slate-600" 
                     : "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
                 )}>
-                  {msg.role === 'user' ? <User size={20} /> : <Scale size={20} />}
+                  {msg.role === 'user' ? <User size={20} /> : <RengeraLogo size={28} label="" />}
                 </div>
 
                 {/* Message Bubble */}
@@ -162,8 +172,12 @@ export default function ChatInterface() {
                       )}
                       
                       {msg.id !== 'msg-0' && (
-                        <div className="mt-6 pt-4 border-t border-slate-100 flex flex-wrap gap-2">
-                          <button className="px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                        <div className="no-print mt-6 pt-4 border-t border-slate-100 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={handleSaveAsPdf}
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                          >
                             <Download size={16} /> Save as PDF
                           </button>
                         </div>
@@ -176,13 +190,13 @@ export default function ChatInterface() {
           </AnimatePresence>
 
           {isLoading && (
-            <motion.div 
-              initial={{ opacity: 0 }} 
+            <motion.div
+              initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex gap-4"
+              className="no-print flex gap-4"
             >
-              <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-1 shadow-md">
-                <Bot size={20} />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 shadow-md">
+                <RengeraLogo size={28} loading label="" />
               </div>
               <div className="bg-white border border-slate-200 shadow-sm rounded-2xl rounded-tl-sm px-6 py-5 flex items-center gap-3">
                 <Loader2 size={18} className="animate-spin text-emerald-600" />
@@ -195,7 +209,7 @@ export default function ChatInterface() {
       </div>
 
       {/* Input Area */}
-      <div className="p-4 bg-white border-t border-slate-200 shrink-0">
+      <div className="no-print p-4 bg-white border-t border-slate-200 shrink-0">
         <div className="max-w-3xl mx-auto relative">
           {emergencyRisk.level === 'urgent' && (
             <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-red-950 shadow-sm">
@@ -245,6 +259,7 @@ export default function ChatInterface() {
           <div className="text-center mt-3 text-xs text-slate-400 font-medium">
             Rengera AI can make mistakes. Verify important information with official sources.
           </div>
+          <p className="sr-only" role="status" aria-live="polite">{printStatus}</p>
         </div>
       </div>
 

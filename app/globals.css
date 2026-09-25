@@ -62,3 +62,30 @@
   }
 }
 
+@media print {
+  body {
+    background: #fff !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .chat-print-area,
+  .chat-print-area * {
+    visibility: visible !important;
+  }
+
+  .chat-print-area {
+    position: absolute !important;
+    inset: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .chat-print-area .no-print {
+    display: none !important;
+  }
+}
+
