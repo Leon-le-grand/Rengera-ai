@@ -16,7 +16,7 @@ interface AdminSessionPayload {
 }
 
 const ADMIN_SESSION_COOKIE = 'rengera_admin_session';
-const DEVELOPMENT_AUTH_SECRET = 'rengera-local-development-secret-change-before-deploying';
+const DEFAULT_AUTH_SECRET = 'rengera-demo-secret-change-before-public-deploy';
 const SESSION_DURATION_SECONDS = 8 * 60 * 60;
 const SCRYPT_COST = 32768;
 const SCRYPT_BLOCK_SIZE = 8;
@@ -25,8 +25,7 @@ const SCRYPT_KEY_LENGTH = 64;
 const SCRYPT_MAX_MEMORY = 64 * 1024 * 1024;
 
 function getAuthSecret(): string | null {
-  const configuredSecret = process.env.AUTH_SECRET?.trim();
-  const secret = configuredSecret || (process.env.NODE_ENV === 'production' ? '' : DEVELOPMENT_AUTH_SECRET);
+  const secret = process.env.AUTH_SECRET?.trim() || DEFAULT_AUTH_SECRET;
 
   if (!secret || Buffer.byteLength(secret, 'utf8') < 32) {
     return null;
@@ -228,10 +227,7 @@ export async function getAdminSession(): Promise<AdminUser | null> {
   }
 
   const payload = verifySessionToken(token, secret);
-  const configuredEmail = (
-    process.env.ADMIN_EMAIL?.trim().toLowerCase() ||
-    (process.env.NODE_ENV === 'production' ? '' : 'admin')
-  );
+  const configuredEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase() || 'admin';
   if (!payload || !configuredEmail || payload.email.toLowerCase() !== configuredEmail) {
     return null;
   }

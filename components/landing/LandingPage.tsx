@@ -12,13 +12,14 @@ import Footer from './Footer';
 interface LandingPageProps {
   onEnterApp: () => void;
   onLogin: () => void;
+  onStartFree: () => void;
 }
 
-export default function LandingPage({ onEnterApp, onLogin }: LandingPageProps) {
+export default function LandingPage({ onEnterApp, onLogin, onStartFree }: LandingPageProps) {
   return (
     <div className="flex flex-col w-full bg-slate-50">
-      <Navbar onEnterApp={onEnterApp} onLogin={onLogin} />
-      <Hero onEnterApp={onEnterApp} />
+      <Navbar onEnterApp={onStartFree} onLogin={onLogin} />
+      <Hero onStartFree={onStartFree} />
       <Features />
       <InteractiveDemo />
       <Business onEnterApp={onEnterApp} />

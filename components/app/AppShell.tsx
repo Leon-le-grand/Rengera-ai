@@ -53,7 +53,7 @@ export default function AppShell({ initialAdmin }: AppShellProps) {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
           >
-            <LandingPage onEnterApp={openApp} onLogin={openLogin} />
+            <LandingPage onEnterApp={openApp} onLogin={openLogin} onStartFree={openLogin} />
           </motion.div>
         ) : currentView === 'login' ? (
           <motion.div

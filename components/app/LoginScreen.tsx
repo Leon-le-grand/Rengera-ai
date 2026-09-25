@@ -16,9 +16,8 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ onLogin, onExit }: LoginScreenProps) {
-  const developmentMode = process.env.NODE_ENV !== 'production';
-  const [email, setEmail] = useState(developmentMode ? 'admin' : '');
-  const [password, setPassword] = useState(developmentMode ? 'admin123' : '');
+  const [email, setEmail] = useState('admin');
+  const [password, setPassword] = useState('admin123');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,11 +110,9 @@ export default function LoginScreen({ onLogin, onExit }: LoginScreenProps) {
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 Use your administrator account to manage verified legal sources.
               </p>
-              {developmentMode && (
-                <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
-                  Local development demo: <strong>admin</strong> / <strong>admin123</strong>. These defaults are disabled in production.
-                </p>
-              )}
+              <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+                Demo credentials: <strong>admin</strong> / <strong>admin123</strong>. Replace them with deployment credentials before making the app public.
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5" aria-describedby={error ? 'login-error' : undefined}>

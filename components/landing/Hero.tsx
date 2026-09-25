@@ -3,7 +3,7 @@
 import { motion } from 'motion/react';
 import { ArrowRight, ShieldCheck, FileText, Scale } from 'lucide-react';
 
-export default function Hero({ onEnterApp }: { onEnterApp: () => void }) {
+export default function Hero({ onStartFree }: { onStartFree: () => void }) {
   return (
     <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
       {/* Background Mesh/Gradients */}
@@ -32,9 +32,10 @@ export default function Hero({ onEnterApp }: { onEnterApp: () => void }) {
               Rengera transforms complex legal language into simple, practical guidance that every citizen can understand. Empowering you with AI-driven clarity.
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-              <button 
-                onClick={onEnterApp}
-                className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-semibold text-lg transition-all shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 group"
+              <button
+                type="button"
+                onClick={onStartFree}
+                className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-semibold text-lg transition-all shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
               >
                 Start Free
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />

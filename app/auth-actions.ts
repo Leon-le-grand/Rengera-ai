@@ -21,6 +21,8 @@ interface LoginAttempt {
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
+const DEFAULT_ADMIN_EMAIL = 'admin';
+const DEFAULT_ADMIN_PASSWORD = 'admin123';
 const loginAttempts = new Map<string, LoginAttempt>();
 
 async function getClientAddress(): Promise<string> {
@@ -67,16 +69,11 @@ export async function loginAdmin(formData: FormData): Promise<LoginResult> {
 
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const password = String(formData.get('password') || '');
-  const isProduction = process.env.NODE_ENV === 'production';
-  const configuredEmail = (
-    process.env.ADMIN_EMAIL?.trim().toLowerCase() || (isProduction ? '' : 'admin')
-  );
+  const configuredEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase() || DEFAULT_ADMIN_EMAIL;
   const configuredPasswordHash = process.env.ADMIN_PASSWORD_HASH?.trim();
-  const configuredDevelopmentPassword = isProduction
-    ? ''
-    : process.env.ADMIN_PASSWORD?.trim() || 'admin123';
+  const configuredPlainPassword = process.env.ADMIN_PASSWORD?.trim() || DEFAULT_ADMIN_PASSWORD;
 
-  if (!configuredEmail || (!configuredPasswordHash && !configuredDevelopmentPassword)) {
+  if (!configuredEmail || (!configuredPasswordHash && !configuredPlainPassword)) {
     return {
       success: false,
       error: 'Administrator sign-in is not configured. Please contact the site administrator.',
@@ -86,7 +83,7 @@ export async function loginAdmin(formData: FormData): Promise<LoginResult> {
   const emailMatches = email === configuredEmail;
   const passwordMatches = configuredPasswordHash
     ? await verifyAdminPassword(password, configuredPasswordHash)
-    : password === configuredDevelopmentPassword;
+    : password === configuredPlainPassword;
 
   if (!emailMatches || !passwordMatches) {
     recordFailedLogin(clientAddress);
