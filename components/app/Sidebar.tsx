@@ -1,13 +1,12 @@
 'use client';
 
-import { Scale, MessageSquare, BookOpen, Bookmark, ShieldAlert, FileSignature, Settings, Briefcase, Home, Power } from 'lucide-react';
+import { Scale, MessageSquare, BookOpen, Bookmark, ShieldAlert, FileSignature, Briefcase, Power } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ElementType } from 'react';
 
-export type AppView = 'chat' | 'library' | 'bookmarks' | 'emergency' | 'complaints' | 'business' | 'admin' | 'settings';
+export type AppView = 'chat' | 'library' | 'bookmarks' | 'emergency' | 'complaints' | 'business' | 'admin';
 
 interface SidebarProps {
-  onExit: () => void;
   onLogout: () => void | Promise<void>;
   onLogin: () => void;
   onClose: () => void;
@@ -18,7 +17,6 @@ interface SidebarProps {
 }
 
 export default function Sidebar({
-  onExit,
   onLogout,
   onLogin,
   onClose,
@@ -55,14 +53,6 @@ export default function Sidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto py-5 px-3 flex flex-col gap-1">
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3">
-          <div className="flex items-center gap-2 text-sm font-bold text-red-800">
-            <ShieldAlert size={16} />
-            Emergency first
-          </div>
-          <p className="mt-1 text-xs leading-5 text-red-700">Urgent prompts route to official contacts before normal AI guidance.</p>
-        </div>
-
         <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Citizen Platform</div>
         
         {navItems.map((item, idx) => (
@@ -99,32 +89,6 @@ export default function Sidebar({
           Business Dashboard
         </button>
 
-        {isAdmin && (
-          <>
-            <div className="mt-5 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">System</div>
-            <button
-              onClick={() => handleNavClick('admin')}
-              className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
-                currentView === 'admin'
-                  ? "bg-amber-50 text-amber-700"
-                  : "hover:bg-slate-100 hover:text-slate-950"
-              )}
-            >
-              <Settings size={18} />
-              Admin Portal
-            </button>
-          </>
-        )}
-
-        <div className="mt-6 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Recent Queries</div>
-        <div className="space-y-1">
-          {["Unfair dismissal notice", "Landlord eviction rights", "Business registration fees"].map((q, i) => (
-            <button key={i} className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-500 hover:text-slate-950 hover:bg-slate-100 truncate transition-colors">
-              {q}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="p-3 border-t border-slate-200 bg-slate-50">
@@ -150,17 +114,6 @@ export default function Sidebar({
           </div>
         )}
 
-        {isAdmin && (
-          <button
-            onClick={() => handleNavClick('settings')}
-            className={cn(
-              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors",
-              currentView === 'settings' ? "bg-slate-950 text-white" : "hover:bg-slate-100 hover:text-slate-950"
-            )}
-          >
-            <Settings size={18} /> Settings
-          </button>
-        )}
         {isAdmin ? (
           <button
             onClick={onLogout}
@@ -176,12 +129,6 @@ export default function Sidebar({
             <Power size={18} /> Admin sign in
           </button>
         )}
-        <button
-          onClick={onExit}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-100 hover:text-slate-950 transition-colors text-slate-500 mt-1"
-        >
-          <Home size={18} /> Back to Home
-        </button>
       </div>
     </aside>
   );

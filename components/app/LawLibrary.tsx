@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { Search, Book, Briefcase, Home, Users, Car, Shield, FileText, Map, ChevronRight, X } from 'lucide-react';
 
 const CATEGORIES = [
@@ -19,32 +18,34 @@ export default function LawLibrary() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   return (
-    <div className="flex flex-col h-full bg-slate-50">
-      <div className="bg-white border-b border-slate-200 px-6 py-8 md:py-10">
-        <div className="max-w-5xl mx-auto">
-          <h1 className="text-3xl font-bold text-slate-900 mb-4 flex items-center gap-3">
-            <Book className="text-emerald-600" size={32} />
-            Rwanda Legal Library
-          </h1>
-          <p className="text-slate-500 text-lg mb-8 max-w-2xl">
-            Browse simplified versions of official Rwandan laws. Search by topic, category, or keyword.
-          </p>
-          
-          <div className="relative max-w-2xl">
-            <input 
+    <div className="flex h-full min-h-0 flex-col bg-slate-50">
+      <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
+            <h1 className="flex items-center gap-2 text-xl font-bold text-slate-900 sm:text-2xl">
+              <Book className="text-emerald-600" size={24} />
+              Rwanda Legal Library
+            </h1>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
+              Browse simplified versions of official Rwandan laws. Search by topic, category, or keyword.
+            </p>
+          </div>
+
+          <div className="relative w-full lg:max-w-md">
+            <input
               type="text"
-              placeholder="Search laws (e.g., 'maternity leave', 'eviction notice')..."
+              placeholder="Search laws or keywords..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-shadow text-slate-900 shadow-sm"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
             />
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-5xl mx-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="mx-auto max-w-6xl">
           {selectedCategory ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
               <button 
@@ -54,20 +55,20 @@ export default function LawLibrary() {
                 <X size={18} /> Back to Categories
               </button>
               
-              <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
-                <div className="flex items-center gap-4 mb-6">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+                <div className="mb-5 flex items-center gap-3 sm:gap-4">
                   {(() => {
                     const cat = CATEGORIES.find(c => c.id === selectedCategory);
                     if (!cat) return null;
                     const Icon = cat.icon;
                     return (
                       <>
-                        <div className={`p-4 rounded-xl ${cat.bg} ${cat.color}`}>
-                          <Icon size={32} />
+                        <div className={`rounded-xl p-3 ${cat.bg} ${cat.color}`}>
+                          <Icon size={26} />
                         </div>
                         <div>
-                          <h2 className="text-2xl font-bold text-slate-900">{cat.name} Law</h2>
-                          <p className="text-slate-500">{cat.desc}</p>
+                          <h2 className="text-xl font-bold text-slate-900">{cat.name} Law</h2>
+                          <p className="text-sm text-slate-500">{cat.desc}</p>
                         </div>
                       </>
                     )
@@ -100,19 +101,19 @@ export default function LawLibrary() {
             </div>
           ) : (
             <div>
-              <h2 className="text-xl font-bold text-slate-900 mb-6">Browse Categories</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <h2 className="mb-4 text-lg font-bold text-slate-900">Browse Categories</h2>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {CATEGORIES.map(category => (
                   <button
                     key={category.id}
                     onClick={() => setSelectedCategory(category.id)}
-                    className="flex flex-col text-left p-5 bg-white border border-slate-200 rounded-2xl hover:border-emerald-500 hover:shadow-md transition-all group"
+                    className="group flex flex-col rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-emerald-500 hover:shadow-md"
                   >
-                    <div className={`p-3 rounded-xl ${category.bg} ${category.color} w-fit mb-4 group-hover:scale-110 transition-transform`}>
-                      <category.icon size={24} />
+                    <div className={`mb-3 w-fit rounded-lg p-2.5 ${category.bg} ${category.color} transition-transform group-hover:scale-105`}>
+                      <category.icon size={21} />
                     </div>
-                    <h3 className="font-bold text-slate-900 text-lg mb-1">{category.name}</h3>
-                    <p className="text-sm text-slate-500 line-clamp-2">{category.desc}</p>
+                    <h3 className="mb-1 text-base font-bold text-slate-900">{category.name}</h3>
+                    <p className="line-clamp-2 text-xs leading-5 text-slate-500">{category.desc}</p>
                   </button>
                 ))}
               </div>

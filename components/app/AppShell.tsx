@@ -79,7 +79,6 @@ export default function AppShell({ initialAdmin }: AppShellProps) {
               initialView={initialDashboardView}
               onLogin={openLogin}
               onLogout={handleLogout}
-              onExit={returnHome}
             />
           </motion.div>
         )}
