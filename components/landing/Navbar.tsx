@@ -28,8 +28,8 @@ export default function Navbar({ onEnterApp, onLogin }: NavbarProps) {
       )}
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-slate-900">
-          <RengeraLogo size={40} animated className="drop-shadow-md" />
+        <div className="flex items-center gap-3 text-slate-900">
+          <RengeraLogo size={64} className="drop-shadow-md" />
           <span className="font-bold text-xl tracking-tight">Rengera</span>
         </div>
 

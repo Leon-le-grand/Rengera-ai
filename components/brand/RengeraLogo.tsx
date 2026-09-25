@@ -5,15 +5,13 @@ import { motion } from 'motion/react';
 interface RengeraLogoProps {
   size?: number;
   className?: string;
-  animated?: boolean;
   loading?: boolean;
   label?: string;
 }
 
 export default function RengeraLogo({
-  size = 40,
+  size = 56,
   className = '',
-  animated = false,
   loading = false,
   label = 'Rengera',
 }: RengeraLogoProps) {
@@ -37,7 +35,7 @@ export default function RengeraLogo({
       />
       <path
         d="M250 35L465 250L250 465L35 250L250 35Z"
-        stroke="#D4A72A"
+        stroke="#B69D74"
         strokeWidth="4"
       />
       <g
@@ -59,27 +57,22 @@ export default function RengeraLogo({
       <path
         d="M350 57L361 91L396 102L361 113L350 148L339 113L304 102L339 91L350 57Z"
         fill="#FFFFFF"
-        stroke="#D4A72A"
+        stroke="#B69D74"
         strokeWidth="7"
         strokeLinejoin="round"
       />
     </svg>
   );
 
-  if (!animated && !loading) {
+  if (!loading) {
     return <span className={`inline-flex shrink-0 ${className}`}>{logo}</span>;
   }
 
   return (
     <motion.span
       className={`inline-flex shrink-0 ${className}`}
-      initial={animated ? { opacity: 0, scale: 0.88 } : false}
-      animate={loading ? { rotate: 360 } : { opacity: [0.72, 1, 0.72] }}
-      transition={
-        loading
-          ? { duration: 1.6, repeat: Infinity, ease: 'linear' }
-          : { duration: 2.8, repeat: Infinity, ease: 'easeInOut' }
-      }
+      animate={{ rotate: 360 }}
+      transition={{ duration: 1.6, repeat: Infinity, ease: 'linear' }}
     >
       {logo}
     </motion.span>

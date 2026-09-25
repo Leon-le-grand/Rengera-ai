@@ -140,7 +140,7 @@ export default function ChatInterface() {
                     ? "bg-slate-100 text-slate-600" 
                     : "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
                 )}>
-                  {msg.role === 'user' ? <User size={20} /> : <RengeraLogo size={28} label="" />}
+                  {msg.role === 'user' ? <User size={20} /> : <RengeraLogo size={36} label="" />}
                 </div>
 
                 {/* Message Bubble */}
@@ -195,8 +195,8 @@ export default function ChatInterface() {
               animate={{ opacity: 1 }}
               className="no-print flex gap-4"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 shadow-md">
-                <RengeraLogo size={28} loading label="" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-600 shadow-md">
+                <RengeraLogo size={36} loading label="" />
               </div>
               <div className="bg-white border border-slate-200 shadow-sm rounded-2xl rounded-tl-sm px-6 py-5 flex items-center gap-3">
                 <Loader2 size={18} className="animate-spin text-emerald-600" />

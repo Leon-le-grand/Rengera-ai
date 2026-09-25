@@ -67,7 +67,7 @@ export default function Hero({ onStartFree }: { onStartFree: () => void }) {
               <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 rounded-full blur-[80px]" />
               
               <div className="flex items-center gap-4 mb-8">
-                <RengeraLogo size={48} animated />
+                <RengeraLogo size={72} />
                 <div>
                   <div className="text-white font-semibold">Rengera AI</div>
                   <div className="text-emerald-400 text-sm">Legal Assistant</div>

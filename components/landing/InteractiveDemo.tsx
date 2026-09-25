@@ -65,8 +65,8 @@ export default function InteractiveDemo() {
             <div className="bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden">
               {/* Header */}
               <div className="bg-slate-800/50 border-b border-slate-700 p-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500">
-                  <RengeraLogo size={28} animated label="" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500">
+                  <RengeraLogo size={40} label="" />
                 </div>
                 <div>
                   <h3 className="text-white font-medium">Rengera Assistant</h3>
@@ -95,8 +95,8 @@ export default function InteractiveDemo() {
                     animate={{ opacity: 1 }}
                     className="flex justify-start gap-3"
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-700">
-                      <RengeraLogo size={22} label="" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-700">
+                      <RengeraLogo size={30} label="" />
                     </div>
                     <div className="bg-slate-700 rounded-2xl rounded-tl-sm px-5 py-4 max-w-[90%] text-slate-200">
                       {step === 2 ? (

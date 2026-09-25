@@ -9,8 +9,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center gap-2 text-white mb-6">
-              <RengeraLogo size={40} animated />
+            <div className="flex items-center gap-3 text-white mb-6">
+              <RengeraLogo size={64} />
               <span className="font-bold text-2xl tracking-tight">Rengera</span>
             </div>
             <p className="text-slate-400 max-w-sm leading-relaxed">
