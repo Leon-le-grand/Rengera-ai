@@ -69,7 +69,7 @@ export default function Hero({ onStartFree }: { onStartFree: () => void }) {
               <div className="flex items-center gap-4 mb-8">
                 <RengeraLogo size={72} />
                 <div>
-                  <div className="text-white font-semibold">Rengera AI</div>
+                  <div className="font-brand text-xl text-white">RENGERA AI</div>
                   <div className="text-emerald-400 text-sm">Legal Assistant</div>
                 </div>
               </div>

@@ -59,7 +59,7 @@ export default function LoginScreen({ onLogin, onExit }: LoginScreenProps) {
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500 text-white">
               <Scale size={18} />
             </span>
-            <span className="text-lg font-bold">Rengera</span>
+            <span className="font-brand text-lg tracking-wide">RENGERA AI</span>
           </button>
 
           <div className="max-w-xl py-16">

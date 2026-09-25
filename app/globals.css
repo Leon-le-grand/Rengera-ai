@@ -3,6 +3,7 @@
 
 @theme {
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-brand: var(--font-squada), ui-serif, Georgia, serif;
 
   --color-emerald-500: #10b981;
   --color-emerald-600: #059669;

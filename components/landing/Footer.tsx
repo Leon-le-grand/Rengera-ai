@@ -11,7 +11,7 @@ export default function Footer() {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-3 text-white mb-6">
               <RengeraLogo size={64} />
-              <span className="font-bold text-2xl tracking-tight">Rengera</span>
+              <span className="font-brand text-2xl tracking-wide">RENGERA AI</span>
             </div>
             <p className="text-slate-400 max-w-sm leading-relaxed">
               Empowering Rwandan citizens through accessible, AI-driven legal education. Know your rights, protect your future.
@@ -42,7 +42,7 @@ export default function Footer() {
         
         <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-slate-500 text-sm">
-            © {new Date().getFullYear()} Rengera Inc. All rights reserved. Made in Kigali.
+            © {new Date().getFullYear()} RENGERA AI. All rights reserved. Made in Kigali.
           </p>
           <div className="flex gap-4">
             <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-emerald-600 transition-all cursor-pointer">

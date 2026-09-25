@@ -69,7 +69,7 @@ export default function InteractiveDemo() {
                   <RengeraLogo size={40} label="" />
                 </div>
                 <div>
-                  <h3 className="text-white font-medium">Rengera Assistant</h3>
+                  <h3 className="font-brand text-lg text-white">RENGERA AI</h3>
                   <p className="text-emerald-400 text-xs">Online • Ready to help</p>
                 </div>
               </div>

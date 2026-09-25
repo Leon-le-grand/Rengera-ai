@@ -46,7 +46,7 @@ export default function Sidebar({
             <Scale size={16} strokeWidth={2.5} />
           </div>
           <div>
-            <span className="block font-bold text-lg tracking-tight leading-5">Rengera</span>
+            <span className="font-brand block text-lg leading-6 tracking-wide">RENGERA AI</span>
             <span className="text-xs font-medium text-slate-500">Rwanda legal AI</span>
           </div>
         </div>
