@@ -1,14 +1,14 @@
 'use server';
 
-import { GoogleGenAI } from '@google/genai';
 import { getDb } from '@/lib/db';
 import { buildEmergencyMarkdown, detectEmergencyRisk } from '@/lib/safety';
-
-const geminiApiKey =
-  process.env.GEMINI_API_KEY?.trim() || process.env.SPACE_BUNNY_API_KEY?.trim() || '';
-const generativeModel = process.env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash';
-const embeddingModel = process.env.GEMINI_EMBEDDING_MODEL?.trim() || 'gemini-embedding-001';
-const ai = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
+import {
+  createSpaceBunnyChatCompletion,
+  createSpaceBunnyEmbedding,
+  getSpaceBunnyRuntime,
+  SpaceBunnyConfigurationError,
+  type SpaceBunnyMessage,
+} from '@/lib/space-bunny';
 
 const SYSTEM_PROMPT = `You are Rengera, an expert legal AI assistant for Rwanda. 
 Your goal is to explain Rwandan laws simply to citizens and businesses.
@@ -61,103 +61,108 @@ function cosineSimilarity(a: number[], b: number[]) {
 }
 
 export async function generateLegalAdvice(query: string, chatHistory: { role: 'user' | 'model', content: string }[] = []) {
+  const runtime = getSpaceBunnyRuntime();
+
   try {
     const emergencyRisk = detectEmergencyRisk(query);
     if (emergencyRisk.level === 'urgent') {
       return buildEmergencyMarkdown(emergencyRisk);
     }
 
-    if (!ai) {
-      return 'AI is not configured. Add GEMINI_API_KEY (or SPACE_BUNNY_API_KEY) in Vercel and redeploy.';
-    }
-
-    const history = chatHistory.map(msg => ({
-      role: msg.role,
-      parts: [{ text: msg.content }]
-    }));
-
-    // 1. Generate embedding for query
+    // Embeddings are optional. Chat still works without a Space Bunny
+    // embedding model, but retrieval will report that no laws were indexed.
     let queryEmbedding: number[] = [];
     try {
-      const embedResponse = await ai.models.embedContent({
-        model: embeddingModel,
-        contents: query
+      queryEmbedding = (await createSpaceBunnyEmbedding(query)) || [];
+    } catch (error) {
+      console.error('Space Bunny embedding error:', {
+        model: runtime.embeddingModel,
+        message: error instanceof Error ? error.message : String(error),
       });
-      if (embedResponse.embeddings && embedResponse.embeddings[0]?.values) {
-        queryEmbedding = embedResponse.embeddings[0].values;
-      }
-    } catch (e) {
-      console.error("Failed to embed query", e);
     }
 
-    // 2. Retrieve similar articles
-    let contextText = "No relevant laws found in the database.";
+    // Retrieve similar articles from the local RAG store.
+    let contextText = 'No relevant laws found in the database.';
     if (queryEmbedding.length > 0) {
       const db = await getDb();
       const similarities = db.articles
-        .filter(article => article.status !== 'repealed')
-        .map(article => {
-        const sim = cosineSimilarity(queryEmbedding, article.embedding);
-        return { article, sim };
-      });
-      
-      similarities.sort((a, b) => b.sim - a.sim);
-      const topArticles = similarities.slice(0, 5).filter(s => s.sim > 0.5); // Use a threshold if desired
-      
-      if (topArticles.length > 0) {
-        contextText = topArticles.map(s => {
-          const law = db.laws.find(l => l.id === s.article.lawId);
-          const amendmentNotes = db.amendments
-            .filter(amendment => amendment.originalLawId === law?.id && amendment.affectedArticle === s.article.articleNumber)
-            .map(amendment => {
-              const amendingLaw = db.laws.find(item => item.id === amendment.amendingLawId);
-              return `${amendment.amendmentType.toUpperCase()} by ${amendingLaw?.title || 'unknown amending law'} (${amendingLaw?.lawNumber || 'no number'})`;
-            });
+        .filter((article) => article.status !== 'repealed' && article.embedding.length > 0)
+        .map((article) => ({
+          article,
+          similarity: cosineSimilarity(queryEmbedding, article.embedding),
+        }));
 
-          return [
-            `Law: ${law?.title || 'Unknown Law'}`,
-            `Law number: ${law?.lawNumber || 'Unknown'}`,
-            `Article ${s.article.articleNumber}: ${s.article.title}`,
-            `Citation: ${s.article.citation}`,
-            `Source URL: ${s.article.sourceUrl || law?.sourceUrl || 'Unknown source'}`,
-            amendmentNotes.length ? `Amendment notes: ${amendmentNotes.join('; ')}` : '',
-            `Official text: ${s.article.text}`,
-          ].filter(Boolean).join('\n');
-        }).join('\n\n---\n\n');
+      similarities.sort((a, b) => b.similarity - a.similarity);
+      const topArticles = similarities.slice(0, 5).filter((item) => item.similarity > 0.5);
+
+      if (topArticles.length > 0) {
+        contextText = topArticles
+          .map(({ article }) => {
+            const law = db.laws.find((item) => item.id === article.lawId);
+            const amendmentNotes = db.amendments
+              .filter(
+                (amendment) =>
+                  amendment.originalLawId === law?.id &&
+                  amendment.affectedArticle === article.articleNumber,
+              )
+              .map((amendment) => {
+                const amendingLaw = db.laws.find((item) => item.id === amendment.amendingLawId);
+                return `${amendment.amendmentType.toUpperCase()} by ${
+                  amendingLaw?.title || 'unknown amending law'
+                } (${amendingLaw?.lawNumber || 'no number'})`;
+              });
+
+            return [
+              `Law: ${law?.title || 'Unknown Law'}`,
+              `Law number: ${law?.lawNumber || 'Unknown'}`,
+              `Article ${article.articleNumber}: ${article.title}`,
+              `Citation: ${article.citation}`,
+              `Source URL: ${article.sourceUrl || law?.sourceUrl || 'Unknown source'}`,
+              amendmentNotes.length ? `Amendment notes: ${amendmentNotes.join('; ')}` : '',
+              `Official text: ${article.text}`,
+            ]
+              .filter(Boolean)
+              .join('\n');
+          })
+          .join('\n\n---\n\n');
       }
     }
 
     const contextPrompt = `
-      RETRIEVED LEGAL CONTEXT:
-      ${contextText}
-      
-      USER QUERY:
-      ${query}
-    `;
+RETRIEVED LEGAL CONTEXT:
+${contextText}
 
-    const response = await ai.models.generateContent({
-      model: generativeModel,
-      contents: [
-        { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
-        { role: 'model', parts: [{ text: 'Understood. I will strictly follow the instructions, structure all responses with the requested headings, and only use the provided retrieved context.' }] },
-        ...history,
-        { role: 'user', parts: [{ text: contextPrompt }] }
-      ],
-    });
-    return response.text;
+USER QUERY:
+${query}
+`;
+
+    const messages: SpaceBunnyMessage[] = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      {
+        role: 'assistant',
+        content:
+          'Understood. I will strictly follow the instructions, structure all responses with the requested headings, and only use the provided retrieved context.',
+      },
+      ...chatHistory.map((message) => ({
+        role: message.role === 'model' ? ('assistant' as const) : ('user' as const),
+        content: message.content,
+      })),
+      { role: 'user', content: contextPrompt },
+    ];
+
+    return await createSpaceBunnyChatCompletion(messages, { temperature: 0.2 });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('Gemini Error:', {
-      model: generativeModel,
-      embeddingModel,
-      keyConfigured: Boolean(geminiApiKey),
-      message: errorMessage,
-    });
-
-    if (!geminiApiKey) {
-      return 'AI is not configured. Add GEMINI_API_KEY (or SPACE_BUNNY_API_KEY) in Vercel and redeploy.';
+    if (error instanceof SpaceBunnyConfigurationError) {
+      return error.message;
     }
 
-    return `The AI provider could not complete the request. Check that the API key is valid and that GEMINI_MODEL (${generativeModel}) is available, then try again.`;
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Space Bunny request error:', {
+      model: runtime.model,
+      embeddingModel: runtime.embeddingModel,
+      message,
+    });
+
+    return `Space Bunny could not complete the request: ${message}`;
   }
 }

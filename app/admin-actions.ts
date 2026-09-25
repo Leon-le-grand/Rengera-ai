@@ -1,8 +1,8 @@
 'use server';
 
-import { GoogleGenAI } from '@google/genai';
 import { getAdminSession } from '@/lib/auth';
 import { addAmendments, addArticles, addLaw, getDb, type Law } from '@/lib/db';
+import { createSpaceBunnyEmbedding } from '@/lib/space-bunny';
 import {
   buildLawDraft,
   extractAmendmentsFromText,
@@ -10,11 +10,6 @@ import {
   extractPdfText,
   normalizePdfText,
 } from '@/lib/legal-pdf';
-
-const geminiApiKey =
-  process.env.GEMINI_API_KEY?.trim() || process.env.SPACE_BUNNY_API_KEY?.trim() || '';
-const embeddingModel = process.env.GEMINI_EMBEDDING_MODEL?.trim() || 'gemini-embedding-001';
-const ai = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
 
 type ProcessLawResult = {
   success: boolean;
@@ -28,13 +23,6 @@ export async function processNewLaw(formData: FormData): Promise<ProcessLawResul
   const adminSession = await getAdminSession();
   if (!adminSession) {
     return { success: false, error: 'Your administrator session has expired. Please sign in again.' };
-  }
-
-  if (!ai) {
-    return {
-      success: false,
-      error: 'AI is not configured. Add GEMINI_API_KEY (or SPACE_BUNNY_API_KEY) in Vercel and redeploy.',
-    };
   }
 
   try {
@@ -81,29 +69,28 @@ export async function processNewLaw(formData: FormData): Promise<ProcessLawResul
     const articlesWithEmbeddings = [];
 
     for (const article of extractedArticles) {
+      let embedding: number[] = [];
       try {
-        const embedResponse = await ai.models.embedContent({
-          model: embeddingModel,
-          contents: `Law: ${newLaw.title}\nCitation: ${article.citation}\n${article.text}`,
-        });
-
-        if (embedResponse.embeddings && embedResponse.embeddings[0]?.values) {
-          articlesWithEmbeddings.push({
-            lawId: newLaw.id,
-            articleNumber: article.articleNumber,
-            title: article.title,
-            text: article.text,
-            embedding: embedResponse.embeddings[0].values,
-            version: article.version,
-            sourceUrl: article.sourceUrl,
-            sourceFileName: article.sourceFileName,
-            citation: article.citation,
-            status: article.status,
-          });
-        }
+        embedding =
+          (await createSpaceBunnyEmbedding(
+            `Law: ${newLaw.title}\nCitation: ${article.citation}\n${article.text}`,
+          )) || [];
       } catch (err) {
-        console.error('Embedding failed for article', article.articleNumber, err);
+        console.error('Space Bunny embedding failed for article', article.articleNumber, err);
       }
+
+      articlesWithEmbeddings.push({
+        lawId: newLaw.id,
+        articleNumber: article.articleNumber,
+        title: article.title,
+        text: article.text,
+        embedding,
+        version: article.version,
+        sourceUrl: article.sourceUrl,
+        sourceFileName: article.sourceFileName,
+        citation: article.citation,
+        status: article.status,
+      });
     }
 
     await addArticles(articlesWithEmbeddings);

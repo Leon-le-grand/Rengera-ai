@@ -277,7 +277,7 @@ export default function AdminDashboard() {
                </div>
                <div className="flex items-center justify-between text-sm border-b border-slate-800 pb-2">
                  <span className="text-slate-500">Embedding Model</span>
-                 <span className="text-slate-300 font-mono text-xs">gemini-embedding-2</span>
+                 <span className="text-slate-300 font-mono text-xs">SPACE_BUNNY_EMBEDDING_MODEL</span>
                </div>
                <div className="flex items-center justify-between text-sm pb-2">
                  <span className="text-slate-500">Storage</span>
@@ -299,7 +299,7 @@ export default function AdminDashboard() {
                </li>
                <li className="flex gap-2">
                  <span className="text-amber-500 font-bold">3.</span>
-                 Gemini embeddings are generated for each official article text.
+                 Space Bunny embeddings are generated for each official article text when configured.
                </li>
                <li className="flex gap-2">
                  <span className="text-amber-500 font-bold">4.</span>
