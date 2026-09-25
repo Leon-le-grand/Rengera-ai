@@ -1,6 +1,7 @@
 'use server';
 
 import { GoogleGenAI } from '@google/genai';
+import { getAdminSession } from '@/lib/auth';
 import { addAmendments, addArticles, addLaw, getDb, type Law } from '@/lib/db';
 import {
   buildLawDraft,
@@ -10,7 +11,9 @@ import {
   normalizePdfText,
 } from '@/lib/legal-pdf';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const geminiApiKey =
+  process.env.GEMINI_API_KEY?.trim() || process.env.SPACE_BUNNY_API_KEY?.trim() || '';
+const ai = new GoogleGenAI({ apiKey: geminiApiKey });
 
 type ProcessLawResult = {
   success: boolean;
@@ -21,6 +24,11 @@ type ProcessLawResult = {
 };
 
 export async function processNewLaw(formData: FormData): Promise<ProcessLawResult> {
+  const adminSession = await getAdminSession();
+  if (!adminSession) {
+    return { success: false, error: 'Your administrator session has expired. Please sign in again.' };
+  }
+
   try {
     const pdf = formData.get('pdf');
     const rawText = String(formData.get('rawText') || '');

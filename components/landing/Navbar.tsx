@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, useScroll, useMotionValueEvent } from 'motion/react';
+import { useState } from 'react';
+import { useScroll, useMotionValueEvent } from 'motion/react';
 import { Scale, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function Navbar({ onEnterApp }: { onEnterApp: () => void }) {
+interface NavbarProps {
+  onEnterApp: () => void;
+  onLogin: () => void;
+}
+
+export default function Navbar({ onEnterApp, onLogin }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const { scrollY } = useScroll();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -34,18 +39,29 @@ export default function Navbar({ onEnterApp }: { onEnterApp: () => void }) {
           <a href="#business" className="hover:text-emerald-600 transition-colors">Business</a>
           <a href="#faq" className="hover:text-emerald-600 transition-colors">FAQ</a>
           <div className="w-px h-4 bg-slate-300"></div>
-          <button className="hover:text-slate-900 transition-colors">Login</button>
-          <button 
+          <button
+            type="button"
+            onClick={onLogin}
+            className="rounded-lg px-2 py-2 transition-colors hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            Login
+          </button>
+          <button
+            type="button"
             onClick={onEnterApp}
-            className="bg-slate-900 text-white px-5 py-2.5 rounded-full hover:bg-slate-800 transition-all active:scale-95 shadow-sm"
+            className="bg-slate-900 text-white px-5 py-2.5 rounded-full hover:bg-slate-800 transition-all active:scale-95 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
           >
             Get Started
           </button>
         </nav>
 
-        <button 
-          className="md:hidden text-slate-600"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        <button
+          type="button"
+          className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 md:hidden"
+          onClick={() => setMobileMenuOpen((open) => !open)}
+          aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={mobileMenuOpen}
+          aria-controls="mobile-navigation"
         >
           {mobileMenuOpen ? <X /> : <Menu />}
         </button>
@@ -53,15 +69,28 @@ export default function Navbar({ onEnterApp }: { onEnterApp: () => void }) {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-200 shadow-xl p-6 flex flex-col gap-4">
+        <div id="mobile-navigation" className="md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-200 shadow-xl p-6 flex flex-col gap-4">
           <a href="#features" className="text-slate-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Features</a>
           <a href="#business" className="text-slate-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Business</a>
           <a href="#faq" className="text-slate-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
           <div className="h-px w-full bg-slate-100 my-2"></div>
-          <button className="text-left font-medium text-slate-600 py-2">Login</button>
-          <button 
-            onClick={onEnterApp}
-            className="bg-emerald-600 text-white px-5 py-3 rounded-xl font-medium mt-2"
+          <button
+            type="button"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              onLogin();
+            }}
+            className="rounded-lg text-left font-medium text-slate-600 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              onEnterApp();
+            }}
+            className="bg-emerald-600 text-white px-5 py-3 rounded-xl font-medium mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
           >
             Get Started Free
           </button>

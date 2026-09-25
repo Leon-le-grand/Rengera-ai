@@ -28,7 +28,7 @@ export default function InteractiveDemo() {
   };
 
   return (
-    <section className="py-24 bg-slate-900 overflow-hidden relative">
+    <section id="interactive-demo" className="scroll-mt-24 py-24 bg-slate-900 overflow-hidden relative">
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px]" />
       
       <div className="max-w-7xl mx-auto px-6">

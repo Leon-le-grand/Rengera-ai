@@ -3,7 +3,11 @@
 import { motion } from 'motion/react';
 import { CheckCircle2, TrendingUp, Users, ShieldAlert, ArrowRight } from 'lucide-react';
 
-export default function Business() {
+interface BusinessProps {
+  onEnterApp: () => void;
+}
+
+export default function Business({ onEnterApp }: BusinessProps) {
   return (
     <section id="business" className="py-24 bg-slate-50 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
@@ -93,8 +97,12 @@ export default function Business() {
               ))}
             </div>
 
-            <button className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-full font-semibold transition-all flex items-center gap-2 group">
-              Explore Business Plans
+            <button
+              type="button"
+              onClick={onEnterApp}
+              className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-full font-semibold transition-all flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+            >
+              Explore Business Tools
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </div>

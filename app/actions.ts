@@ -4,7 +4,9 @@ import { GoogleGenAI } from '@google/genai';
 import { getDb } from '@/lib/db';
 import { buildEmergencyMarkdown, detectEmergencyRisk } from '@/lib/safety';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const geminiApiKey =
+  process.env.GEMINI_API_KEY?.trim() || process.env.SPACE_BUNNY_API_KEY?.trim() || '';
+const ai = new GoogleGenAI({ apiKey: geminiApiKey });
 
 const SYSTEM_PROMPT = `You are Rengera, an expert legal AI assistant for Rwanda. 
 Your goal is to explain Rwandan laws simply to citizens and businesses.

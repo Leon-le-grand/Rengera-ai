@@ -39,14 +39,18 @@ export default function Hero({ onEnterApp }: { onEnterApp: () => void }) {
                 Start Free
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 rounded-full font-semibold text-lg transition-all shadow-sm">
+              <button
+                type="button"
+                onClick={() => document.getElementById('interactive-demo')?.scrollIntoView({ behavior: 'smooth' })}
+                className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 rounded-full font-semibold text-lg transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+              >
                 Watch Demo
               </button>
             </div>
             
             <div className="mt-10 flex items-center justify-center lg:justify-start gap-6 text-sm text-slate-500 font-medium">
-              <div className="flex items-center gap-1.5"><ShieldCheck size={16} className="text-emerald-500" /> Government-ready</div>
-              <div className="flex items-center gap-1.5"><FileText size={16} className="text-emerald-500" /> Offline support</div>
+              <div className="flex items-center gap-1.5"><ShieldCheck size={16} className="text-emerald-500" /> Source-linked guidance</div>
+              <div className="flex items-center gap-1.5"><FileText size={16} className="text-emerald-500" /> Emergency routing</div>
             </div>
           </motion.div>
 

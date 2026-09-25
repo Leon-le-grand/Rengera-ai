@@ -8,14 +8,25 @@ export type AppView = 'chat' | 'library' | 'bookmarks' | 'emergency' | 'complain
 
 interface SidebarProps {
   onExit: () => void;
-  onLogout: () => void;
+  onLogout: () => void | Promise<void>;
+  onLogin: () => void;
   onClose: () => void;
   currentView: AppView;
   onViewChange: (view: AppView) => void;
   userName: string;
+  isAdmin?: boolean;
 }
 
-export default function Sidebar({ onExit, onLogout, onClose, currentView, onViewChange, userName }: SidebarProps) {
+export default function Sidebar({
+  onExit,
+  onLogout,
+  onLogin,
+  onClose,
+  currentView,
+  onViewChange,
+  userName,
+  isAdmin = false,
+}: SidebarProps) {
   const navItems: { icon: ElementType, label: string, view: AppView, tone?: 'danger' }[] = [
     { icon: MessageSquare, label: 'AI Assistant', view: 'chat' },
     { icon: BookOpen, label: 'Law Library', view: 'library' },
@@ -88,19 +99,23 @@ export default function Sidebar({ onExit, onLogout, onClose, currentView, onView
           Business Dashboard
         </button>
 
-        <div className="mt-5 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">System</div>
-        <button
-          onClick={() => handleNavClick('admin')}
-          className={cn(
-            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
-            currentView === 'admin'
-              ? "bg-amber-50 text-amber-700"
-              : "hover:bg-slate-100 hover:text-slate-950"
-          )}
-        >
-          <Settings size={18} />
-          Admin Portal
-        </button>
+        {isAdmin && (
+          <>
+            <div className="mt-5 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">System</div>
+            <button
+              onClick={() => handleNavClick('admin')}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
+                currentView === 'admin'
+                  ? "bg-amber-50 text-amber-700"
+                  : "hover:bg-slate-100 hover:text-slate-950"
+              )}
+            >
+              <Settings size={18} />
+              Admin Portal
+            </button>
+          </>
+        )}
 
         <div className="mt-6 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Recent Queries</div>
         <div className="space-y-1">
@@ -113,31 +128,54 @@ export default function Sidebar({ onExit, onLogout, onClose, currentView, onView
       </div>
 
       <div className="p-3 border-t border-slate-200 bg-slate-50">
-        <div className="flex items-center gap-3 px-3 py-3 mb-3 rounded-lg bg-white border border-slate-200">
-          <div className="w-9 h-9 rounded-md bg-emerald-600 flex items-center justify-center text-white font-bold text-sm">
-            {userName.slice(0, 2).toUpperCase()}
+        {isAdmin ? (
+          <div className="flex items-center gap-3 px-3 py-3 mb-3 rounded-lg bg-white border border-slate-200">
+            <div className="w-9 h-9 rounded-md bg-emerald-600 flex items-center justify-center text-white font-bold text-sm">
+              {userName.slice(0, 2).toUpperCase()}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-bold text-slate-950 truncate">{userName}</span>
+              <span className="text-xs text-slate-500">Administrator</span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-bold text-slate-950">{userName}</span>
-            <span className="text-xs text-slate-500">Prototype admin</span>
+        ) : (
+          <div className="flex items-center gap-3 px-3 py-3 mb-3 rounded-lg border border-slate-200 bg-white">
+            <div className="w-9 h-9 rounded-md bg-slate-100 flex items-center justify-center text-slate-500">
+              <ShieldAlert size={17} />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-bold text-slate-950">Public access</span>
+              <span className="text-xs text-slate-500">No account required</span>
+            </div>
           </div>
-        </div>
+        )}
 
-        <button 
-          onClick={() => handleNavClick('settings')}
-          className={cn(
-            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors",
-            currentView === 'settings' ? "bg-slate-950 text-white" : "hover:bg-slate-100 hover:text-slate-950"
-          )}
-        >
-          <Settings size={18} /> Settings
-        </button>
-        <button 
-          onClick={onLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-100 hover:text-slate-950 transition-colors text-slate-500 mt-1"
-        >
-          <Power size={18} /> Sign out
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => handleNavClick('settings')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors",
+              currentView === 'settings' ? "bg-slate-950 text-white" : "hover:bg-slate-100 hover:text-slate-950"
+            )}
+          >
+            <Settings size={18} /> Settings
+          </button>
+        )}
+        {isAdmin ? (
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-100 hover:text-slate-950 transition-colors text-slate-500 mt-1"
+          >
+            <Power size={18} /> Sign out
+          </button>
+        ) : (
+          <button
+            onClick={onLogin}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-950 hover:bg-slate-100 transition-colors"
+          >
+            <Power size={18} /> Admin sign in
+          </button>
+        )}
         <button
           onClick={onExit}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-100 hover:text-slate-950 transition-colors text-slate-500 mt-1"
