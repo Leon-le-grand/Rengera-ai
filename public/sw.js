@@ -41,6 +41,7 @@ self.addEventListener('fetch', (event) => {
 
   if (
     url.pathname === '/manifest.json' ||
+    url.pathname === '/icon.svg' ||
     url.pathname.startsWith('/_next/static/') ||
     url.pathname.startsWith('/icons/') ||
     url.pathname.startsWith('/images/')

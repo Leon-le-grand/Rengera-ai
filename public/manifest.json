@@ -1,21 +1,17 @@
 {
-  "name": "Rengera",
-  "short_name": "Rengera",
+  "name": "RENGERA AI",
+  "short_name": "RENGERA",
   "description": "AI-powered legal literacy platform for Rwanda.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0f172a",
+  "background_color": "#B69D74",
+  "theme_color": "#0B1B35",
   "icons": [
     {
-      "src": "https://picsum.photos/seed/rengerapp192/192/192",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "https://picsum.photos/seed/rengerapp512/512/512",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }
