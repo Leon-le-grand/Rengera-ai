@@ -44,7 +44,7 @@ export async function retrieveSupabaseLegalContext(
   if (error) {
     const message =
       error.message.includes('search_laws') || error.message.includes('schema cache')
-        ? 'Supabase schema is out of date. Run supabase/migrations/002_add_classification_metadata_and_search.sql in the SQL Editor, then retry.'
+        ? 'Supabase schema is out of date. Run supabase/migrations/002_add_classification_metadata_and_search.sql and 003_improve_search_and_deduplicate.sql in the SQL Editor, then retry.'
         : error.message;
     throw new Error(`Supabase law search failed: ${message}`);
   }

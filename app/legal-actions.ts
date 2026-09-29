@@ -1,5 +1,6 @@
 'use server';
 
+import { createHash } from 'node:crypto';
 import { getAdminSession } from '@/lib/auth';
 import { extractPdfText, normalizePdfText } from '@/lib/legal-pdf';
 import {
@@ -60,7 +61,7 @@ function explainSupabaseError(message: string): string {
     message.includes('does not exist') ||
     message.includes('search_laws')
   ) {
-    return 'Supabase schema is out of date. Run supabase/migrations/002_add_classification_metadata_and_search.sql in the SQL Editor, then retry.';
+    return 'Supabase schema is out of date. Run supabase/migrations/002_add_classification_metadata_and_search.sql and 003_improve_search_and_deduplicate.sql in the SQL Editor, then retry.';
   }
   return message;
 }
@@ -108,6 +109,7 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
       { temperature: 0.1 },
     );
     const classification = parseClassificationResponse(rawResponse);
+    const contentHash = createHash('sha256').update(rawContent, 'utf8').digest('hex');
     const supabase = getSupabaseAdminClient();
 
     const { data: category, error: categoryError } = await supabase
@@ -130,7 +132,7 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
 
     const { data: insertedLaw, error: insertError } = await supabase
       .from('laws')
-      .insert({
+      .upsert({
         title: classification.title,
         reference_number: classification.reference_number,
         category_id: category.id,
@@ -147,9 +149,10 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
         raw_content: rawContent,
         classification_model: getSpaceBunnyRuntime().model,
         classification_prompt_version: CLASSIFICATION_PROMPT_VERSION,
+        content_hash: contentHash,
         created_by: null,
         created_by_label: adminSession.email,
-      })
+      }, { onConflict: 'content_hash' })
       .select('id')
       .single();
 

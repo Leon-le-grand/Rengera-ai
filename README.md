@@ -112,7 +112,10 @@ Run these files in the Supabase SQL Editor, in order:
 ```text
 supabase/migrations/001_create_legal_knowledge_base.sql
 supabase/migrations/002_add_classification_metadata_and_search.sql
+supabase/migrations/003_improve_search_and_deduplicate.sql
 ```
+
+Migration 003 broadens natural-language search and removes duplicate uploads using a SHA-256 `content_hash`. Later uploads of the same source text update the existing law instead of creating another row.
 
 `scripts/legal_chunks_schema.sql` is optional and only needed for a separate pgvector article-chunk table.
 
