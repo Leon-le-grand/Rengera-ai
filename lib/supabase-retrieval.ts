@@ -42,7 +42,11 @@ export async function retrieveSupabaseLegalContext(
   });
 
   if (error) {
-    throw new Error(`Supabase law search failed: ${error.message}`);
+    const message =
+      error.message.includes('search_laws') || error.message.includes('schema cache')
+        ? 'Supabase schema is out of date. Run supabase/migrations/002_add_classification_metadata_and_search.sql in the SQL Editor, then retry.'
+        : error.message;
+    throw new Error(`Supabase law search failed: ${message}`);
   }
 
   return formatSearchRows(data);

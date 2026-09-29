@@ -54,6 +54,17 @@ const LAW_LIST_SELECT = `
   legal_categories (name)
 `;
 
+function explainSupabaseError(message: string): string {
+  if (
+    message.includes('schema cache') ||
+    message.includes('does not exist') ||
+    message.includes('search_laws')
+  ) {
+    return 'Supabase schema is out of date. Run supabase/migrations/002_add_classification_metadata_and_search.sql in the SQL Editor, then retry.';
+  }
+  return message;
+}
+
 async function readRawLegalText(formData: FormData): Promise<string> {
   const submittedText = String(formData.get('rawText') || '').trim();
   if (submittedText) {
@@ -112,7 +123,9 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
       .single();
 
     if (categoryError || !category) {
-      throw new Error(`Could not store the legal category: ${categoryError?.message || 'unknown error'}`);
+      throw new Error(
+        `Could not store the legal category: ${explainSupabaseError(categoryError?.message || 'unknown error')}`,
+      );
     }
 
     const { data: insertedLaw, error: insertError } = await supabase
@@ -141,7 +154,9 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
       .single();
 
     if (insertError || !insertedLaw) {
-      throw new Error(`Could not store the classified law: ${insertError?.message || 'unknown error'}`);
+      throw new Error(
+        `Could not store the classified law: ${explainSupabaseError(insertError?.message || 'unknown error')}`,
+      );
     }
 
     return {
@@ -198,7 +213,7 @@ async function runPublicLawQuery(
   try {
     const { data, error } = await buildQuery(getSupabasePublicClient());
     if (error) {
-      throw new Error(error.message);
+      throw new Error(explainSupabaseError(error.message));
     }
     return castLawRows(data);
   } catch (error) {
