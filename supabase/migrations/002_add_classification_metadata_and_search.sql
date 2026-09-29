@@ -71,7 +71,7 @@ as $$
      or law.title ilike '%' || query_text || '%'
      or law.reference_number ilike '%' || query_text || '%'
   order by search_rank desc, law.created_at desc
-  limit pg_catalog.least(pg_catalog.greatest(result_limit, 1), 10);
+  limit least(greatest(result_limit, 1), 10);
 $$;
 
 grant execute on function public.search_laws(text, integer) to anon, authenticated;
