@@ -96,7 +96,7 @@ export default function SupabaseLawClassifier() {
               type="file"
               accept="application/pdf"
               className="hidden"
-              onChange={(event) => setPdfFile(event.target.target.files?.[0] || null)}
+              onChange={(event) => setPdfFile(event.currentTarget.files?.[0] || null)}
             />
           </label>
 
