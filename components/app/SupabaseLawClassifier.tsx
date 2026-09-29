@@ -67,9 +67,9 @@ export default function SupabaseLawClassifier() {
             <FileJson size={22} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-950">Space Bunny Law Classifier</h2>
+            <h2 className="text-xl font-bold text-slate-950">PDF-First Law Classifier</h2>
             <p className="mt-1 text-sm leading-6 text-slate-600">
-              Classify raw Rwandan legal text into strict JSON, upsert its category, and store it in Supabase.
+              Upload one official PDF. Title, law number, dates, language, source, and category are classified automatically.
             </p>
           </div>
         </div>
@@ -91,7 +91,7 @@ export default function SupabaseLawClassifier() {
 
           <label className="flex cursor-pointer items-center justify-center gap-3 rounded-xl border border-dashed border-blue-300 bg-blue-50/60 px-4 py-4 text-sm font-semibold text-blue-800 transition hover:border-blue-500 hover:bg-blue-50">
             <Upload size={18} />
-            <span>{pdfFile ? pdfFile.name : 'Choose an official legal PDF (optional)'}</span>
+            <span>{pdfFile ? pdfFile.name : 'Choose the official legal PDF'}</span>
             <input
               type="file"
               accept="application/pdf"
@@ -172,6 +172,14 @@ export default function SupabaseLawClassifier() {
               </div>
               {law.reference_number && (
                 <p className="mt-1 text-xs font-medium text-slate-500">{law.reference_number}</p>
+              )}
+              {(law.publication_date || law.effective_date || law.language) && (
+                <p className="mt-1 text-xs text-slate-500">
+                  {law.publication_date ? `Published ${law.publication_date}` : ''}
+                  {law.publication_date && law.effective_date ? ' · ' : ''}
+                  {law.effective_date ? `Effective ${law.effective_date}` : ''}
+                  {law.language ? ` · ${law.language}` : ''}
+                </p>
               )}
               {law.summary && <p className="mt-2 text-sm leading-6 text-slate-600">{law.summary}</p>}
               {law.tags.length > 0 && (

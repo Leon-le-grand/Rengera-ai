@@ -10,6 +10,13 @@ export class SupabaseConfigurationError extends Error {
 let adminClient: SupabaseClient | null = null;
 let publicClient: SupabaseClient | null = null;
 
+export function isSupabaseConfigured(): boolean {
+  return Boolean(
+    (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)?.trim() &&
+    (process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)?.trim(),
+  );
+}
+
 function requireValue(value: string | undefined, name: string): string {
   const normalized = value?.trim();
   if (!normalized) {

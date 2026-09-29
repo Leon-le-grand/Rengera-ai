@@ -1,3 +1,5 @@
+export const CLASSIFICATION_PROMPT_VERSION = '2026-09-29.1';
+
 export const CLASSIFICATION_SYSTEM_PROMPT = `You are an expert Rwandan legal classification assistant. Your task is to process raw legal text (statutes, decrees, organic laws, or business regulations) and return strict JSON output with structured metadata for database insertion.
 
 Categorize the law according to Rwanda Law classifications (e.g., Commercial Law, Penal Code, Tax Law, Labor Law, Tech & IP Regulations). Extract key attributes clearly.
@@ -8,6 +10,10 @@ Return ONLY a valid JSON object with exactly these keys:
   "reference_number": "Law N° or Official Gazette Reference if present, otherwise null",
   "category": "Main Legal Category",
   "subcategories": ["Subcategory 1", "Subcategory 2"],
+  "publication_date": "Official publication date in YYYY-MM-DD format, or null if not explicit",
+  "effective_date": "Official effective date in YYYY-MM-DD format, or null if not explicit",
+  "language": "kinyarwanda, english, or french",
+  "source_url": "Official source URL printed in the document, or null if absent",
   "summary": "A concise 2-3 sentence overview of the law's scope",
   "key_obligations": ["Core legal requirements or rules established"],
   "applicable_entities": ["Target demographic or entities"],
@@ -15,13 +21,17 @@ Return ONLY a valid JSON object with exactly these keys:
   "tags": ["tag1", "tag2", "tag3"]
 }
 
-Do not include markdown fences, introductory prose, explanations, or any key outside this schema.`;
+Do not include markdown fences, introductory prose, explanations, or any key outside this schema. Never invent missing dates, references, URLs, obligations, or penalties. Use null or an empty array when the source does not explicitly provide the information.`;
 
 export interface ClassifiedLaw {
   title: string;
   reference_number: string | null;
   category: string;
   subcategories: string[];
+  publication_date: string | null;
+  effective_date: string | null;
+  language: 'kinyarwanda' | 'english' | 'french' | null;
+  source_url: string | null;
   summary: string;
   key_obligations: string[];
   applicable_entities: string[];
@@ -67,6 +77,52 @@ function optionalString(
   return cleanString(value, maxLength);
 }
 
+function optionalIsoDate(
+  source: Record<string, unknown>,
+  field: string,
+): string | null {
+  const value = optionalString(source, field, 100);
+  if (!value) return null;
+
+  const match = value.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return `${match[1]}-${match[2]}-${match[3]}`;
+}
+
+function optionalUrl(source: Record<string, unknown>, field: string): string | null {
+  const value = optionalString(source, field, 2_000);
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    return ['http:', 'https:'].includes(url.protocol) ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function optionalLanguage(
+  source: Record<string, unknown>,
+): ClassifiedLaw['language'] {
+  const value = optionalString(source, 'language', 30)?.toLowerCase();
+  if (value === 'kinyarwanda' || value === 'english' || value === 'french') {
+    return value;
+  }
+  return null;
+}
+
 function requireStringArray(
   source: Record<string, unknown>,
   field: string,
@@ -109,6 +165,10 @@ export function parseClassificationResponse(response: string): ClassifiedLaw {
     reference_number: optionalString(object, 'reference_number', 200),
     category: requireString(object, 'category', 200),
     subcategories: requireStringArray(object, 'subcategories', 20),
+    publication_date: optionalIsoDate(object, 'publication_date'),
+    effective_date: optionalIsoDate(object, 'effective_date'),
+    language: optionalLanguage(object),
+    source_url: optionalUrl(object, 'source_url'),
     summary: requireString(object, 'summary', 4_000),
     key_obligations: requireStringArray(object, 'key_obligations', 50),
     applicable_entities: requireStringArray(object, 'applicable_entities', 50),

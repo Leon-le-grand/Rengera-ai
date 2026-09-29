@@ -2,6 +2,8 @@
 
 import { getDb } from '@/lib/db';
 import { buildEmergencyMarkdown, detectEmergencyRisk } from '@/lib/safety';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import { retrieveSupabaseLegalContext } from '@/lib/supabase-retrieval';
 import {
   createSpaceBunnyChatCompletion,
   createSpaceBunnyEmbedding,
@@ -69,62 +71,72 @@ export async function generateLegalAdvice(query: string, chatHistory: { role: 'u
       return buildEmergencyMarkdown(emergencyRisk);
     }
 
-    // Embeddings are optional. Chat still works without a Space Bunny
-    // embedding model, but retrieval will report that no laws were indexed.
-    let queryEmbedding: number[] = [];
-    try {
-      queryEmbedding = (await createSpaceBunnyEmbedding(query)) || [];
-    } catch (error) {
-      console.error('Space Bunny embedding error:', {
-        model: runtime.embeddingModel,
-        message: error instanceof Error ? error.message : String(error),
-      });
-    }
-
-    // Retrieve similar articles from the local RAG store.
     let contextText = 'No relevant laws found in the database.';
-    if (queryEmbedding.length > 0) {
-      const db = await getDb();
-      const similarities = db.articles
-        .filter((article) => article.status !== 'repealed' && article.embedding.length > 0)
-        .map((article) => ({
-          article,
-          similarity: cosineSimilarity(queryEmbedding, article.embedding),
-        }));
 
-      similarities.sort((a, b) => b.similarity - a.similarity);
-      const topArticles = similarities.slice(0, 5).filter((item) => item.similarity > 0.5);
+    if (isSupabaseConfigured()) {
+      try {
+        contextText =
+          (await retrieveSupabaseLegalContext(query, 5)) || 'No relevant laws found in Supabase.';
+      } catch (error) {
+        console.error('Supabase retrieval error:', error);
+        contextText = 'Legal search is temporarily unavailable.';
+      }
+    } else {
+      // Local embeddings are a development-only fallback. Production uses
+      // Supabase so Vercel never reads or writes data/db.json.
+      let queryEmbedding: number[] = [];
+      try {
+        queryEmbedding = (await createSpaceBunnyEmbedding(query)) || [];
+      } catch (error) {
+        console.error('Space Bunny embedding error:', {
+          model: runtime.embeddingModel,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
 
-      if (topArticles.length > 0) {
-        contextText = topArticles
-          .map(({ article }) => {
-            const law = db.laws.find((item) => item.id === article.lawId);
-            const amendmentNotes = db.amendments
-              .filter(
-                (amendment) =>
-                  amendment.originalLawId === law?.id &&
-                  amendment.affectedArticle === article.articleNumber,
-              )
-              .map((amendment) => {
-                const amendingLaw = db.laws.find((item) => item.id === amendment.amendingLawId);
-                return `${amendment.amendmentType.toUpperCase()} by ${
-                  amendingLaw?.title || 'unknown amending law'
-                } (${amendingLaw?.lawNumber || 'no number'})`;
-              });
+      if (queryEmbedding.length > 0) {
+        const db = await getDb();
+        const similarities = db.articles
+          .filter((article) => article.status !== 'repealed' && article.embedding.length > 0)
+          .map((article) => ({
+            article,
+            similarity: cosineSimilarity(queryEmbedding, article.embedding),
+          }));
 
-            return [
-              `Law: ${law?.title || 'Unknown Law'}`,
-              `Law number: ${law?.lawNumber || 'Unknown'}`,
-              `Article ${article.articleNumber}: ${article.title}`,
-              `Citation: ${article.citation}`,
-              `Source URL: ${article.sourceUrl || law?.sourceUrl || 'Unknown source'}`,
-              amendmentNotes.length ? `Amendment notes: ${amendmentNotes.join('; ')}` : '',
-              `Official text: ${article.text}`,
-            ]
-              .filter(Boolean)
-              .join('\n');
-          })
-          .join('\n\n---\n\n');
+        similarities.sort((a, b) => b.similarity - a.similarity);
+        const topArticles = similarities.slice(0, 5).filter((item) => item.similarity > 0.5);
+
+        if (topArticles.length > 0) {
+          contextText = topArticles
+            .map(({ article }) => {
+              const law = db.laws.find((item) => item.id === article.lawId);
+              const amendmentNotes = db.amendments
+                .filter(
+                  (amendment) =>
+                    amendment.originalLawId === law?.id &&
+                    amendment.affectedArticle === article.articleNumber,
+                )
+                .map((amendment) => {
+                  const amendingLaw = db.laws.find((item) => item.id === amendment.amendingLawId);
+                  return `${amendment.amendmentType.toUpperCase()} by ${
+                    amendingLaw?.title || 'unknown amending law'
+                  } (${amendingLaw?.lawNumber || 'no number'})`;
+                });
+
+              return [
+                `Law: ${law?.title || 'Unknown Law'}`,
+                `Law number: ${law?.lawNumber || 'Unknown'}`,
+                `Article ${article.articleNumber}: ${article.title}`,
+                `Citation: ${article.citation}`,
+                `Source URL: ${article.sourceUrl || law?.sourceUrl || 'Unknown source'}`,
+                amendmentNotes.length ? `Amendment notes: ${amendmentNotes.join('; ')}` : '',
+                `Official text: ${article.text}`,
+              ]
+                .filter(Boolean)
+                .join('\n');
+            })
+            .join('\n\n---\n\n');
+        }
       }
     }
 

@@ -3,12 +3,14 @@
 import { getAdminSession } from '@/lib/auth';
 import { extractPdfText, normalizePdfText } from '@/lib/legal-pdf';
 import {
+  CLASSIFICATION_PROMPT_VERSION,
   CLASSIFICATION_SYSTEM_PROMPT,
   parseClassificationResponse,
   type ClassifiedLaw,
 } from '@/lib/legal-classification';
 import {
   createSpaceBunnyChatCompletion,
+  getSpaceBunnyRuntime,
   SpaceBunnyConfigurationError,
 } from '@/lib/space-bunny';
 import {
@@ -21,6 +23,10 @@ export interface LawListItem {
   id: string;
   title: string;
   reference_number: string | null;
+  publication_date: string | null;
+  effective_date: string | null;
+  language: string | null;
+  source_url: string | null;
   summary: string | null;
   tags: string[];
   category: string | null;
@@ -38,6 +44,10 @@ const LAW_LIST_SELECT = `
   id,
   title,
   reference_number,
+  publication_date,
+  effective_date,
+  language,
+  source_url,
   summary,
   tags,
   created_at,
@@ -112,12 +122,18 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
         reference_number: classification.reference_number,
         category_id: category.id,
         subcategories: classification.subcategories,
+        publication_date: classification.publication_date,
+        effective_date: classification.effective_date,
+        language: classification.language,
+        source_url: classification.source_url,
         summary: classification.summary,
         key_obligations: classification.key_obligations,
         applicable_entities: classification.applicable_entities,
         penalties_non_compliance: classification.penalties_non_compliance,
         tags: classification.tags,
         raw_content: rawContent,
+        classification_model: getSpaceBunnyRuntime().model,
+        classification_prompt_version: CLASSIFICATION_PROMPT_VERSION,
         created_by: null,
         created_by_label: adminSession.email,
       })
@@ -157,6 +173,12 @@ function castLawRows(data: unknown): LawListItem[] {
       title: String(item.title || ''),
       reference_number:
         typeof item.reference_number === 'string' ? item.reference_number : null,
+      publication_date:
+        typeof item.publication_date === 'string' ? item.publication_date : null,
+      effective_date:
+        typeof item.effective_date === 'string' ? item.effective_date : null,
+      language: typeof item.language === 'string' ? item.language : null,
+      source_url: typeof item.source_url === 'string' ? item.source_url : null,
       summary: typeof item.summary === 'string' ? item.summary : null,
       tags: Array.isArray(item.tags)
         ? item.tags.filter((tag): tag is string => typeof tag === 'string')

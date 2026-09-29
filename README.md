@@ -107,12 +107,14 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Run these files in the Supabase SQL Editor:
+Run these files in the Supabase SQL Editor, in order:
 
 ```text
 supabase/migrations/001_create_legal_knowledge_base.sql
-scripts/legal_chunks_schema.sql
+supabase/migrations/002_add_classification_metadata_and_search.sql
 ```
+
+`scripts/legal_chunks_schema.sql` is optional and only needed for a separate pgvector article-chunk table.
 
 Never commit `.env.local`, the Space Bunny key, or the Supabase service-role key.
 
@@ -142,7 +144,7 @@ Set the printed value as `ADMIN_PASSWORD_HASH`, configure a long random `AUTH_SE
 5. Select **Classify and store in Supabase**.
 6. Review the strict JSON and recently stored laws.
 
-The article indexer remains available for article-level retrieval.
+The old manual local indexer has been removed because Vercel cannot persist `data/db.json`. Supabase full-text search is the production retrieval path.
 
 ## Strict-fidelity Python ingestion
 
@@ -204,12 +206,12 @@ npm run auth:hash
 
 ```text
 app/actions.ts                    # Public RAG chat and retrieval
-app/admin-actions.ts              # Article indexing and embeddings
 app/auth-actions.ts               # Administrator session actions
 app/legal-actions.ts              # Supabase classification and queries
 lib/space-bunny.ts                # OpenAI-compatible Space Bunny client
 lib/legal-classification.ts       # Strict JSON schema and parser
 lib/supabase.ts                   # Server-only Supabase clients
+lib/supabase-retrieval.ts         # Ranked Supabase legal excerpts
 lib/legal-pdf.ts                  # PDF extraction and article splitting
 scripts/ingest_legal_pdf.py       # Strict-fidelity Python parser
 supabase/migrations/              # Supabase knowledge-base schema
