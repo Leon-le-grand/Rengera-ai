@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { processNewLaw } from '@/app/admin-actions';
+import SupabaseLawClassifier from './SupabaseLawClassifier';
 import { Upload, Database, ShieldCheck, Loader2, Link } from 'lucide-react';
 
 const RLRC_LABOUR_QUEUE = [
@@ -54,7 +55,11 @@ export default function AdminDashboard() {
     setResult(null);
     try {
       const payload = new FormData();
-      Object.entries(formData).forEach(([key, value]) => payload.append(key, value));
+      Object.entries(formData).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          payload.append(key, value);
+        }
+      });
       if (pdfFile) payload.append('pdf', pdfFile);
 
       const res = await processNewLaw(payload);
@@ -81,16 +86,18 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-8">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
       <div className="flex items-center gap-3 mb-8">
         <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center">
           <Database size={24} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Legal Data Ingestion</h1>
-          <p className="text-slate-500">Upload official RLRC PDFs and index article-level citations</p>
+          <h1 className="text-2xl font-bold text-slate-900">Legal Data Operations</h1>
+          <p className="text-slate-500">Classify laws into Supabase and index article-level citations</p>
         </div>
       </div>
+
+      <SupabaseLawClassifier />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">

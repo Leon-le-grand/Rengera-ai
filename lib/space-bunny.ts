@@ -1,4 +1,6 @@
 const DEFAULT_TIMEOUT_MS = 45_000;
+const DEFAULT_API_URL = 'https://api.aimlapi.com/v1';
+const DEFAULT_MODEL = 'stealth/space-bunny-alpha';
 
 export type SpaceBunnyMessageRole = 'system' | 'user' | 'assistant';
 
@@ -23,14 +25,12 @@ interface SpaceBunnyConfig {
 
 function getConfig(requireEmbeddingModel = false): SpaceBunnyConfig {
   const apiKey = process.env.SPACE_BUNNY_API_KEY?.trim() || '';
-  const baseUrl = process.env.SPACE_BUNNY_API_URL?.trim() || '';
-  const model = process.env.SPACE_BUNNY_MODEL?.trim() || '';
+  const baseUrl = process.env.SPACE_BUNNY_API_URL?.trim() || DEFAULT_API_URL;
+  const model = process.env.SPACE_BUNNY_MODEL?.trim() || DEFAULT_MODEL;
   const embeddingModel = process.env.SPACE_BUNNY_EMBEDDING_MODEL?.trim() || '';
 
   const missing: string[] = [];
   if (!apiKey) missing.push('SPACE_BUNNY_API_KEY');
-  if (!baseUrl) missing.push('SPACE_BUNNY_API_URL');
-  if (!model) missing.push('SPACE_BUNNY_MODEL');
   if (requireEmbeddingModel && !embeddingModel) missing.push('SPACE_BUNNY_EMBEDDING_MODEL');
 
   if (missing.length > 0) {
@@ -152,13 +152,9 @@ export function getSpaceBunnyRuntime(): {
   configured: boolean;
 } {
   return {
-    model: process.env.SPACE_BUNNY_MODEL?.trim() || '',
+    model: process.env.SPACE_BUNNY_MODEL?.trim() || DEFAULT_MODEL,
     embeddingModel: process.env.SPACE_BUNNY_EMBEDDING_MODEL?.trim() || '',
-    configured: Boolean(
-      process.env.SPACE_BUNNY_API_KEY?.trim() &&
-      process.env.SPACE_BUNNY_API_URL?.trim() &&
-      process.env.SPACE_BUNNY_MODEL?.trim(),
-    ),
+    configured: Boolean(process.env.SPACE_BUNNY_API_KEY?.trim()),
   };
 }
 
