@@ -121,7 +121,10 @@ export default function SupabaseLawClassifier() {
           >
             {result.success ? (
               <>
-                <p className="font-bold">Law classified and stored successfully.</p>
+                <p className="font-bold">
+                  Law classified and stored successfully. {result.articleCount ?? 0} exact article
+                  {result.articleCount === 1 ? '' : 's'} indexed.
+                </p>
                 <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded-lg bg-white/70 p-3 font-mono text-xs leading-5">
                   {JSON.stringify(result.classification, null, 2)}
                 </pre>

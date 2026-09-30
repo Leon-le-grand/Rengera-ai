@@ -113,9 +113,11 @@ Run these files in the Supabase SQL Editor, in order:
 supabase/migrations/001_create_legal_knowledge_base.sql
 supabase/migrations/002_add_classification_metadata_and_search.sql
 supabase/migrations/003_improve_search_and_deduplicate.sql
+supabase/migrations/004_add_article_level_search.sql
+supabase/migrations/005_add_legal_status_audit.sql
 ```
 
-Migration 003 broadens natural-language search and removes duplicate uploads using a SHA-256 `content_hash`. Later uploads of the same source text update the existing law instead of creating another row.
+Migration 003 broadens natural-language search and removes duplicate uploads using a SHA-256 `content_hash`. Migration 004 stores exact article-level text, article numbers, citations, and article-first search results. Migration 005 adds statutory status and amendment/repeal audit fields. Later uploads of the same source text update the existing law and refresh its articles instead of creating duplicates.
 
 `scripts/legal_chunks_schema.sql` is optional and only needed for a separate pgvector article-chunk table.
 
@@ -149,6 +151,10 @@ Set the printed value as `ADMIN_PASSWORD_HASH`, configure a long random `AUTH_SE
 
 The old manual local indexer has been removed because Vercel cannot persist `data/db.json`. Supabase full-text search is the production retrieval path.
 
+## Session handover and context
+
+The chat stores the current session locally, estimates context usage, and warns at 82%. Use **Handover & new chat** to ask Space Bunny for a short handover containing the objective, established law, unresolved questions, and the next action. The next chat starts with that handover, so “continue where we were” has the necessary context.
+
 ## Strict-fidelity Python ingestion
 
 ```bash
@@ -164,6 +170,31 @@ python3 scripts/ingest_legal_pdf.py ./law.pdf \
 
 The parser splits only at English/French `Article N` and Kinyarwanda `Ingingo ya N` headings, preserves article text, logs unreadable pages, and generates SHA-256 `content_hash` values.
 
+## RLRC document crawler
+
+The crawler discovers the RLRC site tree, honors `robots.txt`, rate-limits requests, and downloads public legal PDFs without bypassing access controls.
+
+```bash
+pip install -r scripts/requirements-legal-ingest.txt
+
+python3 scripts/crawl_rlrc_laws.py \
+  --start-url https://www.rlrc.gov.rw/ \
+  --output ./data/rlrc \
+  --max-pages 2000 \
+  --max-depth 6
+```
+
+Outputs:
+
+```text
+data/rlrc/tree.md       # Human-readable discovered hierarchy
+data/rlrc/tree.json     # Machine-readable hierarchy
+data/rlrc/manifest.json # URL, category path, hash, and local PDF path
+data/rlrc/pdfs/         # Downloaded public legal PDFs
+```
+
+The crawler is intentionally conservative. Review the discovered tree and provide more specific `--start-url` seeds or `--include-regex` values when you want to restrict it to a particular RLRC category.
+
 ## Verification checklist
 
 ### Space Bunny
@@ -176,9 +207,17 @@ The parser splits only at English/French `Article N` and Kinyarwanda `Ingingo ya
 ### Classification
 
 - Paste a known law and compare every returned field with the source.
+- Confirm status, superseded_by, and affected_articles are explicit and never guessed.
 - Upload a digital-text PDF and confirm the title and reference number appear in it.
 - Record scanned PDFs as unsupported until OCR is added.
 - Introduce malformed input and confirm nothing is stored.
+
+### Session handover
+
+```text
+ChatInterface.tsx        # Context meter, local session, new-chat handover
+app/chat-actions.ts     # Short Space Bunny handover summary
+```
 
 ### Supabase
 
@@ -213,9 +252,12 @@ app/auth-actions.ts               # Administrator session actions
 app/legal-actions.ts              # Supabase classification and queries
 lib/space-bunny.ts                # OpenAI-compatible Space Bunny client
 lib/legal-classification.ts       # Strict JSON schema and parser
+lib/legal-article-parser.ts       # Exact multilingual article extraction
 lib/supabase.ts                   # Server-only Supabase clients
-lib/supabase-retrieval.ts         # Ranked Supabase legal excerpts
+lib/supabase-retrieval.ts         # Article-first ranked Supabase context
 lib/legal-pdf.ts                  # PDF extraction and article splitting
+app/chat-actions.ts               # Context handover summaries
 scripts/ingest_legal_pdf.py       # Strict-fidelity Python parser
+scripts/crawl_rlrc_laws.py        # RLRC tree crawler and PDF downloader
 supabase/migrations/              # Supabase knowledge-base schema
 ```

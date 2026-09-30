@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, User, Loader2, Download, ArrowRight, ShieldAlert, Phone } from 'lucide-react';
+import { Send, User, Loader2, Download, ArrowRight, ShieldAlert, Phone, RotateCcw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import RengeraLogo from '@/components/brand/RengeraLogo';
+import { createSessionHandover } from '@/app/chat-actions';
 import { generateLegalAdvice } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { detectEmergencyRisk } from '@/lib/safety';
@@ -23,6 +24,10 @@ const INITIAL_MESSAGE: Message = {
 How can I help you understand your rights today? You can type your situation below, or select a common scenario:`
 };
 
+const SESSION_STORAGE_KEY = 'rengera_ai_chat_session_v1';
+const HANDOVER_THRESHOLD = 82;
+const ESTIMATED_CONTEXT_CHARACTERS = 24_000;
+
 const SCENARIOS = [
   { id: 'tenant', label: 'Tenant problem', prompt: 'My landlord locked me out. What are my rights?' },
   { id: 'employment', label: 'Employment', prompt: 'My employer refuses to pay me for overtime. What should I do?' },
@@ -30,13 +35,43 @@ const SCENARIOS = [
   { id: 'traffic', label: 'Traffic', prompt: 'The police stopped me and asked for a bribe. What are my rights?' },
 ];
 
+function loadStoredMessages(): Message[] {
+  if (typeof window === 'undefined') return [INITIAL_MESSAGE];
+
+  try {
+    const stored = window.localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!stored) return [INITIAL_MESSAGE];
+    const parsed = JSON.parse(stored) as { messages?: Message[] };
+    return Array.isArray(parsed.messages) && parsed.messages.length > 0
+      ? parsed.messages
+      : [INITIAL_MESSAGE];
+  } catch {
+    return [INITIAL_MESSAGE];
+  }
+}
+
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
+  const [messages, setMessages] = useState<Message[]>(loadStoredMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isPreparingHandover, setIsPreparingHandover] = useState(false);
   const [printStatus, setPrintStatus] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const emergencyRisk = detectEmergencyRisk(input);
+  const contextUsage = useMemo(() => {
+    const characters = messages.reduce(
+      (total, message) => total + message.content.length + 40,
+      0,
+    );
+    return Math.min(100, Math.round((characters / ESTIMATED_CONTEXT_CHARACTERS) * 100));
+  }, [messages]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      SESSION_STORAGE_KEY,
+      JSON.stringify({ messages, updatedAt: new Date().toISOString() }),
+    );
+  }, [messages]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -84,6 +119,36 @@ export default function ChatInterface() {
     }
   };
 
+  const handleNewChat = async () => {
+    if (isPreparingHandover) return;
+    setIsPreparingHandover(true);
+
+    try {
+      const hasConversation = messages.some((message) => message.id !== 'msg-0');
+      if (!hasConversation) {
+        setMessages([INITIAL_MESSAGE]);
+        return;
+      }
+
+      const result = await createSessionHandover(
+        messages.map((message) => ({
+          role: message.role === 'assistant' ? 'model' : 'user',
+          content: message.content,
+        })),
+      );
+      const summary = result.summary || 'Continue the previous legal discussion.';
+      const handoverMessage: Message = {
+        id: `handover-${crypto.randomUUID()}`,
+        role: 'assistant',
+        content: `Session handover — continue from here\n\n${summary}\n\nAsk your next question and I will continue from this point.`,
+      };
+      setMessages([handoverMessage]);
+      setInput('');
+    } finally {
+      setIsPreparingHandover(false);
+    }
+  };
+
   const handleSaveAsPdf = () => {
     setPrintStatus('Opening the print dialog… choose “Save as PDF”.');
     window.setTimeout(() => {
@@ -117,7 +182,37 @@ export default function ChatInterface() {
 
   return (
     <div className="chat-print-area flex flex-col h-full bg-white relative">
-      
+      <div className="no-print flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
+        <div>
+          <p className="text-sm font-bold text-slate-900">Session context</p>
+          <p className="text-xs text-slate-500">Carry a short handover into the next chat.</p>
+        </div>
+        <div className="flex min-w-52 flex-1 items-center gap-3">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
+            <div
+              className={`h-full rounded-full transition-all ${contextUsage >= HANDOVER_THRESHOLD ? 'bg-amber-500' : 'bg-emerald-500'}`}
+              style={{ width: `${contextUsage}%` }}
+            />
+          </div>
+          <span className="w-10 text-right text-xs font-bold text-slate-600">{contextUsage}%</span>
+        </div>
+        <button
+          type="button"
+          onClick={handleNewChat}
+          disabled={isPreparingHandover}
+          className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+        >
+          {isPreparingHandover ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+          {isPreparingHandover ? 'Preparing…' : 'Handover & new chat'}
+        </button>
+      </div>
+
+      {contextUsage >= HANDOVER_THRESHOLD && (
+        <div className="no-print border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs font-medium text-amber-800">
+          Context is at {contextUsage}%. Start a handover before continuing to preserve the legal findings and next step.
+        </div>
+      )}
+
       {/* Chat Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 scrollbar-hide">
         <div className="max-w-3xl mx-auto flex flex-col gap-8 pb-10">

@@ -10,6 +10,11 @@ import {
   type ClassifiedLaw,
 } from '@/lib/legal-classification';
 import {
+  detectLegalLanguage,
+  parseLegalArticles,
+  RLRC_SOURCE_URL,
+} from '@/lib/legal-article-parser';
+import {
   createSpaceBunnyChatCompletion,
   getSpaceBunnyRuntime,
   SpaceBunnyConfigurationError,
@@ -24,6 +29,10 @@ export interface LawListItem {
   id: string;
   title: string;
   reference_number: string | null;
+  gazette_reference: string | null;
+  status: 'active' | 'amended' | 'repealed';
+  superseded_by: string | null;
+  affected_articles: string[];
   publication_date: string | null;
   effective_date: string | null;
   language: string | null;
@@ -37,6 +46,7 @@ export interface LawListItem {
 export interface ClassificationStoreResult {
   success: boolean;
   lawId?: string;
+  articleCount?: number;
   classification?: ClassifiedLaw;
   error?: string;
 }
@@ -45,6 +55,10 @@ const LAW_LIST_SELECT = `
   id,
   title,
   reference_number,
+  gazette_reference,
+  status,
+  superseded_by,
+  affected_articles,
   publication_date,
   effective_date,
   language,
@@ -61,7 +75,7 @@ function explainSupabaseError(message: string): string {
     message.includes('does not exist') ||
     message.includes('search_laws')
   ) {
-    return 'Supabase schema is out of date. Run supabase/migrations/002_add_classification_metadata_and_search.sql and 003_improve_search_and_deduplicate.sql in the SQL Editor, then retry.';
+    return 'Supabase schema is out of date. Run supabase/migrations/002_add_classification_metadata_and_search.sql through 005_add_legal_status_audit.sql in the SQL Editor, then retry.';
   }
   return message;
 }
@@ -108,8 +122,15 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
       ],
       { temperature: 0.1 },
     );
-    const classification = parseClassificationResponse(rawResponse);
+    const parsedClassification = parseClassificationResponse(rawResponse);
     const contentHash = createHash('sha256').update(rawContent, 'utf8').digest('hex');
+    const language = parsedClassification.language || detectLegalLanguage(rawContent);
+    const sourceUrl = parsedClassification.source_url || RLRC_SOURCE_URL;
+    const classification = {
+      ...parsedClassification,
+      language,
+      source_url: sourceUrl,
+    };
     const supabase = getSupabaseAdminClient();
 
     const { data: category, error: categoryError } = await supabase
@@ -135,12 +156,16 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
       .upsert({
         title: classification.title,
         reference_number: classification.reference_number,
+        gazette_reference: classification.gazette_reference,
+        status: classification.status,
+        superseded_by: classification.superseded_by,
+        affected_articles: classification.affected_articles,
         category_id: category.id,
         subcategories: classification.subcategories,
         publication_date: classification.publication_date,
         effective_date: classification.effective_date,
-        language: classification.language,
-        source_url: classification.source_url,
+        language,
+        source_url: sourceUrl,
         summary: classification.summary,
         key_obligations: classification.key_obligations,
         applicable_entities: classification.applicable_entities,
@@ -162,9 +187,51 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
       );
     }
 
+    const lawId = String(insertedLaw.id);
+    const articles = parseLegalArticles(rawContent, {
+      lawId,
+      documentTitle: classification.title,
+      referenceNumber: classification.reference_number,
+      language,
+      sourceUrl,
+    });
+
+    const { error: deleteArticlesError } = await supabase
+      .from('law_articles')
+      .delete()
+      .eq('law_id', lawId);
+    if (deleteArticlesError) {
+      throw new Error(
+        `Could not refresh article records: ${explainSupabaseError(deleteArticlesError.message)}`,
+      );
+    }
+
+    if (articles.length > 0) {
+      const { error: articleInsertError } = await supabase.from('law_articles').insert(
+        articles.map((article) => ({
+          law_id: article.lawId,
+          document_title: article.documentTitle,
+          reference_number: article.referenceNumber,
+          article_number: article.articleNumber,
+          article_title: article.articleTitle,
+          language: article.language,
+          content: article.content,
+          content_hash: article.contentHash,
+          citation: article.citation,
+          source_url: article.sourceUrl,
+        })),
+      );
+      if (articleInsertError) {
+        throw new Error(
+          `Could not store article records: ${explainSupabaseError(articleInsertError.message)}`,
+        );
+      }
+    }
+
     return {
       success: true,
-      lawId: String(insertedLaw.id),
+      lawId,
+      articleCount: articles.length,
       classification,
     };
   } catch (error) {
@@ -191,6 +258,14 @@ function castLawRows(data: unknown): LawListItem[] {
       title: String(item.title || ''),
       reference_number:
         typeof item.reference_number === 'string' ? item.reference_number : null,
+      gazette_reference:
+        typeof item.gazette_reference === 'string' ? item.gazette_reference : null,
+      status:
+        item.status === 'amended' || item.status === 'repealed' ? item.status : 'active',
+      superseded_by: typeof item.superseded_by === 'string' ? item.superseded_by : null,
+      affected_articles: Array.isArray(item.affected_articles)
+        ? item.affected_articles.filter((value): value is string => typeof value === 'string')
+        : [],
       publication_date:
         typeof item.publication_date === 'string' ? item.publication_date : null,
       effective_date:

@@ -8,6 +8,10 @@ Return ONLY a valid JSON object with exactly these keys:
 {
   "title": "Official Title of the Legal Document",
   "reference_number": "Law N° or Official Gazette Reference if present, otherwise null",
+  "gazette_reference": "Official Gazette reference or date if present, otherwise null",
+  "status": "active, amended, or repealed",
+  "superseded_by": "Reference of the law that expressly amended or repealed this statute, otherwise null",
+  "affected_articles": ["Specific articles expressly amended or repealed, otherwise empty array"],
   "category": "Main Legal Category",
   "subcategories": ["Subcategory 1", "Subcategory 2"],
   "publication_date": "Official publication date in YYYY-MM-DD format, or null if not explicit",
@@ -21,11 +25,15 @@ Return ONLY a valid JSON object with exactly these keys:
   "tags": ["tag1", "tag2", "tag3"]
 }
 
-Do not include markdown fences, introductory prose, explanations, or any key outside this schema. Never invent missing dates, references, URLs, obligations, or penalties. Use null or an empty array when the source does not explicitly provide the information.`;
+Do not include markdown fences, introductory prose, explanations, or any key outside this schema. Never invent missing dates, references, URLs, obligations, penalties, repeals, amendments, or affected articles. Use status "active" unless the source explicitly states that the statute is amended or repealed. Use null or an empty array when the source does not explicitly provide the information.`;
 
 export interface ClassifiedLaw {
   title: string;
   reference_number: string | null;
+  gazette_reference: string | null;
+  status: 'active' | 'amended' | 'repealed';
+  superseded_by: string | null;
+  affected_articles: string[];
   category: string;
   subcategories: string[];
   publication_date: string | null;
@@ -123,6 +131,14 @@ function optionalLanguage(
   return null;
 }
 
+function requireStatus(source: Record<string, unknown>): ClassifiedLaw['status'] {
+  const value = String(source.status || '').toLowerCase();
+  if (value === 'active' || value === 'amended' || value === 'repealed') {
+    return value;
+  }
+  throw new Error('Space Bunny returned an invalid legal status.');
+}
+
 function requireStringArray(
   source: Record<string, unknown>,
   field: string,
@@ -163,6 +179,10 @@ export function parseClassificationResponse(response: string): ClassifiedLaw {
   return {
     title: requireString(object, 'title', 500),
     reference_number: optionalString(object, 'reference_number', 200),
+    gazette_reference: optionalString(object, 'gazette_reference', 300),
+    status: requireStatus(object),
+    superseded_by: optionalString(object, 'superseded_by', 300),
+    affected_articles: requireStringArray(object, 'affected_articles', 100),
     category: requireString(object, 'category', 200),
     subcategories: requireStringArray(object, 'subcategories', 20),
     publication_date: optionalIsoDate(object, 'publication_date'),
