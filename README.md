@@ -168,14 +168,25 @@ The public legal assistant stays reachable without an account; only the admin wo
 
 ### Administrator access
 
-Prototype defaults:
+#### How the administrator signs in
+
+1. Open the app and select **Get Started**.
+2. Stay on the **Sign in** tab. Do not use **Create account**.
+3. Enter the administrator credentials and submit.
+4. The sidebar gains an **Administrator / Law Ingestion** section. That section is the only route to the PDF classifier, and the server rejects any ingestion request without a valid administrator session.
+
+The public legal assistant needs no account. Citizens who create an account get a
+signed-in session but never see the administration tools.
+
+#### Prototype defaults
 
 ```text
 ADMIN_EMAIL=admin
 ADMIN_PASSWORD=admin123
 ```
 
-Replace them before deployment. Generate a production hash with:
+The Sign in form is prefilled with these so you can test immediately. Replace
+them before deployment. Generate a production hash with:
 
 ```bash
 ADMIN_PASSWORD='use-a-strong-password' npm run auth:hash
@@ -194,9 +205,9 @@ Set the printed value as `ADMIN_PASSWORD_HASH`, configure a long random `AUTH_SE
 
 The old manual local indexer has been removed because Vercel cannot persist `data/db.json`. Supabase full-text search is the production retrieval path.
 
-## Session handover and context
+## Chat sessions
 
-The chat stores the current session locally, estimates context usage, and warns at 82%. Use **Handover & new chat** to ask Space Bunny for a short handover containing the objective, established law, unresolved questions, and the next action. The next chat starts with that handover, so “continue where we were” has the necessary context.
+The chat keeps the current conversation in `localStorage` under `rengera_ai_chat_session_v1`, so a refresh or an accidental tab close does not lose your history. **New chat** clears the thread and returns to the opening message.
 
 ## Strict-fidelity Python ingestion
 
@@ -267,13 +278,6 @@ The crawler is intentionally conservative. Review the discovered tree and provid
 - Confirm the admin email cannot be registered through sign-up.
 - Confirm the stored `app_users.password_hash` starts with `scrypt$`.
 
-### Session handover
-
-```text
-ChatInterface.tsx        # Context meter, local session, new-chat handover
-app/chat-actions.ts     # Short Space Bunny handover summary
-```
-
 ### Supabase
 
 - Confirm the category is created once and reused.
@@ -312,9 +316,9 @@ lib/legal-article-parser.ts       # Exact multilingual article extraction
 lib/supabase.ts                   # Server-only Supabase clients
 lib/supabase-retrieval.ts         # Article-first ranked Supabase context
 lib/legal-pdf.ts                  # PDF extraction and article splitting
-app/chat-actions.ts               # Context handover summaries
 components/app/LoginScreen.tsx    # Sign-in and sign-up interface
-components/app/ChatInterface.tsx  # Context meter and handover button
+components/app/ChatInterface.tsx  # Chat thread, local session, and new chat
+components/app/Sidebar.tsx        # Navigation and account state
 scripts/ingest_legal_pdf.py       # Strict-fidelity Python parser
 scripts/crawl_rlrc_laws.py        # RLRC tree crawler and PDF downloader
 scripts/verify-classification-parser.ts  # Schema fidelity checks

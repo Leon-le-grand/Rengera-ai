@@ -1,15 +1,20 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
+import { motion } from 'motion/react';
 import {
   ArrowLeft,
+  ArrowRight,
   Eye,
   EyeOff,
   Loader2,
   Lock,
+  Mail,
   Scale,
   ShieldCheck,
+  User,
   UserPlus,
+  BookOpen,
 } from 'lucide-react';
 import { signIn, signUp, type AuthResult } from '@/app/auth-actions';
 
@@ -131,19 +136,24 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
           <button
             type="button"
             onClick={onExit}
-            className="flex w-fit items-center gap-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+            className="flex w-fit items-center gap-3 rounded-xl text-left transition-opacity duration-200 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500 text-white">
-              <Scale size={18} />
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
+              <Scale size={19} strokeWidth={2.25} />
             </span>
             <span className="font-brand text-lg tracking-wide">RENGERA AI</span>
           </button>
 
           <div className="max-w-xl py-16">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-200">
-              <ShieldCheck size={16} />
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+              className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3.5 py-2 text-sm font-semibold text-emerald-200"
+            >
+              <ShieldCheck size={16} strokeWidth={2.25} />
               Secure accounts, grounded answers
-            </div>
+            </motion.div>
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
               Keep every legal answer grounded and accountable.
             </h1>
@@ -153,18 +163,19 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
           </div>
 
           <div className="grid grid-cols-3 gap-3 text-sm text-slate-300">
-            <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-              <div className="text-xl font-bold text-white">Source</div>
-              <div className="mt-1">Official citations</div>
-            </div>
-            <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-              <div className="text-xl font-bold text-white">Safe</div>
-              <div className="mt-1">Server session</div>
-            </div>
-            <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-              <div className="text-xl font-bold text-white">Private</div>
-              <div className="mt-1">Hashed passwords</div>
-            </div>
+            {[
+              { icon: BookOpen, label: 'Official citations' },
+              { icon: Lock, label: 'Server session' },
+              { icon: ShieldCheck, label: 'Hashed passwords' },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-xl border border-white/10 bg-white/5 p-3.5 transition-colors duration-300 hover:border-emerald-400/30 hover:bg-white/[0.08]"
+              >
+                <stat.icon size={18} strokeWidth={2.25} className="mb-2 text-emerald-400" />
+                <div className="text-sm font-semibold text-white">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -180,9 +191,15 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
             </button>
 
             <div className="mb-8">
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-white shadow-lg shadow-slate-900/15">
-                {isSignUp ? <UserPlus size={20} /> : <Lock size={20} />}
-              </div>
+              <motion.span
+                key={isSignUp ? 'signup' : 'signin'}
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-900/20"
+              >
+                {isSignUp ? <UserPlus size={21} strokeWidth={2.25} /> : <Lock size={21} strokeWidth={2.25} />}
+              </motion.span>
               <h2 className="text-2xl font-bold tracking-tight">
                 {isSignUp ? 'Create your account' : 'Sign in to Rengera'}
               </h2>
@@ -193,8 +210,13 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
               </p>
 
               {!isSignUp && (
-                <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
-                  Administrator credentials: <strong>admin</strong> / <strong>admin123</strong>. Replace them with deployment credentials before making the app public.
+                <p className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs leading-5 text-amber-800">
+                  <ShieldCheck size={14} strokeWidth={2.25} className="mt-0.5 shrink-0" />
+                  <span>
+                    Administrator signs in on this tab with{' '}
+                    <strong>admin</strong> / <strong>admin123</strong>. Replace these with deployment
+                    credentials before making the app public.
+                  </span>
                 </p>
               )}
             </div>
@@ -206,8 +228,8 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
             >
               {(
                 [
-                  { key: 'signin', label: 'Sign in' },
-                  { key: 'signup', label: 'Create account' },
+                  { key: 'signin', label: 'Sign in', icon: Lock },
+                  { key: 'signup', label: 'Create account', icon: UserPlus },
                 ] as const
               ).map((tab) => (
                 <button
@@ -216,9 +238,17 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
                   role="tab"
                   aria-selected={mode === tab.key}
                   onClick={() => switchMode(tab.key)}
-                  className={`rounded-lg px-3 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${mode === tab.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                  className={`relative flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${mode === tab.key ? 'text-slate-950' : 'text-slate-500 hover:text-slate-800'}`}
                 >
-                  {tab.label}
+                  {mode === tab.key && (
+                    <motion.span
+                      layoutId="auth-tab"
+                      className="absolute inset-0 rounded-lg bg-white shadow-sm"
+                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                    />
+                  )}
+                  <tab.icon size={15} strokeWidth={2.25} className="relative" />
+                  <span className="relative">{tab.label}</span>
                 </button>
               ))}
             </div>
@@ -233,18 +263,25 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
                   <label htmlFor="account-name" className="mb-2 block text-sm font-semibold text-slate-700">
                     Full name
                   </label>
-                  <input
-                    id="account-name"
-                    name="fullName"
-                    type="text"
-                    autoComplete="name"
-                    required
-                    maxLength={120}
-                    value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
-                    placeholder="Enter your full name"
-                  />
+                  <div className="relative">
+                    <User
+                      size={16}
+                      strokeWidth={2.25}
+                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      id="account-name"
+                      name="fullName"
+                      type="text"
+                      autoComplete="name"
+                      required
+                      maxLength={120}
+                      value={fullName}
+                      onChange={(event) => setFullName(event.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-950 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -252,21 +289,29 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
                 <label htmlFor="admin-email" className="mb-2 block text-sm font-semibold text-slate-700">
                   Email address
                 </label>
-                <input
-                  id="admin-email"
-                  name="email"
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
-                  placeholder="you@example.com"
-                />
+                <div className="relative">
+                  <Mail
+                    size={16}
+                    strokeWidth={2.25}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    id="admin-email"
+                    name="email"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-950 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                    placeholder="you@example.com"
+                  />
+                </div>
                 {!isSignUp && (
-                  <p className="mt-2 text-xs text-slate-400">
-                    Administrators may also sign in with their username.
+                  <p className="mt-2 text-xs leading-5 text-slate-400">
+                    The administrator signs in here on the Sign in tab. Citizens use the same tab
+                    with their own email and password.
                   </p>
                 )}
               </div>
@@ -276,6 +321,11 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
                   Password
                 </label>
                 <div className="relative">
+                  <Lock
+                    size={16}
+                    strokeWidth={2.25}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
                   <input
                     id="admin-password"
                     name="password"
@@ -285,7 +335,7 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
                     minLength={isSignUp ? 8 : undefined}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-12 text-sm text-slate-950 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
                     placeholder={isSignUp ? 'At least 8 characters' : 'Enter your password'}
                   />
                   <button
@@ -293,9 +343,13 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
                     onClick={() => setShowPassword((visible) => !visible)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     aria-pressed={showPassword}
-                    className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                    className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? (
+                      <EyeOff size={18} strokeWidth={2.25} />
+                    ) : (
+                      <Eye size={18} strokeWidth={2.25} />
+                    )}
                   </button>
                 </div>
               </div>
@@ -305,18 +359,25 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
                   <label htmlFor="confirm-password" className="mb-2 block text-sm font-semibold text-slate-700">
                     Confirm password
                   </label>
-                  <input
-                    id="confirm-password"
-                    name="confirmPassword"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    required
-                    minLength={8}
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
-                    placeholder="Repeat your password"
-                  />
+                  <div className="relative">
+                    <ShieldCheck
+                      size={16}
+                      strokeWidth={2.25}
+                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      id="confirm-password"
+                      name="confirmPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
+                      required
+                      minLength={8}
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-950 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                      placeholder="Repeat your password"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -332,15 +393,16 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
                 </p>
               )}
 
-              <button
+              <motion.button
                 type="submit"
+                whileTap={{ scale: 0.98 }}
                 disabled={
                   isSubmitting ||
                   !email.trim() ||
                   !password ||
                   (isSignUp && (!fullName.trim() || !confirmPassword))
                 }
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition-all duration-200 hover:-translate-y-px hover:bg-slate-800 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
               >
                 {isSubmitting ? (
                   <>
@@ -349,16 +411,17 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
                   </>
                 ) : isSignUp ? (
                   <>
-                    <UserPlus size={17} />
+                    <UserPlus size={17} strokeWidth={2.25} />
                     Create account
                   </>
                 ) : (
                   <>
-                    <Lock size={17} />
+                    <Lock size={17} strokeWidth={2.25} />
                     Sign in securely
+                    <ArrowRight size={16} strokeWidth={2.25} className="ml-0.5" />
                   </>
                 )}
-              </button>
+              </motion.button>
             </form>
 
             <p className="mt-8 text-center text-xs leading-5 text-slate-400">

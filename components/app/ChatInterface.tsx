@@ -1,11 +1,24 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, User, Loader2, Download, ArrowRight, ShieldAlert, Phone, RotateCcw } from 'lucide-react';
+import {
+  Send,
+  User,
+  Loader2,
+  Download,
+  ArrowRight,
+  ShieldAlert,
+  Phone,
+  RotateCcw,
+  Car,
+  FileText,
+  Home,
+  Shield,
+} from 'lucide-react';
+import type { ElementType } from 'react';
 import ReactMarkdown from 'react-markdown';
 import RengeraLogo from '@/components/brand/RengeraLogo';
-import { createSessionHandover } from '@/app/chat-actions';
 import { generateLegalAdvice } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { detectEmergencyRisk } from '@/lib/safety';
@@ -19,20 +32,38 @@ interface Message {
 const INITIAL_MESSAGE: Message = {
   id: 'msg-0',
   role: 'assistant',
-  content: `Muraho! I am Rengera, your legal assistant. 
+  content: `Muraho! I am Rengera, your legal assistant.
 
-How can I help you understand your rights today? You can type your situation below, or select a common scenario:`
+How can I help you understand your rights today? You can type your situation below, or select a common scenario:`,
 };
 
 const SESSION_STORAGE_KEY = 'rengera_ai_chat_session_v1';
-const HANDOVER_THRESHOLD = 82;
-const ESTIMATED_CONTEXT_CHARACTERS = 24_000;
 
-const SCENARIOS = [
-  { id: 'tenant', label: 'Tenant problem', prompt: 'My landlord locked me out. What are my rights?' },
-  { id: 'employment', label: 'Employment', prompt: 'My employer refuses to pay me for overtime. What should I do?' },
-  { id: 'privacy', label: 'Privacy', prompt: 'Someone shared my private photos without my consent. Is this illegal?' },
-  { id: 'traffic', label: 'Traffic', prompt: 'The police stopped me and asked for a bribe. What are my rights?' },
+const SCENARIOS: { id: string; label: string; icon: ElementType; prompt: string }[] = [
+  {
+    id: 'tenant',
+    label: 'Tenant problem',
+    icon: Home,
+    prompt: 'My landlord locked me out. What are my rights?',
+  },
+  {
+    id: 'employment',
+    label: 'Employment',
+    icon: FileText,
+    prompt: 'My employer refuses to pay me for overtime. What should I do?',
+  },
+  {
+    id: 'privacy',
+    label: 'Privacy',
+    icon: Shield,
+    prompt: 'Someone shared my private photos without my consent. Is this illegal?',
+  },
+  {
+    id: 'traffic',
+    label: 'Traffic',
+    icon: Car,
+    prompt: 'The police stopped me and asked for a bribe. What are my rights?',
+  },
 ];
 
 function loadStoredMessages(): Message[] {
@@ -54,17 +85,9 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>(loadStoredMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isPreparingHandover, setIsPreparingHandover] = useState(false);
   const [printStatus, setPrintStatus] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const emergencyRisk = detectEmergencyRisk(input);
-  const contextUsage = useMemo(() => {
-    const characters = messages.reduce(
-      (total, message) => total + message.content.length + 40,
-      0,
-    );
-    return Math.min(100, Math.round((characters / ESTIMATED_CONTEXT_CHARACTERS) * 100));
-  }, [messages]);
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -77,7 +100,7 @@ export default function ChatInterface() {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
         top: scrollRef.current.scrollHeight,
-        behavior: 'smooth'
+        behavior: 'smooth',
       });
     }
   }, [messages]);
@@ -90,28 +113,30 @@ export default function ChatInterface() {
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: 'user',
-      content: query
+      content: query,
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     if (!presetPrompt) setInput('');
     setIsLoading(true);
 
     try {
-      // Simulate network delay for UX
-      await new Promise(r => setTimeout(r, 600));
-      
-      const history = messages.filter(m => m.id !== 'msg-0').map(m => ({ role: m.role === 'user' ? 'user' : 'model', content: m.content })) as { role: 'user'|'model', content: string }[];
-      
+      const history = messages
+        .filter((message) => message.id !== 'msg-0')
+        .map((message) => ({
+          role: message.role === 'user' ? 'user' : 'model',
+          content: message.content,
+        })) as { role: 'user' | 'model'; content: string }[];
+
       const responseText = await generateLegalAdvice(userMessage.content, history);
-      
+
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: responseText || "I couldn't generate a response. Please try again."
+        content: responseText || "I couldn't generate a response. Please try again.",
       };
-      
-      setMessages(prev => [...prev, assistantMessage]);
+
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error(error);
     } finally {
@@ -119,34 +144,10 @@ export default function ChatInterface() {
     }
   };
 
-  const handleNewChat = async () => {
-    if (isPreparingHandover) return;
-    setIsPreparingHandover(true);
-
-    try {
-      const hasConversation = messages.some((message) => message.id !== 'msg-0');
-      if (!hasConversation) {
-        setMessages([INITIAL_MESSAGE]);
-        return;
-      }
-
-      const result = await createSessionHandover(
-        messages.map((message) => ({
-          role: message.role === 'assistant' ? 'model' : 'user',
-          content: message.content,
-        })),
-      );
-      const summary = result.summary || 'Continue the previous legal discussion.';
-      const handoverMessage: Message = {
-        id: `handover-${crypto.randomUUID()}`,
-        role: 'assistant',
-        content: `Session handover — continue from here\n\n${summary}\n\nAsk your next question and I will continue from this point.`,
-      };
-      setMessages([handoverMessage]);
-      setInput('');
-    } finally {
-      setIsPreparingHandover(false);
-    }
+  const handleNewChat = () => {
+    setMessages([INITIAL_MESSAGE]);
+    setInput('');
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSaveAsPdf = () => {
@@ -157,123 +158,159 @@ export default function ChatInterface() {
     }, 50);
   };
 
-  const renderMarkdown = (content: string) => {
-    return (
-      <div className="markdown-body">
-        <ReactMarkdown
-          components={{
-            h3: ({ node, ...props }) => <h3 className="text-emerald-700 font-bold text-sm uppercase tracking-wider mt-6 mb-2 border-b border-emerald-100 pb-1" {...props} />,
-            p: ({ node, ...props }) => <p className="text-slate-700 leading-relaxed mb-4 text-[15px]" {...props} />,
-            ul: ({ node, ...props }) => <ul className="space-y-2 mb-4" {...props} />,
-            li: ({ node, ...props }) => (
-              <li className="flex items-start gap-2 text-slate-700 text-[15px]">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
-                <span>{props.children}</span>
-              </li>
-            ),
-            strong: ({ node, ...props }) => <strong className="font-semibold text-slate-900" {...props} />,
-          }}
-        >
-          {content}
-        </ReactMarkdown>
-      </div>
-    );
-  };
+  const renderMarkdown = (content: string) => (
+    <div className="markdown-body">
+      <ReactMarkdown
+        components={{
+          h3: ({ node, ...props }) => (
+            <h3
+              className="mt-6 mb-2 border-b border-emerald-100 pb-1 text-sm font-bold uppercase tracking-wider text-emerald-700"
+              {...props}
+            />
+          ),
+          p: ({ node, ...props }) => (
+            <p className="mb-4 text-[15px] leading-relaxed text-slate-700" {...props} />
+          ),
+          ul: ({ node, ...props }) => <ul className="mb-4 space-y-2" {...props} />,
+          ol: ({ node, ...props }) => <ol className="mb-4 list-decimal space-y-2 pl-5" {...props} />,
+          li: ({ node, ...props }) => (
+            <li className="flex items-start gap-2 text-[15px] text-slate-700">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+              <span>{props.children}</span>
+            </li>
+          ),
+          a: ({ node, ...props }) => (
+            <a
+              className="font-medium text-emerald-700 underline underline-offset-2 transition hover:text-emerald-900"
+              target="_blank"
+              rel="noreferrer noopener"
+              {...props}
+            />
+          ),
+          strong: ({ node, ...props }) => (
+            <strong className="font-semibold text-slate-900" {...props} />
+          ),
+          code: ({ node, ...props }) => (
+            <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[13px] text-slate-800" {...props} />
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
 
   return (
-    <div className="chat-print-area flex flex-col h-full bg-white relative">
-      <div className="no-print flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <div>
-          <p className="text-sm font-bold text-slate-900">Session context</p>
-          <p className="text-xs text-slate-500">Carry a short handover into the next chat.</p>
-        </div>
-        <div className="flex min-w-52 flex-1 items-center gap-3">
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
-            <div
-              className={`h-full rounded-full transition-all ${contextUsage >= HANDOVER_THRESHOLD ? 'bg-amber-500' : 'bg-emerald-500'}`}
-              style={{ width: `${contextUsage}%` }}
-            />
+    <div className="chat-print-area flex h-full flex-col bg-white">
+      <div className="no-print flex items-center justify-between gap-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-emerald-50/40 px-4 py-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/25">
+            <MessageSquareGlyph />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold text-slate-900">AI Legal Assistant</p>
+            <p className="truncate text-xs text-slate-500">
+              Answers cite the exact article and official source.
+            </p>
           </div>
-          <span className="w-10 text-right text-xs font-bold text-slate-600">{contextUsage}%</span>
         </div>
+
         <button
           type="button"
           onClick={handleNewChat}
-          disabled={isPreparingHandover}
-          className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-emerald-300 hover:text-emerald-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 active:translate-y-0"
         >
-          {isPreparingHandover ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
-          {isPreparingHandover ? 'Preparing…' : 'Handover & new chat'}
+          <RotateCcw size={14} strokeWidth={2.25} />
+          New chat
         </button>
       </div>
 
-      {contextUsage >= HANDOVER_THRESHOLD && (
-        <div className="no-print border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs font-medium text-amber-800">
-          Context is at {contextUsage}%. Start a handover before continuing to preserve the legal findings and next step.
-        </div>
-      )}
-
-      {/* Chat Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 scrollbar-hide">
-        <div className="max-w-3xl mx-auto flex flex-col gap-8 pb-10">
-          
+      <div ref={scrollRef} className="scrollbar-hide flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-3xl flex-col gap-6 pb-10">
           <AnimatePresence initial={false}>
-            {messages.map((msg, index) => (
+            {messages.map((msg) => (
               <motion.div
                 key={msg.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={cn(
-                  "flex gap-4",
-                  msg.role === 'user' ? "flex-row-reverse" : "flex-row"
-                )}
+                transition={{ duration: 0.28, ease: 'easeOut' }}
+                className={cn('flex gap-3', msg.role === 'user' ? 'flex-row-reverse' : 'flex-row')}
               >
-                {/* Avatar */}
-                <div className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-1",
-                  msg.role === 'user' 
-                    ? "bg-slate-100 text-slate-600" 
-                    : "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
-                )}>
-                  {msg.role === 'user' ? <User size={20} /> : <RengeraLogo size={36} label="" />}
+                <div
+                  className={cn(
+                    'mt-1 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl',
+                    msg.role === 'user'
+                      ? 'bg-slate-100 text-slate-600'
+                      : 'bg-emerald-600 shadow-md shadow-emerald-600/25',
+                  )}
+                >
+                  {msg.role === 'user' ? (
+                    <User size={18} strokeWidth={2.25} />
+                  ) : (
+                    <RengeraLogo size={34} label="" />
+                  )}
                 </div>
 
-                {/* Message Bubble */}
-                <div className={cn(
-                  "max-w-[85%] rounded-2xl px-6 py-4",
-                  msg.role === 'user' 
-                    ? "bg-slate-900 text-white rounded-tr-sm" 
-                    : "bg-white border border-slate-200 shadow-sm rounded-tl-sm"
-                )}>
+                <div
+                  className={cn(
+                    'max-w-[85%] rounded-2xl px-5 py-4',
+                    msg.role === 'user'
+                      ? 'rounded-tr-sm bg-slate-900 text-white'
+                      : 'rounded-tl-sm border border-slate-200 bg-white shadow-sm',
+                  )}
+                >
                   {msg.role === 'user' ? (
-                    <p className="text-[15px] leading-relaxed">{msg.content}</p>
+                    <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{msg.content}</p>
                   ) : (
                     <div>
                       {renderMarkdown(msg.content)}
-                      
+
                       {msg.id === 'msg-0' && messages.length === 1 && (
-                        <div className="mt-4 flex flex-col gap-2">
-                          {SCENARIOS.map(scenario => (
-                            <button
+                        <motion.div
+                          initial="hidden"
+                          animate="shown"
+                          variants={{
+                            hidden: {},
+                            shown: { transition: { staggerChildren: 0.06 } },
+                          }}
+                          className="mt-5 flex flex-col gap-2"
+                        >
+                          {SCENARIOS.map((scenario) => (
+                            <motion.button
                               key={scenario.id}
+                              variants={{
+                                hidden: { opacity: 0, x: -8 },
+                                shown: { opacity: 1, x: 0 },
+                              }}
                               onClick={() => handleSubmit(undefined, scenario.prompt)}
-                              className="text-left w-full px-4 py-3 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-slate-700 transition-colors flex items-center justify-between group"
+                              className="group flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left transition-all duration-200 hover:-translate-y-px hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
                             >
-                              <span className="font-medium text-[15px]">{scenario.label}</span>
-                              <ArrowRight size={16} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
-                            </button>
+                              <span className="flex min-w-0 items-center gap-3">
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-emerald-700 shadow-sm transition-colors duration-200 group-hover:bg-emerald-600 group-hover:text-white">
+                                  <scenario.icon size={16} strokeWidth={2.25} />
+                                </span>
+                                <span className="truncate text-[15px] font-medium text-slate-700 transition-colors group-hover:text-slate-900">
+                                  {scenario.label}
+                                </span>
+                              </span>
+                              <ArrowRight
+                                size={16}
+                                className="shrink-0 text-slate-300 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-emerald-600"
+                              />
+                            </motion.button>
                           ))}
-                        </div>
+                        </motion.div>
                       )}
-                      
+
                       {msg.id !== 'msg-0' && (
-                        <div className="no-print mt-6 pt-4 border-t border-slate-100 flex flex-wrap gap-2">
+                        <div className="no-print mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
                           <button
                             type="button"
                             onClick={handleSaveAsPdf}
-                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-px hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 active:translate-y-0"
                           >
-                            <Download size={16} /> Save as PDF
+                            <Download size={16} strokeWidth={2.25} />
+                            Save as PDF
                           </button>
                         </div>
                       )}
@@ -284,57 +321,89 @@ export default function ChatInterface() {
             ))}
           </AnimatePresence>
 
-          {isLoading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="no-print flex gap-4"
-            >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-600 shadow-md">
-                <RengeraLogo size={36} loading label="" />
-              </div>
-              <div className="bg-white border border-slate-200 shadow-sm rounded-2xl rounded-tl-sm px-6 py-5 flex items-center gap-3">
-                <Loader2 size={18} className="animate-spin text-emerald-600" />
-                <span className="text-sm text-slate-500 font-medium">Consulting legal database...</span>
-              </div>
-            </motion.div>
-          )}
-
+          <AnimatePresence>
+            {isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="no-print flex gap-3"
+              >
+                <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-emerald-600 shadow-md shadow-emerald-600/25">
+                  <RengeraLogo size={34} loading label="" />
+                </div>
+                <div className="flex items-center gap-2.5 rounded-2xl rounded-tl-sm border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                  <span className="flex gap-1">
+                    {[0, 1, 2].map((dot) => (
+                      <motion.span
+                        key={dot}
+                        className="h-1.5 w-1.5 rounded-full bg-emerald-500"
+                        animate={{ opacity: [0.25, 1, 0.25], y: [0, -3, 0] }}
+                        transition={{
+                          duration: 1.1,
+                          repeat: Infinity,
+                          delay: dot * 0.16,
+                          ease: 'easeInOut',
+                        }}
+                      />
+                    ))}
+                  </span>
+                  <span className="text-sm font-medium text-slate-500">
+                    Consulting the legal database…
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="no-print p-4 bg-white border-t border-slate-200 shrink-0">
-        <div className="max-w-3xl mx-auto relative">
-          {emergencyRisk.level === 'urgent' && (
-            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-red-950 shadow-sm">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-red-600 text-white">
-                  <ShieldAlert size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-bold">{emergencyRisk.title}</p>
-                    <span className="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
-                      <Phone size={12} /> Police 112
+      <div className="no-print shrink-0 border-t border-slate-200 bg-white p-4">
+        <div className="relative mx-auto max-w-3xl">
+          <AnimatePresence>
+            {emergencyRisk.level === 'urgent' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginBottom: 12 }}
+                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="overflow-hidden"
+              >
+                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-950 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm">
+                      <ShieldAlert size={17} strokeWidth={2.25} />
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
-                      RIB 166
-                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-bold">{emergencyRisk.title}</p>
+                        <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
+                          <Phone size={12} strokeWidth={2.5} /> Police 112
+                        </span>
+                        <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
+                          RIB 166
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs leading-5 text-red-800">
+                        If someone is in immediate danger, contact official emergency services before
+                        continuing the chat.
+                      </p>
+                    </div>
                   </div>
-                  <p className="mt-1 text-xs leading-5 text-red-800">
-                    If someone is in immediate danger, contact official emergency services before continuing the chat.
-                  </p>
                 </div>
-              </div>
-            </div>
-          )}
-          <form onSubmit={handleSubmit} className="relative flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-3xl p-2 shadow-sm focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 transition-all">
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <form
+            onSubmit={handleSubmit}
+            className="relative flex items-end gap-2 rounded-3xl border border-slate-200 bg-slate-50 p-2 shadow-sm transition-all duration-200 focus-within:border-emerald-500 focus-within:bg-white focus-within:shadow-md"
+          >
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Describe your legal situation..."
-              className="w-full bg-transparent border-none resize-none px-4 py-3 text-[15px] text-slate-900 placeholder:text-slate-500 focus:outline-none min-h-[56px] max-h-32 scrollbar-hide"
+              placeholder="Describe your legal situation…"
+              className="scrollbar-hide min-h-[56px] max-h-32 w-full resize-none border-none bg-transparent px-4 py-3 text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
               rows={1}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -343,21 +412,47 @@ export default function ChatInterface() {
                 }
               }}
             />
-            <button 
+            <motion.button
               type="submit"
+              whileTap={{ scale: 0.9 }}
               disabled={!input.trim() || isLoading}
-              className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white shrink-0 mb-1 mr-1 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-700 transition-colors"
+              className="mb-1 mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white shadow-md shadow-emerald-600/25 transition-all duration-200 hover:bg-emerald-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
             >
-              <Send size={18} className={input.trim() && !isLoading ? "ml-0.5" : ""} />
-            </button>
+              {isLoading ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Send size={18} strokeWidth={2.25} className="ml-0.5" />
+              )}
+            </motion.button>
           </form>
-          <div className="text-center mt-3 text-xs text-slate-400 font-medium">
+
+          <p className="mt-3 text-center text-xs font-medium text-slate-400">
             Rengera AI can make mistakes. Verify important information with official sources.
-          </div>
-          <p className="sr-only" role="status" aria-live="polite">{printStatus}</p>
+          </p>
+          <p className="sr-only" role="status" aria-live="polite">
+            {printStatus}
+          </p>
         </div>
       </div>
-
     </div>
+  );
+}
+
+/** Small inline mark so the header does not depend on a large glyph set. */
+function MessageSquareGlyph() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+    </svg>
   );
 }
