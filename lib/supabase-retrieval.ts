@@ -1,5 +1,22 @@
 import { getSupabasePublicClient } from '@/lib/supabase';
 
+export interface RetrievedSource {
+  lawId: string;
+  title: string;
+  referenceNumber: string | null;
+  articleNumber: string | null;
+  articleTitle: string | null;
+  citation: string;
+  sourceUrl: string | null;
+  language: string | null;
+  score: number;
+}
+
+export interface RetrievedContext {
+  context: string;
+  sources: RetrievedSource[];
+}
+
 interface SearchContextRow {
   law_id: string;
   source_kind: 'article' | 'law';
@@ -14,14 +31,21 @@ interface SearchContextRow {
   search_rank: number;
 }
 
-function formatSearchRows(rows: unknown): string | null {
-  if (!Array.isArray(rows) || rows.length === 0) {
+function castRows(data: unknown): SearchContextRow[] {
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data as SearchContextRow[];
+}
+
+function formatSearchRows(rows: SearchContextRow[]): string | null {
+  if (rows.length === 0) {
     return null;
   }
 
   return rows
-    .map((row) => {
-      const law = row as SearchContextRow;
+    .map((law) => {
       const articleLabel = law.article_number
         ? `${law.article_number}${law.article_title ? ` — ${law.article_title}` : ''}`
         : 'Full law (no article boundary detected)';
@@ -40,10 +64,39 @@ function formatSearchRows(rows: unknown): string | null {
     .join('\n\n---\n\n');
 }
 
+/**
+ * Build the citation list an AI answer links to. Preamble rows are excluded
+ * because there is no article number to anchor to, and duplicate articles from
+ * the same law are collapsed so the user sees one entry per article.
+ */
+function buildSources(rows: SearchContextRow[]): RetrievedSource[] {
+  const seen = new Set<string>();
+
+  return rows
+    .filter((row) => row.article_number && row.article_number !== 'preamble')
+    .filter((row) => {
+      const key = `${row.law_id}::${row.article_number}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .map((row) => ({
+      lawId: String(row.law_id),
+      title: String(row.document_title || 'Untitled law'),
+      referenceNumber: row.reference_number,
+      articleNumber: row.article_number,
+      articleTitle: row.article_title,
+      citation: String(row.citation || ''),
+      sourceUrl: row.source_url,
+      language: row.language,
+      score: Number(row.search_rank) || 0,
+    }));
+}
+
 export async function retrieveSupabaseLegalContext(
   query: string,
   limit = 8,
-): Promise<string | null> {
+): Promise<RetrievedContext | null> {
   const supabase = getSupabasePublicClient();
   const { data, error } = await supabase.rpc('search_legal_context', {
     query_text: query,
@@ -58,5 +111,12 @@ export async function retrieveSupabaseLegalContext(
     throw new Error(`Supabase legal search failed: ${message}`);
   }
 
-  return formatSearchRows(data);
+  const rows = castRows(data);
+  const context = formatSearchRows(rows);
+
+  if (!context) {
+    return null;
+  }
+
+  return { context, sources: buildSources(rows) };
 }

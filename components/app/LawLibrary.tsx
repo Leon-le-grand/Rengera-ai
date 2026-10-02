@@ -1,126 +1,557 @@
 'use client';
-import { useState } from 'react';
-import { Search, Book, Briefcase, Home, Users, Car, Shield, FileText, Map, ChevronRight, X } from 'lucide-react';
 
-const CATEGORIES = [
-  { id: 'labour', name: 'Labour', icon: Briefcase, color: 'text-blue-500', bg: 'bg-blue-100', desc: 'Employment rights, contracts, dismissals' },
-  { id: 'housing', name: 'Housing', icon: Home, color: 'text-emerald-500', bg: 'bg-emerald-100', desc: 'Tenancy, eviction, property rental' },
-  { id: 'family', name: 'Family', icon: Users, color: 'text-purple-500', bg: 'bg-purple-100', desc: 'Marriage, divorce, inheritance' },
-  { id: 'traffic', name: 'Traffic', icon: Car, color: 'text-amber-500', bg: 'bg-amber-100', desc: 'Road rules, fines, accidents' },
-  { id: 'business', name: 'Business', icon: FileText, color: 'text-indigo-500', bg: 'bg-indigo-100', desc: 'Registration, taxes, corporate law' },
-  { id: 'cybercrime', name: 'Cybercrime', icon: Shield, color: 'text-rose-500', bg: 'bg-rose-100', desc: 'Online fraud, data theft' },
-  { id: 'privacy', name: 'Privacy', icon: Shield, color: 'text-teal-500', bg: 'bg-teal-100', desc: 'Data protection, personal rights' },
-  { id: 'land', name: 'Land', icon: Map, color: 'text-orange-500', bg: 'bg-orange-100', desc: 'Ownership, transfer, disputes' }
+import { useEffect, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  Search,
+  BookOpen,
+  ChevronRight,
+  X,
+  Loader2,
+  FileText,
+  Briefcase,
+  Home,
+  Users,
+  Car,
+  Shield,
+  Map,
+  ScrollText,
+} from 'lucide-react';
+import type { ElementType } from 'react';
+import { getLawLibrary, type LawLibraryCategory, type LawLibraryEntry } from '@/app/legal-actions';
+import { cn } from '@/lib/utils';
+
+interface LawLibraryProps {
+  /** Law and article the reader should open. Null closes the reader. */
+  openLawId?: string | null;
+  openArticleNumber?: string | null;
+  onOpenLaw: (lawId: string, articleNumber?: string | null) => void;
+  onCloseReader: () => void;
+}
+
+const CATEGORY_STYLES: { match: RegExp; icon: ElementType; tone: string }[] = [
+  { match: /labou?r|employ|social security/i, icon: Briefcase, tone: 'blue' },
+  { match: /housing|land|property|tenan|rental|urban/i, icon: Home, tone: 'emerald' },
+  { match: /family|marriag|divorce|inherit|succession/i, icon: Users, tone: 'purple' },
+  { match: /traffic|road|transport|accident/i, icon: Car, tone: 'amber' },
+  { match: /business|commercial|corporate|compan|tax|bank/i, icon: FileText, tone: 'indigo' },
+  { match: /cyber|crime|penali/i, icon: Shield, tone: 'rose' },
+  { match: /privacy|data|personal protection|information/i, icon: Shield, tone: 'teal' },
+  { match: /environment|water|forest|agricultur/i, icon: Map, tone: 'orange' },
+  { match: /health|medical|public health/i, icon: ScrollText, tone: 'lime' },
 ];
 
-export default function LawLibrary() {
+const TONE_CLASSES: Record<string, { icon: string; badge: string; ring: string }> = {
+  blue: { icon: 'bg-blue-100 text-blue-600', badge: 'bg-blue-50 text-blue-700', ring: 'hover:border-blue-400' },
+  emerald: { icon: 'bg-emerald-100 text-emerald-600', badge: 'bg-emerald-50 text-emerald-700', ring: 'hover:border-emerald-400' },
+  purple: { icon: 'bg-purple-100 text-purple-600', badge: 'bg-purple-50 text-purple-700', ring: 'hover:border-purple-400' },
+  amber: { icon: 'bg-amber-100 text-amber-600', badge: 'bg-amber-50 text-amber-700', ring: 'hover:border-amber-400' },
+  indigo: { icon: 'bg-indigo-100 text-indigo-600', badge: 'bg-indigo-50 text-indigo-700', ring: 'hover:border-indigo-400' },
+  rose: { icon: 'bg-rose-100 text-rose-600', badge: 'bg-rose-50 text-rose-700', ring: 'hover:border-rose-400' },
+  teal: { icon: 'bg-teal-100 text-teal-600', badge: 'bg-teal-50 text-teal-700', ring: 'hover:border-teal-400' },
+  orange: { icon: 'bg-orange-100 text-orange-600', badge: 'bg-orange-50 text-orange-700', ring: 'hover:border-orange-400' },
+  lime: { icon: 'bg-lime-100 text-lime-600', badge: 'bg-lime-50 text-lime-700', ring: 'hover:border-lime-400' },
+};
+
+const DEFAULT_TONE = { icon: 'bg-slate-100 text-slate-600', badge: 'bg-slate-100 text-slate-700', ring: 'hover:border-slate-400' };
+
+function toneFor(category: string) {
+  const style = CATEGORY_STYLES.find((entry) => entry.match.test(category));
+  const classes = style ? TONE_CLASSES[style.tone] : DEFAULT_TONE;
+  // `Icon` is the component; `icon` stays the class list. Keep the names apart.
+  return { Icon: style?.icon || BookOpen, ...classes };
+}
+
+function formatDate(value: string | null): string | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function matchesSearch(law: LawLibraryEntry, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+
+  return [
+    law.title,
+    law.reference_number || '',
+    law.summary || '',
+    law.category || '',
+    law.gazette_reference || '',
+    ...law.subcategories,
+    ...law.tags,
+  ]
+    .join(' ')
+    .toLowerCase()
+    .includes(needle);
+}
+
+export default function LawLibrary({
+  openLawId,
+  openArticleNumber,
+  onOpenLaw,
+  onCloseReader,
+}: LawLibraryProps) {
+  const [categories, setCategories] = useState<LawLibraryCategory[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  return (
-    <div className="flex h-full min-h-0 flex-col bg-slate-50">
-      <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-            <h1 className="flex items-center gap-2 text-xl font-bold text-slate-900 sm:text-2xl">
-              <Book className="text-emerald-600" size={24} />
-              Rwanda Legal Library
-            </h1>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
-              Browse simplified versions of official Rwandan laws. Search by topic, category, or keyword.
-            </p>
-          </div>
+  useEffect(() => {
+    let cancelled = false;
 
-          <div className="relative w-full lg:max-w-md">
-            <input
-              type="text"
-              placeholder="Search laws or keywords..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-            />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          </div>
+    (async () => {
+      try {
+        const data = await getLawLibrary();
+        if (!cancelled) setCategories(data);
+      } catch (caught) {
+        if (!cancelled) {
+          setError(
+            caught instanceof Error
+              ? caught.message
+              : 'The law library could not be loaded right now.',
+          );
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // A deep link from an AI answer selects the law's category automatically.
+  useEffect(() => {
+    if (!openLawId) return;
+    const owner = categories.find((group) => group.laws.some((law) => law.id === openLawId));
+    if (owner) setSelectedCategory(owner.category);
+  }, [openLawId, categories]);
+
+  const visibleCategories = useMemo(() => {
+    return categories
+      .map((group) => ({
+        ...group,
+        laws: group.laws.filter((law) => matchesSearch(law, searchQuery)),
+      }))
+      .filter((group) => group.laws.length > 0);
+  }, [categories, searchQuery]);
+
+  const activeGroup = useMemo(
+    () => visibleCategories.find((group) => group.category === selectedCategory) ?? null,
+    [visibleCategories, selectedCategory],
+  );
+
+  const totalLaws = categories.reduce((total, group) => total + group.laws.length, 0);
+
+  const header = (
+    <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5">
+      <div className="mx-auto flex max-w-6xl flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="flex items-center gap-2 text-xl font-bold text-slate-900 sm:text-2xl">
+            <BookOpen className="text-emerald-600" size={24} strokeWidth={2.25} />
+            Rwanda Legal Library
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
+            {totalLaws > 0
+              ? `${totalLaws} official ${totalLaws === 1 ? 'law' : 'laws'} stored by administrators. Open one to read the exact article text.`
+              : 'Official Rwandan laws stored by administrators. Open one to read the exact article text.'}
+          </p>
         </div>
-      </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
-        <div className="mx-auto max-w-6xl">
-          {selectedCategory ? (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <button 
-                onClick={() => setSelectedCategory(null)}
-                className="flex items-center gap-2 text-slate-500 hover:text-slate-900 mb-6 font-medium transition-colors"
-              >
-                <X size={18} /> Back to Categories
-              </button>
-              
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-                <div className="mb-5 flex items-center gap-3 sm:gap-4">
-                  {(() => {
-                    const cat = CATEGORIES.find(c => c.id === selectedCategory);
-                    if (!cat) return null;
-                    const Icon = cat.icon;
-                    return (
-                      <>
-                        <div className={`rounded-xl p-3 ${cat.bg} ${cat.color}`}>
-                          <Icon size={26} />
-                        </div>
-                        <div>
-                          <h2 className="text-xl font-bold text-slate-900">{cat.name} Law</h2>
-                          <p className="text-sm text-slate-500">{cat.desc}</p>
-                        </div>
-                      </>
-                    )
-                  })()}
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="p-4 border border-slate-200 rounded-xl hover:border-emerald-500 cursor-pointer transition-colors group">
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-semibold text-slate-900 text-lg">Law N° 66/2018 of 30/08/2018 regulating labour in Rwanda</h3>
-                      <ChevronRight className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
-                    </div>
-                    <p className="text-sm text-slate-500 mt-2">Published: Official Gazette n° Special of 06/09/2018</p>
-                    <div className="mt-4 flex gap-2">
-                      <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">Contracts</span>
-                      <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">Leave</span>
-                      <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">Termination</span>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 border border-slate-200 rounded-xl hover:border-emerald-500 cursor-pointer transition-colors group">
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-semibold text-slate-900 text-lg">Law N° 02/2015 of 25/02/2015 modifying and complementing Law n° 13/2009 of 27/05/2009</h3>
-                      <ChevronRight className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
-                    </div>
-                    <p className="text-sm text-slate-500 mt-2">Maternity leave benefits and regulations.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <h2 className="mb-4 text-lg font-bold text-slate-900">Browse Categories</h2>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {CATEGORIES.map(category => (
-                  <button
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className="group flex flex-col rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-emerald-500 hover:shadow-md"
-                  >
-                    <div className={`mb-3 w-fit rounded-lg p-2.5 ${category.bg} ${category.color} transition-transform group-hover:scale-105`}>
-                      <category.icon size={21} />
-                    </div>
-                    <h3 className="mb-1 text-base font-bold text-slate-900">{category.name}</h3>
-                    <p className="line-clamp-2 text-xs leading-5 text-slate-500">{category.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+        <div className="relative w-full lg:max-w-md">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            size={18}
+          />
+          <input
+            type="text"
+            placeholder="Search by title, reference, or keyword..."
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none transition-all duration-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+          />
         </div>
       </div>
     </div>
   );
+
+  const body = isLoading ? (
+    <div className="flex flex-col items-center justify-center gap-3 py-24 text-slate-400">
+      <Loader2 size={28} className="animate-spin" />
+      <p className="text-sm font-medium">Loading the official laws…</p>
+    </div>
+  ) : error ? (
+    <div className="mx-auto max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">
+      <p className="text-sm font-bold text-amber-900">The law library is unavailable</p>
+      <p className="mt-2 text-sm leading-6 text-amber-800">{error}</p>
+    </div>
+  ) : totalLaws === 0 ? (
+    <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+      <BookOpen size={32} className="mx-auto text-slate-300" strokeWidth={1.75} />
+      <p className="mt-4 text-base font-bold text-slate-900">No laws stored yet</p>
+      <p className="mt-2 text-sm leading-6 text-slate-500">
+        An administrator uploads a legal PDF in <strong>Administrator / Law Ingestion</strong>. It is
+        classified, split into articles, and appears here automatically.
+      </p>
+    </div>
+  ) : activeGroup ? (
+    <div>
+      <button
+        type="button"
+        onClick={() => setSelectedCategory(null)}
+        className="mb-6 inline-flex items-center gap-2 rounded-lg text-sm font-semibold text-slate-500 transition-colors duration-200 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+      >
+        <X size={18} strokeWidth={2.25} />
+        All categories
+      </button>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        {(() => {
+          const tone = toneFor(activeGroup.category);
+          const Icon = tone.Icon;
+          return (
+            <div className="mb-5 flex items-center gap-3 sm:gap-4">
+              <div className={cn('rounded-xl p-3', tone.icon)}>
+                <Icon size={26} strokeWidth={2.25} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">{activeGroup.category}</h2>
+                <p className="text-sm text-slate-500">
+                  {activeGroup.laws.length} {activeGroup.laws.length === 1 ? 'law' : 'laws'}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
+        <div className="space-y-3">
+          {activeGroup.laws.map((law) => (
+            <LawCard key={law.id} law={law} onOpen={onOpenLaw} />
+          ))}
+        </div>
+      </div>
+    </div>
+  ) : visibleCategories.length === 0 ? (
+    <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+      <p className="text-base font-bold text-slate-900">No match for “{searchQuery}”</p>
+      <p className="mt-2 text-sm text-slate-500">Try a law number, a keyword, or a category name.</p>
+    </div>
+  ) : (
+    <div>
+      <h2 className="mb-4 text-lg font-bold text-slate-900">Browse Categories</h2>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {visibleCategories.map((group) => {
+          const tone = toneFor(group.category);
+          const Icon = tone.Icon;
+          return (
+            <motion.button
+              key={group.category}
+              type="button"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSelectedCategory(group.category)}
+              className={cn(
+                'group flex flex-col rounded-xl border border-slate-200 bg-white p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
+                tone.ring,
+              )}
+            >
+              <div
+                className={cn(
+                  'mb-3 flex h-11 w-11 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-110',
+                  tone.icon,
+                )}
+              >
+                <Icon size={21} strokeWidth={2.25} />
+              </div>
+              <h3 className="mb-1 text-base font-bold text-slate-900">{group.category}</h3>
+              <p className="text-xs text-slate-500">
+                {group.laws.length} {group.laws.length === 1 ? 'law' : 'laws'}
+              </p>
+            </motion.button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-slate-50">
+      <AnimatePresence mode="wait">
+        {openLawId ? (
+          <motion.div
+            key="reader"
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 24 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="flex h-full min-h-0 flex-col bg-white"
+          >
+            <LawReader
+              lawId={openLawId}
+              focusArticle={openArticleNumber ?? null}
+              onBack={onCloseReader}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="browser"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex h-full min-h-0 flex-col"
+          >
+            {header}
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+              <div className="mx-auto max-w-6xl">{body}</div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function LawCard({
+  law,
+  onOpen,
+}: {
+  law: LawLibraryEntry;
+  onOpen: (lawId: string, articleNumber?: string | null) => void;
+}) {
+  const tone = toneFor(law.category || '');
+  const published = formatDate(law.publication_date);
+
+  return (
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.995 }}
+      onClick={() => onOpen(law.id)}
+      className={cn(
+        'group flex w-full items-start justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left transition-all duration-200 hover:-translate-y-px hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
+        tone.ring,
+      )}
+    >
+      <div className="min-w-0">
+        <h3 className="text-base font-bold leading-snug text-slate-900 sm:text-lg">{law.title}</h3>
+        {law.reference_number && (
+          <p className="mt-1 text-sm font-medium text-slate-600">{law.reference_number}</p>
+        )}
+        {law.summary && (
+          <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">{law.summary}</p>
+        )}
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className={cn('rounded-md px-2 py-1 text-xs font-bold', tone.badge)}>
+            {law.article_count} {law.article_count === 1 ? 'article' : 'articles'}
+          </span>
+          {law.type === 'amendment' && (
+            <span className="rounded-md bg-violet-50 px-2 py-1 text-xs font-bold text-violet-700">
+              Amendment
+            </span>
+          )}
+          {law.status !== 'active' && (
+            <span className="rounded-md bg-red-50 px-2 py-1 text-xs font-bold text-red-700">
+              {law.status}
+            </span>
+          )}
+          {published && (
+            <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
+              Published {published}
+            </span>
+          )}
+          {law.subcategories.slice(0, 3).map((subcategory) => (
+            <span
+              key={subcategory}
+              className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600"
+            >
+              {subcategory}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <ChevronRight
+        size={20}
+        className="mt-1 shrink-0 text-slate-300 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-emerald-500"
+      />
+    </motion.button>
+  );
+}
+
+function LawReader({
+  lawId,
+  focusArticle,
+  onBack,
+}: {
+  lawId: string;
+  focusArticle: string | null;
+  onBack: () => void;
+}) {
+  const [detail, setDetail] = useState<Awaited<ReturnType<typeof import('@/app/legal-actions').getLawDetail>>>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+
+    (async () => {
+      try {
+        const { getLawDetail } = await import('@/app/legal-actions');
+        const data = await getLawDetail(lawId);
+        if (!cancelled) {
+          setDetail(data);
+          setError(data ? '' : 'That law is no longer in the library.');
+        }
+      } catch (caught) {
+        if (!cancelled) {
+          setError(caught instanceof Error ? caught.message : 'This law could not be opened.');
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lawId]);
+
+  useEffect(() => {
+    if (!focusArticle || isLoading) return;
+    const anchor = document.getElementById(anchorId(lawId, focusArticle));
+    anchor?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [focusArticle, isLoading, lawId]);
+
+  const tone = toneFor(detail?.category || '');
+
+  return (
+    <>
+      <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
+        <div className="mx-auto max-w-3xl">
+          <button
+            type="button"
+            onClick={onBack}
+            className="mb-3 inline-flex items-center gap-2 rounded-lg text-sm font-semibold text-slate-500 transition-colors duration-200 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            <X size={18} strokeWidth={2.25} />
+            Back to the library
+          </button>
+
+          {detail && (
+            <>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={cn('rounded-md px-2 py-1 text-xs font-bold', tone.badge)}>
+                  {detail.category || 'Uncategorised'}
+                </span>
+                {detail.type === 'amendment' && (
+                  <span className="rounded-md bg-violet-50 px-2 py-1 text-xs font-bold text-violet-700">
+                    Amendment{detail.amends_law_reference ? ` of ${detail.amends_law_reference}` : ''}
+                  </span>
+                )}
+                {detail.status !== 'active' && (
+                  <span className="rounded-md bg-red-50 px-2 py-1 text-xs font-bold text-red-700">
+                    {detail.status}
+                  </span>
+                )}
+                {detail.reference_number && (
+                  <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                    {detail.reference_number}
+                  </span>
+                )}
+              </div>
+
+              <h1 className="mt-3 text-xl font-bold leading-snug text-slate-900 sm:text-2xl">
+                {detail.title}
+              </h1>
+
+              {detail.summary && (
+                <p className="mt-2 text-sm leading-6 text-slate-600">{detail.summary}</p>
+              )}
+
+              {detail.source_url && (
+                <a
+                  href={detail.source_url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 underline underline-offset-2 transition hover:text-emerald-900"
+                >
+                  Open the official source
+                </a>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-4 py-6 sm:px-6">
+        <div className="mx-auto max-w-3xl">
+          {isLoading ? (
+            <div className="flex flex-col items-center gap-3 py-20 text-slate-400">
+              <Loader2 size={28} className="animate-spin" />
+              <p className="text-sm font-medium">Opening the law…</p>
+            </div>
+          ) : error ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">
+              <p className="text-sm font-bold text-amber-900">{error}</p>
+            </div>
+          ) : detail && detail.articles.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+              <p className="text-base font-bold text-slate-900">No articles indexed yet</p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Re-upload the PDF from the administration workspace to split this law into articles.
+              </p>
+            </div>
+          ) : (
+            <ol className="space-y-3">
+              {detail?.articles.map((article) => {
+                const isPreamble = article.chunk_type === 'preamble';
+                return (
+                  <li
+                    key={article.id}
+                    id={anchorId(lawId, article.article_number)}
+                    className="scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={cn(
+                          'rounded-lg px-2.5 py-1 text-xs font-bold',
+                          isPreamble ? 'bg-slate-100 text-slate-700' : tone.badge,
+                        )}
+                      >
+                        {isPreamble ? 'Front matter' : `Article ${article.article_number}`}
+                      </span>
+                      <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold capitalize text-slate-600">
+                        {article.language}
+                      </span>
+                    </div>
+
+                    {article.article_title && !isPreamble && (
+                      <h2 className="mt-3 text-base font-bold text-slate-900">
+                        {article.article_title}
+                      </h2>
+                    )}
+
+                    <p className="mt-3 whitespace-pre-wrap text-[15px] leading-7 text-slate-700">
+                      {article.content}
+                    </p>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function anchorId(lawId: string, articleNumber: string): string {
+  const safeLaw = lawId.replace(/[^a-zA-Z0-9]/g, '');
+  const safeArticle = articleNumber.replace(/[^a-zA-Z0-9]/g, '-');
+  return `law-${safeLaw}-article-${safeArticle}`;
 }

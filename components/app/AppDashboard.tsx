@@ -44,6 +44,19 @@ export default function AppDashboard({
   const isAdmin = adminUser?.role === 'admin';
   const displayName = adminUser?.name || accountUser?.name || '';
 
+  // Deep-link target set by a citation in an AI answer or a law library card.
+  const [openLaw, setOpenLaw] = useState<{ lawId: string; articleNumber: string | null } | null>(
+    null,
+  );
+
+  const openLawReader = (lawId: string, articleNumber?: string | null) => {
+    setOpenLaw({ lawId, articleNumber: articleNumber ?? null });
+    setCurrentView('library');
+    setSidebarOpen(false);
+  };
+
+  const closeLawReader = () => setOpenLaw(null);
+
   return (
     <div className="flex h-dvh bg-slate-100">
       {/* Mobile Sidebar Overlay */}
@@ -91,8 +104,15 @@ export default function AppDashboard({
               transition={{ duration: 0.2 }}
               className="h-full"
             >
-              {currentView === 'chat' && <ChatInterface />}
-              {currentView === 'library' && <LawLibrary />}
+              {currentView === 'chat' && <ChatInterface onOpenLaw={openLawReader} />}
+              {currentView === 'library' && (
+                <LawLibrary
+                  openLawId={openLaw?.lawId ?? null}
+                  openArticleNumber={openLaw?.articleNumber ?? null}
+                  onOpenLaw={openLawReader}
+                  onCloseReader={closeLawReader}
+                />
+              )}
               {currentView === 'complaints' && <Complaints />}
               {currentView === 'emergency' && <Emergency />}
               {currentView === 'business' && <BusinessDashboard />}

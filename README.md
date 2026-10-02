@@ -117,6 +117,7 @@ supabase/migrations/004_add_article_level_search.sql
 supabase/migrations/005_add_legal_status_audit.sql
 supabase/migrations/006_add_amendment_audit_trail.sql
 supabase/migrations/007_create_app_users.sql
+supabase/migrations/008_add_law_library_reading_order.sql
 ```
 
 Migration 003 broadens natural-language search and removes duplicate uploads using a SHA-256 `content_hash`. Migration 004 stores exact article-level text, article numbers, citations, and article-first search results. Migration 005 adds statutory status and amendment/repeal audit fields. Migration 006 adds the document `type`, `amends_law_reference`, `repealed_articles`, `inserted_articles`, `retroactive_effective_date`, and `languages_available`. Migration 007 creates the citizen `app_users` table. Later uploads of the same source text update the existing law and refresh its articles instead of creating duplicates.
@@ -205,9 +206,19 @@ Set the printed value as `ADMIN_PASSWORD_HASH`, configure a long random `AUTH_SE
 
 The old manual local indexer has been removed because Vercel cannot persist `data/db.json`. Supabase full-text search is the production retrieval path.
 
-## Chat sessions
+## Chat sessions and source links
 
 The chat keeps the current conversation in `localStorage` under `rengera_ai_chat_session_v1`, so a refresh or an accidental tab close does not lose your history. **New chat** clears the thread and returns to the opening message.
+
+Every answer carries the citations behind it. Under **Sources in the law library** each citation is a button showing the law reference and article number. Selecting one opens the Law Library reader, scrolls to that exact article, and highlights where you arrived. This is how a user verifies an answer instead of trusting it.
+
+## Law Library
+
+The Law Library reads from Supabase, so it only ever shows laws an administrator actually uploaded. Laws are grouped by their classified category, and each card shows the article count, whether it is an amendment, its status, publication date, and subcategories.
+
+Selecting a law opens the reader with the full article text in statutory order, including the front matter. Article blocks are anchored, which is what makes the AI deep-links land on the right article.
+
+An empty library is expected on a fresh database. Upload the first PDF from **Administrator / Law Ingestion** and it appears automatically.
 
 ## Strict-fidelity Python ingestion
 
@@ -222,7 +233,37 @@ python3 scripts/ingest_legal_pdf.py ./law.pdf \
   --output ./data/labour_chunks.json
 ```
 
-The parser splits only at English/French `Article N` and Kinyarwanda `Ingingo ya N` headings, preserves article text, logs unreadable pages, and generates SHA-256 `content_hash` values.
+The parser splits only at `Article N`, `Ingingo ya N`, and `Iteka ya N` headings, preserves article text, logs unreadable pages, and generates SHA-256 `content_hash` values.
+
+### Proving the capture rate
+
+Coverage used to be an assumption. It is now measured:
+
+```bash
+python3 scripts/ingest_legal_pdf.py ./law.pdf \
+  --law-id law_labour_66_2018 \
+  --document-title "Law N° 66/2018 Regulating Labour in Rwanda" \
+  --category "Labour Law" \
+  --language english \
+  --output ./data/labour_chunks.json \
+  --report ./data/labour_report.json \
+  --min-coverage 99
+```
+
+`--report` records readable pages, unreadable pages, characters captured versus
+characters on the page, the coverage percentage, chunk and article counts, and
+duplicate article numbers. `--min-coverage 99` exits with status 3 if the file
+is not at least 99% captured, so a silent regression fails the build instead of
+shipping a half-empty library.
+
+Three capture bugs were fixed:
+
+1. Text before the first heading (title, gazette line, preamble) was discarded. It is now a `preamble` row.
+2. Only the declared language's heading style was matched, so trilingual documents lost boundaries.
+3. `extract_text()` alone dropped tables. Each page now tries plain text, layout text, and tables, and keeps the richest.
+
+Run `python3 scripts/test_ingest_legal_pdf.py` and `bun run scripts/verify-legal-article-parser.ts`
+for the regression suite. Both include a 100% coverage assertion.
 
 ## RLRC document crawler
 

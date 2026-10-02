@@ -65,21 +65,48 @@ function cosineSimilarity(a: number[], b: number[]) {
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-export async function generateLegalAdvice(query: string, chatHistory: { role: 'user' | 'model', content: string }[] = []) {
+export interface LegalSource {
+  lawId: string;
+  title: string;
+  referenceNumber: string | null;
+  articleNumber: string | null;
+  citation: string;
+  sourceUrl: string | null;
+  score: number;
+}
+
+export interface LegalAnswer {
+  reply: string;
+  sources: LegalSource[];
+}
+
+/** Stable anchor id so an AI answer can deep-link to one article in the reader. */
+export function buildArticleAnchor(lawId: string, articleNumber: string): string {
+  const safeLaw = lawId.replace(/[^a-zA-Z0-9]/g, '');
+  const safeArticle = articleNumber.replace(/[^a-zA-Z0-9]/g, '-');
+  return `law-${safeLaw}-article-${safeArticle}`;
+}
+
+export async function generateLegalAdvice(
+  query: string,
+  chatHistory: { role: 'user' | 'model'; content: string }[] = [],
+): Promise<LegalAnswer> {
   const runtime = getSpaceBunnyRuntime();
+  const collectedSources: LegalSource[] = [];
 
   try {
     const emergencyRisk = detectEmergencyRisk(query);
     if (emergencyRisk.level === 'urgent') {
-      return buildEmergencyMarkdown(emergencyRisk);
+      return { reply: buildEmergencyMarkdown(emergencyRisk), sources: [] };
     }
 
     let contextText = 'No relevant laws found in the database.';
 
     if (isSupabaseConfigured()) {
       try {
-        contextText =
-          (await retrieveSupabaseLegalContext(query, 8)) || 'No relevant laws found in Supabase.';
+        const retrieval = await retrieveSupabaseLegalContext(query, 8);
+        contextText = retrieval?.context || 'No relevant laws found in Supabase.';
+        collectedSources.push(...(retrieval?.sources || []));
       } catch (error) {
         console.error('Supabase retrieval error:', error);
         contextText = 'Legal search is temporarily unavailable.';
@@ -165,10 +192,12 @@ ${query}
       { role: 'user', content: contextPrompt },
     ];
 
-    return await createSpaceBunnyChatCompletion(messages, { temperature: 0.2 });
+    const reply = await createSpaceBunnyChatCompletion(messages, { temperature: 0.2 });
+
+    return { reply, sources: collectedSources };
   } catch (error) {
     if (error instanceof SpaceBunnyConfigurationError) {
-      return error.message;
+      return { reply: error.message, sources: collectedSources };
     }
 
     const message = error instanceof Error ? error.message : String(error);
@@ -178,6 +207,9 @@ ${query}
       message,
     });
 
-    return `Space Bunny could not complete the request: ${message}`;
+    return {
+      reply: `Space Bunny could not complete the request: ${message}`,
+      sources: collectedSources,
+    };
   }
 }

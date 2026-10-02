@@ -15,11 +15,12 @@ import {
   FileText,
   Home,
   Shield,
+  BookOpen,
 } from 'lucide-react';
 import type { ElementType } from 'react';
 import ReactMarkdown from 'react-markdown';
 import RengeraLogo from '@/components/brand/RengeraLogo';
-import { generateLegalAdvice } from '@/app/actions';
+import { generateLegalAdvice, type LegalSource } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { detectEmergencyRisk } from '@/lib/safety';
 
@@ -27,6 +28,12 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  sources?: LegalSource[];
+}
+
+interface ChatInterfaceProps {
+  /** Opens one article of one law inside the Law Library reader. */
+  onOpenLaw?: (lawId: string, articleNumber?: string | null) => void;
 }
 
 const INITIAL_MESSAGE: Message = {
@@ -81,7 +88,7 @@ function loadStoredMessages(): Message[] {
   }
 }
 
-export default function ChatInterface() {
+export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
   const [messages, setMessages] = useState<Message[]>(loadStoredMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -128,12 +135,13 @@ export default function ChatInterface() {
           content: message.content,
         })) as { role: 'user' | 'model'; content: string }[];
 
-      const responseText = await generateLegalAdvice(userMessage.content, history);
+      const answer = await generateLegalAdvice(userMessage.content, history);
 
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: responseText || "I couldn't generate a response. Please try again.",
+        content: answer.reply || "I couldn't generate a response. Please try again.",
+        sources: answer.sources || [],
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -302,8 +310,48 @@ export default function ChatInterface() {
                         </motion.div>
                       )}
 
+                      {msg.id !== 'msg-0' && msg.sources && msg.sources.length > 0 && (
+                        <div className="no-print mt-5 border-t border-slate-100 pt-4">
+                          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                            Sources in the law library
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {msg.sources.map((source, index) => (
+                              <button
+                                key={`${source.lawId}-${source.articleNumber}-${index}`}
+                                type="button"
+                                disabled={!onOpenLaw}
+                                onClick={() => onOpenLaw?.(source.lawId, source.articleNumber)}
+                                title={source.citation}
+                                className="group inline-flex max-w-full items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-left text-xs font-semibold text-emerald-800 transition-all duration-200 hover:-translate-y-px hover:border-emerald-400 hover:bg-emerald-100 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-90 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                              >
+                                <BookOpen size={13} strokeWidth={2.5} className="shrink-0" />
+                                <span className="truncate">
+                                  {source.referenceNumber || source.title}
+                                </span>
+                                {source.articleNumber && (
+                                  <span className="shrink-0 rounded bg-white px-1.5 py-0.5 text-[11px] text-emerald-700 ring-1 ring-emerald-200">
+                                    Art. {source.articleNumber}
+                                  </span>
+                                )}
+                                {onOpenLaw && (
+                                  <ArrowRight
+                                    size={13}
+                                    strokeWidth={2.5}
+                                    className="shrink-0 text-emerald-500 transition-transform duration-200 group-hover:translate-x-0.5"
+                                  />
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                          <p className="mt-2 text-xs text-slate-400">
+                            Tap a source to read the full article in the Law Library.
+                          </p>
+                        </div>
+                      )}
+
                       {msg.id !== 'msg-0' && (
-                        <div className="no-print mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                        <div className="no-print mt-5 flex flex-wrap gap-2">
                           <button
                             type="button"
                             onClick={handleSaveAsPdf}

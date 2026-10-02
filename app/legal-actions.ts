@@ -13,6 +13,7 @@ import {
 } from '@/lib/legal-classification';
 import {
   detectLegalLanguage,
+  isPreambleArticle,
   parseLegalArticles,
   RLRC_SOURCE_URL,
 } from '@/lib/legal-article-parser';
@@ -49,6 +50,56 @@ export interface LawListItem {
   tags: string[];
   category: string | null;
   created_at: string;
+}
+
+export interface LawLibraryEntry {
+  id: string;
+  title: string;
+  reference_number: string | null;
+  gazette_reference: string | null;
+  status: 'active' | 'amended' | 'repealed';
+  type: 'principal' | 'amendment';
+  amends_law_reference: string | null;
+  superseded_by: string | null;
+  affected_articles: string[];
+  repealed_articles: string[];
+  inserted_articles: string[];
+  retroactive_effective_date: Record<string, string>;
+  publication_date: string | null;
+  effective_date: string | null;
+  language: string | null;
+  languages_available: string[];
+  source_url: string | null;
+  summary: string | null;
+  subcategories: string[];
+  key_obligations: string[];
+  applicable_entities: string[];
+  penalties_non_compliance: string[];
+  tags: string[];
+  category: string | null;
+  article_count: number;
+  created_at: string;
+}
+
+export interface LawLibraryCategory {
+  category: string;
+  laws: LawLibraryEntry[];
+}
+
+export interface LawArticle {
+  id: string;
+  article_number: string;
+  article_title: string | null;
+  chunk_type: 'article' | 'preamble';
+  position: number;
+  language: string;
+  content: string;
+  citation: string;
+  source_url: string | null;
+}
+
+export interface LawDetail extends LawLibraryEntry {
+  articles: LawArticle[];
 }
 
 export interface ClassificationStoreResult {
@@ -253,12 +304,14 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
 
     if (articles.length > 0) {
       const { error: articleInsertError } = await supabase.from('law_articles').insert(
-        articles.map((article) => ({
+        articles.map((article, position) => ({
           law_id: article.lawId,
           document_title: article.documentTitle,
           reference_number: article.referenceNumber,
           article_number: article.articleNumber,
           article_title: article.articleTitle,
+          chunk_type: isPreambleArticle(article.articleNumber) ? 'preamble' : 'article',
+          position,
           language: article.language,
           content: article.content,
           content_hash: article.contentHash,
@@ -352,6 +405,71 @@ function castLawRows(data: unknown): LawListItem[] {
   });
 }
 
+function castLibraryRows(data: unknown): LawLibraryEntry[] {
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map((row) => {
+    const item = row as Record<string, unknown>;
+    return {
+      id: String(item.id),
+      title: String(item.title || ''),
+      reference_number:
+        typeof item.reference_number === 'string' ? item.reference_number : null,
+      gazette_reference:
+        typeof item.gazette_reference === 'string' ? item.gazette_reference : null,
+      status:
+        item.status === 'amended' || item.status === 'repealed' ? item.status : 'active',
+      type: item.type === 'amendment' ? 'amendment' : 'principal',
+      amends_law_reference:
+        typeof item.amends_law_reference === 'string' ? item.amends_law_reference : null,
+      superseded_by: typeof item.superseded_by === 'string' ? item.superseded_by : null,
+      affected_articles: castStringArray(item.affected_articles),
+      repealed_articles: castStringArray(item.repealed_articles),
+      inserted_articles: castStringArray(item.inserted_articles),
+      retroactive_effective_date: castRetroactiveDates(item.retroactive_effective_date),
+      publication_date:
+        typeof item.publication_date === 'string' ? item.publication_date : null,
+      effective_date:
+        typeof item.effective_date === 'string' ? item.effective_date : null,
+      language: typeof item.language === 'string' ? item.language : null,
+      languages_available: castStringArray(item.languages_available),
+      source_url: typeof item.source_url === 'string' ? item.source_url : null,
+      summary: typeof item.summary === 'string' ? item.summary : null,
+      subcategories: castStringArray(item.subcategories),
+      key_obligations: castStringArray(item.key_obligations),
+      applicable_entities: castStringArray(item.applicable_entities),
+      penalties_non_compliance: castStringArray(item.penalties_non_compliance),
+      tags: castStringArray(item.tags),
+      category: typeof item.category === 'string' ? item.category : null,
+      article_count: Number(item.article_count) || 0,
+      created_at: String(item.created_at || ''),
+    };
+  });
+}
+
+function castArticleRows(data: unknown): LawArticle[] {
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map((row) => {
+    const item = row as Record<string, unknown>;
+    return {
+      id: String(item.id),
+      article_number: String(item.article_number || ''),
+      article_title: typeof item.article_title === 'string' ? item.article_title : null,
+      chunk_type: item.chunk_type === 'preamble' ? 'preamble' : 'article',
+      position: Number(item.position) || 0,
+      language: String(item.language || 'english'),
+      content: String(item.content || ''),
+      citation: String(item.citation || ''),
+      source_url: typeof item.source_url === 'string' ? item.source_url : null,
+    };
+  });
+}
+
 async function runPublicLawQuery(
   buildQuery: (supabase: ReturnType<typeof getSupabasePublicClient>) => PromiseLike<{
     data: unknown;
@@ -428,4 +546,79 @@ export async function searchLaws(query: string): Promise<LawListItem[]> {
       .order('created_at', { ascending: false })
       .limit(50),
   );
+}
+
+/**
+ * Every stored law grouped by category for the Law Library. This is the real
+ * database content an administrator has ingested, not placeholder data.
+ */
+export async function getLawLibrary(): Promise<LawLibraryCategory[]> {
+  try {
+    const { data, error } = await getSupabasePublicClient().rpc('list_law_library');
+
+    if (error) {
+      throw new Error(explainSupabaseError(error.message));
+    }
+
+    const laws = castLibraryRows(data);
+    const grouped = new Map<string, LawLibraryCategory>();
+
+    for (const law of laws) {
+      const categoryName = law.category || 'Uncategorised';
+      const existing = grouped.get(categoryName);
+      if (existing) {
+        existing.laws.push(law);
+        continue;
+      }
+      grouped.set(categoryName, { category: categoryName, laws: [law] });
+    }
+
+    return Array.from(grouped.values()).sort((a, b) =>
+      a.category.localeCompare(b.category),
+    );
+  } catch (error) {
+    if (error instanceof SupabaseConfigurationError) {
+      throw error;
+    }
+    console.error('Law library query error:', error);
+    throw error;
+  }
+}
+
+/** One law plus its articles in statutory order, for the reader view. */
+export async function getLawDetail(lawId: string): Promise<LawDetail | null> {
+  const normalizedId = cleanQueryValue(lawId, 64);
+  if (!normalizedId) return null;
+
+  try {
+    const supabase = getSupabasePublicClient();
+
+    const { data: lawData, error: lawError } = await supabase
+      .rpc('list_law_library')
+      .eq('id', normalizedId)
+      .maybeSingle();
+
+    if (lawError) {
+      throw new Error(explainSupabaseError(lawError.message));
+    }
+    if (!lawData) return null;
+
+    const { data: articleData, error: articleError } = await supabase.rpc(
+      'get_law_articles',
+      { target_law_id: normalizedId },
+    );
+
+    if (articleError) {
+      throw new Error(explainSupabaseError(articleError.message));
+    }
+
+    const law = castLibraryRows([lawData])[0];
+    return { ...law, articles: castArticleRows(articleData) };
+  } catch (error) {
+    if (error instanceof SupabaseConfigurationError) {
+      throw error;
+    }
+    console.error('Law detail query error:', error);
+    throw error;
+  }
 }
