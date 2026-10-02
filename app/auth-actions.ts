@@ -338,4 +338,7 @@ export async function logoutAdmin(): Promise<void> {
   await clearUserSessionCookie();
 }
 
-export const logoutUser = logoutAdmin;
+export async function logoutUser(): Promise<void> {
+  await clearAdminSessionCookie();
+  await clearUserSessionCookie();
+}

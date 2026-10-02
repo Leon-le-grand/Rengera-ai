@@ -2,10 +2,14 @@
 --
 -- The law reader and the AI answer deep-links need to render a law in
 -- statutory order and skip the front matter when listing articles.
+--
+-- The column is named `sort_order`, not `position`. `position` is reserved in
+-- PostgreSQL because of the POSITION(x IN y) function, and it fails with
+-- "syntax error at or near position" when used as an output column name.
 
 alter table public.law_articles
   add column if not exists chunk_type text not null default 'article',
-  add column if not exists position integer not null default 0;
+  add column if not exists sort_order integer not null default 0;
 
 alter table public.law_articles
   drop constraint if exists law_articles_chunk_type_check;
@@ -19,11 +23,10 @@ update public.law_articles
 set chunk_type = case when article_number = 'preamble' then 'preamble' else 'article' end
 where chunk_type is null;
 
-create index if not exists law_articles_law_position_idx
-  on public.law_articles (law_id, position);
+create index if not exists law_articles_law_sort_order_idx
+  on public.law_articles (law_id, sort_order);
 
--- Full library listing: every stored law with its category, ordered so the
--- reader and the library show the same sequence.
+-- Full library listing: every stored law with its category and article count.
 create or replace function public.list_law_library()
 returns table (
   id uuid,
@@ -106,7 +109,7 @@ returns table (
   article_number text,
   article_title text,
   chunk_type text,
-  position integer,
+  sort_order integer,
   language text,
   content text,
   citation text,
@@ -125,7 +128,7 @@ as $$
     article.article_number,
     article.article_title,
     article.chunk_type,
-    article.position,
+    article.sort_order,
     article.language,
     article.content,
     article.citation,
@@ -134,7 +137,7 @@ as $$
   where article.law_id = target_law_id
   order by
     case when article.chunk_type = 'preamble' then 0 else 1 end,
-    article.position asc,
+    article.sort_order asc,
     article.id asc;
 $$;
 

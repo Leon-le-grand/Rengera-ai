@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "clean": "next clean",
     "auth:hash": "node scripts/hash-admin-password.mjs",
-    "verify:classification": "bun run scripts/verify-classification-parser.ts"
+    "verify": "bun run scripts/verify-server-actions.ts && bun run scripts/verify-classification-parser.ts && bun run scripts/verify-legal-article-parser.ts",
+    "verify:classification": "bun run scripts/verify-classification-parser.ts",
+    "verify:articles": "bun run scripts/verify-legal-article-parser.ts",
+    "verify:server-actions": "bun run scripts/verify-server-actions.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

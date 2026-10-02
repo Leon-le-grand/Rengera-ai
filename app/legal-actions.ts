@@ -91,7 +91,7 @@ export interface LawArticle {
   article_number: string;
   article_title: string | null;
   chunk_type: 'article' | 'preamble';
-  position: number;
+  sort_order: number;
   language: string;
   content: string;
   citation: string;
@@ -304,14 +304,14 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
 
     if (articles.length > 0) {
       const { error: articleInsertError } = await supabase.from('law_articles').insert(
-        articles.map((article, position) => ({
+        articles.map((article, sortOrder) => ({
           law_id: article.lawId,
           document_title: article.documentTitle,
           reference_number: article.referenceNumber,
           article_number: article.articleNumber,
           article_title: article.articleTitle,
           chunk_type: isPreambleArticle(article.articleNumber) ? 'preamble' : 'article',
-          position,
+          sort_order: sortOrder,
           language: article.language,
           content: article.content,
           content_hash: article.contentHash,
@@ -461,7 +461,7 @@ function castArticleRows(data: unknown): LawArticle[] {
       article_number: String(item.article_number || ''),
       article_title: typeof item.article_title === 'string' ? item.article_title : null,
       chunk_type: item.chunk_type === 'preamble' ? 'preamble' : 'article',
-      position: Number(item.position) || 0,
+      sort_order: Number(item.sort_order) || 0,
       language: String(item.language || 'english'),
       content: String(item.content || ''),
       citation: String(item.citation || ''),

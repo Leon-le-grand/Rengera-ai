@@ -80,13 +80,6 @@ export interface LegalAnswer {
   sources: LegalSource[];
 }
 
-/** Stable anchor id so an AI answer can deep-link to one article in the reader. */
-export function buildArticleAnchor(lawId: string, articleNumber: string): string {
-  const safeLaw = lawId.replace(/[^a-zA-Z0-9]/g, '');
-  const safeArticle = articleNumber.replace(/[^a-zA-Z0-9]/g, '-');
-  return `law-${safeLaw}-article-${safeArticle}`;
-}
-
 export async function generateLegalAdvice(
   query: string,
   chatHistory: { role: 'user' | 'model'; content: string }[] = [],
