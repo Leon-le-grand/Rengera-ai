@@ -1,6 +1,6 @@
 'use client';
 
-import { Scale, MessageSquare, BookOpen, Bookmark, ShieldAlert, FileSignature, Briefcase, Power } from 'lucide-react';
+import { Scale, MessageSquare, BookOpen, Bookmark, ShieldAlert, FileSignature, Briefcase, Power, UserRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ElementType } from 'react';
 
@@ -14,6 +14,8 @@ interface SidebarProps {
   onViewChange: (view: AppView) => void;
   userName: string;
   isAdmin?: boolean;
+  isSignedIn?: boolean;
+  roleLabel?: string;
 }
 
 export default function Sidebar({
@@ -24,6 +26,8 @@ export default function Sidebar({
   onViewChange,
   userName,
   isAdmin = false,
+  isSignedIn = false,
+  roleLabel,
 }: SidebarProps) {
   const navItems: { icon: ElementType, label: string, view: AppView, tone?: 'danger' }[] = [
     { icon: MessageSquare, label: 'AI Assistant', view: 'chat' },
@@ -92,14 +96,23 @@ export default function Sidebar({
       </div>
 
       <div className="p-3 border-t border-slate-200 bg-slate-50">
-        {isAdmin ? (
+        {isAdmin || isSignedIn ? (
           <div className="flex items-center gap-3 px-3 py-3 mb-3 rounded-lg bg-white border border-slate-200">
-            <div className="w-9 h-9 rounded-md bg-emerald-600 flex items-center justify-center text-white font-bold text-sm">
-              {userName.slice(0, 2).toUpperCase()}
+            <div
+              className={cn(
+                'w-9 h-9 rounded-md flex items-center justify-center text-white font-bold text-sm',
+                isAdmin ? 'bg-emerald-600' : 'bg-slate-900',
+              )}
+            >
+              {userName ? userName.slice(0, 2).toUpperCase() : <UserRound size={16} />}
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-bold text-slate-950 truncate">{userName}</span>
-              <span className="text-xs text-slate-500">Administrator</span>
+              <span className="text-sm font-bold text-slate-950 truncate">
+                {userName || (isAdmin ? 'Administrator' : 'Member')}
+              </span>
+              <span className="text-xs text-slate-500">
+                {isAdmin ? 'Administrator' : roleLabel || 'Citizen account'}
+              </span>
             </div>
           </div>
         ) : (
@@ -114,7 +127,7 @@ export default function Sidebar({
           </div>
         )}
 
-        {isAdmin ? (
+        {isAdmin || isSignedIn ? (
           <button
             onClick={onLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-100 hover:text-slate-950 transition-colors text-slate-500 mt-1"
@@ -126,7 +139,7 @@ export default function Sidebar({
             onClick={onLogin}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-950 hover:bg-slate-100 transition-colors"
           >
-            <Power size={18} /> Admin sign in
+            <Power size={18} /> Sign in or create account
           </button>
         )}
       </div>

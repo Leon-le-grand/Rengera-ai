@@ -1,8 +1,17 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { ArrowLeft, Eye, EyeOff, Loader2, Lock, Scale, ShieldCheck } from 'lucide-react';
-import { loginAdmin } from '@/app/auth-actions';
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  Scale,
+  ShieldCheck,
+  UserPlus,
+} from 'lucide-react';
+import { signIn, signUp, type AuthResult } from '@/app/auth-actions';
 
 interface LoginUser {
   name: string;
@@ -12,19 +21,50 @@ interface LoginUser {
 
 interface LoginScreenProps {
   onLogin: (user: LoginUser) => void;
+  onAccount: (account: { id: string | null; name: string; email: string; role: 'admin' | 'staff' | 'user' }) => void;
   onExit: () => void;
 }
 
-export default function LoginScreen({ onLogin, onExit }: LoginScreenProps) {
+type AuthMode = 'signin' | 'signup';
+
+export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenProps) {
+  const [mode, setMode] = useState<AuthMode>('signin');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('admin');
   const [password, setPassword] = useState('admin123');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const isSignUp = mode === 'signup';
+
+  const handleResult = (result: AuthResult) => {
+    if (!result.success) {
+      setError(result.error || 'Unable to continue right now. Please try again.');
+      setPassword('');
+      setConfirmPassword('');
+      return;
+    }
+
+    if (result.user) {
+      onLogin(result.user);
+      return;
+    }
+
+    if (result.account) {
+      onAccount(result.account);
+      return;
+    }
+
+    setError('Unable to start a secure session right now. Please try again.');
+  };
+
+  const handleSignIn = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
+    setNotice('');
     setIsSubmitting(true);
 
     const formData = new FormData();
@@ -32,19 +72,56 @@ export default function LoginScreen({ onLogin, onExit }: LoginScreenProps) {
     formData.set('password', password);
 
     try {
-      const result = await loginAdmin(formData);
-      if (!result.success || !result.user) {
-        setError(result.error || 'Unable to sign in right now. Please try again.');
-        setPassword('');
-        return;
-      }
-
-      onLogin(result.user);
+      handleResult(await signIn(formData));
     } catch {
       setError('Unable to sign in right now. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSignUp = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError('');
+    setNotice('');
+    setIsSubmitting(true);
+
+    const formData = new FormData();
+    formData.set('fullName', fullName.trim());
+    formData.set('email', email.trim());
+    formData.set('password', password);
+    formData.set('confirmPassword', confirmPassword);
+
+    try {
+      const result = await signUp(formData);
+      if (!result.success) {
+        handleResult(result);
+        return;
+      }
+      setNotice('Account created. Opening your workspace…');
+      handleResult(result);
+    } catch {
+      setError('Unable to create your account right now. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const switchMode = (nextMode: AuthMode) => {
+    setMode(nextMode);
+    setError('');
+    setNotice('');
+
+    if (nextMode === 'signup') {
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      return;
+    }
+
+    setFullName('');
+    setEmail('admin');
+    setPassword('admin123');
   };
 
   return (
@@ -65,13 +142,13 @@ export default function LoginScreen({ onLogin, onExit }: LoginScreenProps) {
           <div className="max-w-xl py-16">
             <div className="mb-5 inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-200">
               <ShieldCheck size={16} />
-              Secure administrator access
+              Secure accounts, grounded answers
             </div>
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
               Keep every legal answer grounded and accountable.
             </h1>
             <p className="mt-5 max-w-lg text-base leading-7 text-slate-300">
-              Sign in to manage official sources, review indexed articles, and keep the public legal assistant accurate.
+              Create an account to keep your consultation history. Administrators manage official sources, review indexed articles, and keep the public legal assistant accurate.
             </p>
           </div>
 
@@ -86,13 +163,13 @@ export default function LoginScreen({ onLogin, onExit }: LoginScreenProps) {
             </div>
             <div className="rounded-lg border border-white/10 bg-white/5 p-3">
               <div className="text-xl font-bold text-white">Private</div>
-              <div className="mt-1">Admin only</div>
+              <div className="mt-1">Hashed passwords</div>
             </div>
           </div>
         </section>
 
-        <section className="order-1 flex items-center justify-center bg-white px-5 py-8 text-slate-900 sm:px-8 lg:order-2 lg:rounded-l-[2rem] lg:px-12">
-          <div className="w-full max-w-sm">
+        <section className="order-1 flex items-center justify-center overflow-y-auto bg-white px-5 py-8 text-slate-900 sm:px-8 lg:order-2 lg:rounded-l-[2rem] lg:px-12">
+          <div className="w-full max-w-sm py-6">
             <button
               type="button"
               onClick={onExit}
@@ -104,34 +181,94 @@ export default function LoginScreen({ onLogin, onExit }: LoginScreenProps) {
 
             <div className="mb-8">
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-white shadow-lg shadow-slate-900/15">
-                <Lock size={20} />
+                {isSignUp ? <UserPlus size={20} /> : <Lock size={20} />}
               </div>
-              <h2 className="text-2xl font-bold tracking-tight">Administrator sign in</h2>
+              <h2 className="text-2xl font-bold tracking-tight">
+                {isSignUp ? 'Create your account' : 'Sign in to Rengera'}
+              </h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Use your administrator account to manage verified legal sources.
+                {isSignUp
+                  ? 'Register once to keep your legal consultations and sources in one place.'
+                  : 'Use your account to continue, or sign in with the administrator credentials.'}
               </p>
-              <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
-                Demo credentials: <strong>admin</strong> / <strong>admin123</strong>. Replace them with deployment credentials before making the app public.
-              </p>
+
+              {!isSignUp && (
+                <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+                  Administrator credentials: <strong>admin</strong> / <strong>admin123</strong>. Replace them with deployment credentials before making the app public.
+                </p>
+              )}
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5" aria-describedby={error ? 'login-error' : undefined}>
+            <div
+              role="tablist"
+              aria-label="Authentication mode"
+              className="mb-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1"
+            >
+              {(
+                [
+                  { key: 'signin', label: 'Sign in' },
+                  { key: 'signup', label: 'Create account' },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === tab.key}
+                  onClick={() => switchMode(tab.key)}
+                  className={`rounded-lg px-3 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${mode === tab.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <form
+              onSubmit={isSignUp ? handleSignUp : handleSignIn}
+              className="space-y-5"
+              aria-describedby={error ? 'login-error' : undefined}
+            >
+              {isSignUp && (
+                <div>
+                  <label htmlFor="account-name" className="mb-2 block text-sm font-semibold text-slate-700">
+                    Full name
+                  </label>
+                  <input
+                    id="account-name"
+                    name="fullName"
+                    type="text"
+                    autoComplete="name"
+                    required
+                    maxLength={120}
+                    value={fullName}
+                    onChange={(event) => setFullName(event.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+              )}
+
               <div>
                 <label htmlFor="admin-email" className="mb-2 block text-sm font-semibold text-slate-700">
-                  Email or username
+                  Email address
                 </label>
                 <input
                   id="admin-email"
                   name="email"
-                  type="text"
+                  type="email"
                   inputMode="email"
-                  autoComplete="username"
+                  autoComplete="email"
                   required
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
-                  placeholder="Enter your administrator account"
+                  placeholder="you@example.com"
                 />
+                {!isSignUp && (
+                  <p className="mt-2 text-xs text-slate-400">
+                    Administrators may also sign in with their username.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -143,12 +280,13 @@ export default function LoginScreen({ onLogin, onExit }: LoginScreenProps) {
                     id="admin-password"
                     name="password"
                     type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
+                    autoComplete={isSignUp ? 'new-password' : 'current-password'}
                     required
+                    minLength={isSignUp ? 8 : undefined}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
-                    placeholder="Enter your password"
+                    placeholder={isSignUp ? 'At least 8 characters' : 'Enter your password'}
                   />
                   <button
                     type="button"
@@ -162,21 +300,57 @@ export default function LoginScreen({ onLogin, onExit }: LoginScreenProps) {
                 </div>
               </div>
 
+              {isSignUp && (
+                <div>
+                  <label htmlFor="confirm-password" className="mb-2 block text-sm font-semibold text-slate-700">
+                    Confirm password
+                  </label>
+                  <input
+                    id="confirm-password"
+                    name="confirmPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    required
+                    minLength={8}
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                    placeholder="Repeat your password"
+                  />
+                </div>
+              )}
+
               {error && (
                 <p id="login-error" role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-medium leading-6 text-red-700">
                   {error}
                 </p>
               )}
 
+              {notice && (
+                <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-medium leading-6 text-emerald-700">
+                  {notice}
+                </p>
+              )}
+
               <button
                 type="submit"
-                disabled={isSubmitting || !email.trim() || !password}
+                disabled={
+                  isSubmitting ||
+                  !email.trim() ||
+                  !password ||
+                  (isSignUp && (!fullName.trim() || !confirmPassword))
+                }
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    Signing in…
+                    {isSignUp ? 'Creating account…' : 'Signing in…'}
+                  </>
+                ) : isSignUp ? (
+                  <>
+                    <UserPlus size={17} />
+                    Create account
                   </>
                 ) : (
                   <>
@@ -188,7 +362,7 @@ export default function LoginScreen({ onLogin, onExit }: LoginScreenProps) {
             </form>
 
             <p className="mt-8 text-center text-xs leading-5 text-slate-400">
-              Your session is stored in a secure, HTTP-only cookie and expires automatically.
+              Your session is stored in a secure, HTTP-only cookie and expires automatically. Passwords are hashed with scrypt and never stored in plain text.
             </p>
           </div>
         </section>

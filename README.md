@@ -115,13 +115,56 @@ supabase/migrations/002_add_classification_metadata_and_search.sql
 supabase/migrations/003_improve_search_and_deduplicate.sql
 supabase/migrations/004_add_article_level_search.sql
 supabase/migrations/005_add_legal_status_audit.sql
+supabase/migrations/006_add_amendment_audit_trail.sql
+supabase/migrations/007_create_app_users.sql
 ```
 
-Migration 003 broadens natural-language search and removes duplicate uploads using a SHA-256 `content_hash`. Migration 004 stores exact article-level text, article numbers, citations, and article-first search results. Migration 005 adds statutory status and amendment/repeal audit fields. Later uploads of the same source text update the existing law and refresh its articles instead of creating duplicates.
+Migration 003 broadens natural-language search and removes duplicate uploads using a SHA-256 `content_hash`. Migration 004 stores exact article-level text, article numbers, citations, and article-first search results. Migration 005 adds statutory status and amendment/repeal audit fields. Migration 006 adds the document `type`, `amends_law_reference`, `repealed_articles`, `inserted_articles`, `retroactive_effective_date`, and `languages_available`. Migration 007 creates the citizen `app_users` table. Later uploads of the same source text update the existing law and refresh its articles instead of creating duplicates.
 
 `scripts/legal_chunks_schema.sql` is optional and only needed for a separate pgvector article-chunk table.
 
 Never commit `.env.local`, the Space Bunny key, or the Supabase service-role key.
+
+## Legal extraction schema
+
+The classifier in `lib/legal-classification.ts` is versioned by
+`CLASSIFICATION_PROMPT_VERSION` and returns strict JSON. Alongside the original
+metadata it now records the amendment audit trail:
+
+```text
+type                        principal | amendment
+amends_law_reference        law amended by this document, or null
+superseded_by               law that amended or repealed this document
+affected_articles           every article touched in any way
+repealed_articles           articles expressly repealed or deleted
+inserted_articles           articles expressly inserted or substituted
+retroactive_effective_date  { "Article 5": "2023-01-01" } from the source only
+languages_available         official languages, defaults to kinyarwanda/english/french
+```
+
+Fidelity guardrails enforced in the parser:
+
+1. A fabricated or impossible retroactive date is **dropped**, never stored.
+2. A `principal` law never keeps an `amends_law_reference`.
+3. A missing `status` falls back to `active`; an explicitly invalid value is rejected.
+4. `"status": "amendment"` is normalised to `amended` + `amendment` type, because models routinely confuse the two.
+5. Every array accepts `null` and is stored as an empty array.
+
+Run `bun run scripts/verify-classification-parser.ts` to confirm all five.
+
+## Accounts
+
+Sign-in and sign-up are handled by `app/auth-actions.ts` and backed by the
+Supabase `app_users` table from migration 007.
+
+- **Sign up** stores name, email, and a scrypt password hash. Plaintext is never persisted.
+- **Sign in** resolves the environment administrator first, then falls back to `app_users`.
+- Sessions are HMAC-signed, HTTP-only, `sameSite=lax`, and expire after 8 hours.
+- `app_users` has RLS enabled with **no policies**, so anon and authenticated clients cannot read it at all.
+- Rate limits: 5 sign-in attempts and 3 sign-up attempts per IP per 15 minutes.
+- A sign-up cannot claim the administrator email.
+
+The public legal assistant stays reachable without an account; only the admin workspace is gated.
 
 ### Administrator access
 
@@ -147,7 +190,7 @@ Set the printed value as `ADMIN_PASSWORD_HASH`, configure a long random `AUTH_SE
 3. Open the administration workspace.
 4. Paste raw legal text or upload a legal PDF.
 5. Select **Classify and store in Supabase**.
-6. Review the strict JSON and recently stored laws.
+6. Review the strict JSON, including the amendment audit trail, and recently stored laws.
 
 The old manual local indexer has been removed because Vercel cannot persist `data/db.json`. Supabase full-text search is the production retrieval path.
 
@@ -208,9 +251,21 @@ The crawler is intentionally conservative. Review the discovered tree and provid
 
 - Paste a known law and compare every returned field with the source.
 - Confirm status, superseded_by, and affected_articles are explicit and never guessed.
+- Confirm an amendment records `type`, `amends_law_reference`, `repealed_articles`, and `inserted_articles`.
+- Confirm `retroactive_effective_date` is empty unless the source states a date.
+- Confirm `languages_available` defaults to the three official languages.
 - Upload a digital-text PDF and confirm the title and reference number appear in it.
 - Record scanned PDFs as unsupported until OCR is added.
 - Introduce malformed input and confirm nothing is stored.
+
+### Accounts
+
+- Create an account and confirm you are signed in without admin tools.
+- Sign out and confirm the sidebar returns to public access.
+- Sign in with `admin` / `admin123` and confirm the admin workspace unlocks.
+- Confirm a citizen session never reveals the administration workspace.
+- Confirm the admin email cannot be registered through sign-up.
+- Confirm the stored `app_users.password_hash` starts with `scrypt$`.
 
 ### Session handover
 
@@ -248,8 +303,9 @@ npm run auth:hash
 
 ```text
 app/actions.ts                    # Public RAG chat and retrieval
-app/auth-actions.ts               # Administrator session actions
+app/auth-actions.ts               # Sign-in, sign-up, and session actions
 app/legal-actions.ts              # Supabase classification and queries
+lib/auth.ts                       # scrypt hashing and signed session cookies
 lib/space-bunny.ts                # OpenAI-compatible Space Bunny client
 lib/legal-classification.ts       # Strict JSON schema and parser
 lib/legal-article-parser.ts       # Exact multilingual article extraction
@@ -257,7 +313,10 @@ lib/supabase.ts                   # Server-only Supabase clients
 lib/supabase-retrieval.ts         # Article-first ranked Supabase context
 lib/legal-pdf.ts                  # PDF extraction and article splitting
 app/chat-actions.ts               # Context handover summaries
+components/app/LoginScreen.tsx    # Sign-in and sign-up interface
+components/app/ChatInterface.tsx  # Context meter and handover button
 scripts/ingest_legal_pdf.py       # Strict-fidelity Python parser
 scripts/crawl_rlrc_laws.py        # RLRC tree crawler and PDF downloader
+scripts/verify-classification-parser.ts  # Schema fidelity checks
 supabase/migrations/              # Supabase knowledge-base schema
 ```

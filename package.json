@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "clean": "next clean",
-    "auth:hash": "node scripts/hash-admin-password.mjs"
+    "auth:hash": "node scripts/hash-admin-password.mjs",
+    "verify:classification": "bun run scripts/verify-classification-parser.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

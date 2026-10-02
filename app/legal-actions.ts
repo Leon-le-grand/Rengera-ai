@@ -6,8 +6,10 @@ import { extractPdfText, normalizePdfText } from '@/lib/legal-pdf';
 import {
   CLASSIFICATION_PROMPT_VERSION,
   CLASSIFICATION_SYSTEM_PROMPT,
+  DEFAULT_LANGUAGES_AVAILABLE,
   parseClassificationResponse,
   type ClassifiedLaw,
+  type LegalLanguage,
 } from '@/lib/legal-classification';
 import {
   detectLegalLanguage,
@@ -31,11 +33,17 @@ export interface LawListItem {
   reference_number: string | null;
   gazette_reference: string | null;
   status: 'active' | 'amended' | 'repealed';
+  type: 'principal' | 'amendment';
+  amends_law_reference: string | null;
   superseded_by: string | null;
   affected_articles: string[];
+  repealed_articles: string[];
+  inserted_articles: string[];
+  retroactive_effective_date: Record<string, string>;
   publication_date: string | null;
   effective_date: string | null;
   language: string | null;
+  languages_available: string[];
   source_url: string | null;
   summary: string | null;
   tags: string[];
@@ -57,11 +65,17 @@ const LAW_LIST_SELECT = `
   reference_number,
   gazette_reference,
   status,
+  type,
+  amends_law_reference,
   superseded_by,
   affected_articles,
+  repealed_articles,
+  inserted_articles,
+  retroactive_effective_date,
   publication_date,
   effective_date,
   language,
+  languages_available,
   source_url,
   summary,
   tags,
@@ -70,12 +84,16 @@ const LAW_LIST_SELECT = `
 `;
 
 function explainSupabaseError(message: string): string {
+  if (message.includes('app_users')) {
+    return 'The citizen account table is missing. Run supabase/migrations/007_create_app_users.sql in the Supabase SQL Editor, then retry.';
+  }
+
   if (
     message.includes('schema cache') ||
     message.includes('does not exist') ||
     message.includes('search_laws')
   ) {
-    return 'Supabase schema is out of date. Run supabase/migrations/002_add_classification_metadata_and_search.sql through 005_add_legal_status_audit.sql in the SQL Editor, then retry.';
+    return 'Supabase schema is out of date. Run supabase/migrations/002_add_classification_metadata_and_search.sql through 006_add_amendment_audit_trail.sql in the SQL Editor, then retry.';
   }
   return message;
 }
@@ -92,6 +110,23 @@ async function readRawLegalText(formData: FormData): Promise<string> {
   }
 
   return '';
+}
+
+function detectAvailableLanguages(
+  rawContent: string,
+  documentLanguage: string | null,
+): LegalLanguage[] {
+  const detected = detectLegalLanguage(rawContent);
+  const languages = new Set<LegalLanguage>(DEFAULT_LANGUAGES_AVAILABLE);
+
+  if (detected) {
+    languages.add(detected);
+  }
+  if (documentLanguage) {
+    languages.add(documentLanguage as LegalLanguage);
+  }
+
+  return Array.from(languages);
 }
 
 export async function classifyAndStoreLaw(formData: FormData): Promise<ClassificationStoreResult> {
@@ -129,6 +164,10 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
     const classification = {
       ...parsedClassification,
       language,
+      languages_available:
+        parsedClassification.languages_available.length > 0
+          ? parsedClassification.languages_available
+          : detectAvailableLanguages(rawContent, language),
       source_url: sourceUrl,
     };
     const supabase = getSupabaseAdminClient();
@@ -158,13 +197,19 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
         reference_number: classification.reference_number,
         gazette_reference: classification.gazette_reference,
         status: classification.status,
+        type: classification.type,
+        amends_law_reference: classification.amends_law_reference,
         superseded_by: classification.superseded_by,
         affected_articles: classification.affected_articles,
+        repealed_articles: classification.repealed_articles,
+        inserted_articles: classification.inserted_articles,
+        retroactive_effective_date: classification.retroactive_effective_date,
         category_id: category.id,
         subcategories: classification.subcategories,
         publication_date: classification.publication_date,
         effective_date: classification.effective_date,
         language,
+        languages_available: classification.languages_available,
         source_url: sourceUrl,
         summary: classification.summary,
         key_obligations: classification.key_obligations,
@@ -245,6 +290,26 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
   }
 }
 
+function castStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === 'string')
+    : [];
+}
+
+function castRetroactiveDates(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+
+  const dates: Record<string, string> = {};
+  for (const [article, date] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof date === 'string') {
+      dates[article] = date;
+    }
+  }
+  return dates;
+}
+
 function castLawRows(data: unknown): LawListItem[] {
   if (!Array.isArray(data)) {
     return [];
@@ -262,15 +327,20 @@ function castLawRows(data: unknown): LawListItem[] {
         typeof item.gazette_reference === 'string' ? item.gazette_reference : null,
       status:
         item.status === 'amended' || item.status === 'repealed' ? item.status : 'active',
+      type: item.type === 'amendment' ? 'amendment' : 'principal',
+      amends_law_reference:
+        typeof item.amends_law_reference === 'string' ? item.amends_law_reference : null,
       superseded_by: typeof item.superseded_by === 'string' ? item.superseded_by : null,
-      affected_articles: Array.isArray(item.affected_articles)
-        ? item.affected_articles.filter((value): value is string => typeof value === 'string')
-        : [],
+      affected_articles: castStringArray(item.affected_articles),
+      repealed_articles: castStringArray(item.repealed_articles),
+      inserted_articles: castStringArray(item.inserted_articles),
+      retroactive_effective_date: castRetroactiveDates(item.retroactive_effective_date),
       publication_date:
         typeof item.publication_date === 'string' ? item.publication_date : null,
       effective_date:
         typeof item.effective_date === 'string' ? item.effective_date : null,
       language: typeof item.language === 'string' ? item.language : null,
+      languages_available: castStringArray(item.languages_available),
       source_url: typeof item.source_url === 'string' ? item.source_url : null,
       summary: typeof item.summary === 'string' ? item.summary : null,
       tags: Array.isArray(item.tags)

@@ -11,14 +11,19 @@ import type { AppView } from './Sidebar';
 type AppShellView = 'landing' | 'app' | 'login';
 
 type AdminUser = DashboardProps['adminUser'];
+type AccountUser = DashboardProps['accountUser'];
 
 interface AppShellProps {
   initialAdmin: AdminUser;
+  initialAccount: AccountUser;
 }
 
-export default function AppShell({ initialAdmin }: AppShellProps) {
-  const [currentView, setCurrentView] = useState<AppShellView>(initialAdmin ? 'app' : 'landing');
+export default function AppShell({ initialAdmin, initialAccount }: AppShellProps) {
+  const [currentView, setCurrentView] = useState<AppShellView>(
+    initialAdmin || initialAccount ? 'app' : 'landing',
+  );
   const [adminUser, setAdminUser] = useState<AdminUser>(initialAdmin);
+  const [accountUser, setAccountUser] = useState<AccountUser>(initialAccount);
 
   const openApp = () => setCurrentView('app');
   const openLogin = () => setCurrentView('login');
@@ -26,6 +31,18 @@ export default function AppShell({ initialAdmin }: AppShellProps) {
 
   const handleLogin = (user: NonNullable<AdminUser>) => {
     setAdminUser(user);
+    setAccountUser({ id: null, name: user.name, email: user.email, role: 'admin' });
+    setCurrentView('app');
+  };
+
+  const handleAccount = (account: NonNullable<AccountUser>) => {
+    // A citizen session must never populate the administrator slot.
+    if (account.role === 'admin') {
+      setAdminUser({ name: account.name, email: account.email, role: 'admin' });
+    } else {
+      setAdminUser(null);
+    }
+    setAccountUser(account);
     setCurrentView('app');
   };
 
@@ -36,6 +53,7 @@ export default function AppShell({ initialAdmin }: AppShellProps) {
       // Clear the local view even if the network request fails; the server guard remains authoritative.
     } finally {
       setAdminUser(null);
+      setAccountUser(null);
       setCurrentView('app');
     }
   };
@@ -63,11 +81,11 @@ export default function AppShell({ initialAdmin }: AppShellProps) {
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
           >
-            <LoginScreen onLogin={handleLogin} onExit={returnHome} />
+            <LoginScreen onLogin={handleLogin} onAccount={handleAccount} onExit={returnHome} />
           </motion.div>
         ) : (
           <motion.div
-            key={`app-${adminUser ? 'admin' : 'public'}`}
+            key={`app-${adminUser ? 'admin' : accountUser ? 'member' : 'public'}`}
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
@@ -76,6 +94,7 @@ export default function AppShell({ initialAdmin }: AppShellProps) {
           >
             <AppDashboard
               adminUser={adminUser}
+              accountUser={accountUser}
               initialView={initialDashboardView}
               onLogin={openLogin}
               onLogout={handleLogout}

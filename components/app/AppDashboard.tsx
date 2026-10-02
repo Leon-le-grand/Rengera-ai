@@ -16,8 +16,16 @@ export interface DashboardAdminUser {
   role: 'admin';
 }
 
+export interface DashboardAccountUser {
+  id: string | null;
+  name: string;
+  email: string;
+  role: 'admin' | 'staff' | 'user';
+}
+
 export interface DashboardProps {
   adminUser: DashboardAdminUser | null;
+  accountUser: DashboardAccountUser | null;
   initialView: AppView;
   onLogin: () => void;
   onLogout: () => Promise<void>;
@@ -25,13 +33,16 @@ export interface DashboardProps {
 
 export default function AppDashboard({
   adminUser,
+  accountUser,
   initialView,
   onLogin,
   onLogout,
 }: DashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>(initialView);
+  // The admin workspace is gated on the server-verified admin session only.
   const isAdmin = adminUser?.role === 'admin';
+  const displayName = adminUser?.name || accountUser?.name || '';
 
   return (
     <div className="flex h-dvh bg-slate-100">
@@ -51,8 +62,10 @@ export default function AppDashboard({
           onClose={() => setSidebarOpen(false)}
           currentView={currentView}
           onViewChange={setCurrentView}
-          userName={adminUser?.name || ''}
+          userName={displayName}
           isAdmin={isAdmin}
+          isSignedIn={Boolean(accountUser)}
+          roleLabel={accountUser?.role === 'staff' ? 'Staff account' : 'Citizen account'}
         />
       </div>
 
