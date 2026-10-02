@@ -1,11 +1,43 @@
 -- 008: Article ordering, preamble flag, and library listing helpers.
 --
+-- `key_obligations` is jsonb (see migration 001), not text[], so it must be
+-- coalesced with '[]'::jsonb. Coercing it to text[] fails at function creation.
+--
 -- The law reader and the AI answer deep-links need to render a law in
 -- statutory order and skip the front matter when listing articles.
 --
 -- The column is named `sort_order`, not `position`. `position` is reserved in
 -- PostgreSQL because of the POSITION(x IN y) function, and it fails with
 -- "syntax error at or near position" when used as an output column name.
+
+-- The library function below reads columns introduced by 005 and 006. Add any
+-- that are still missing so this migration cannot fail because it ran out of
+-- order. Re-running is harmless.
+alter table public.laws
+  add column if not exists gazette_reference text,
+  add column if not exists status text not null default 'active',
+  add column if not exists superseded_by text,
+  add column if not exists affected_articles text[] not null default '{}',
+  add column if not exists type text not null default 'principal',
+  add column if not exists amends_law_reference text,
+  add column if not exists repealed_articles text[] not null default '{}',
+  add column if not exists inserted_articles text[] not null default '{}',
+  add column if not exists retroactive_effective_date jsonb not null default '{}'::jsonb,
+  add column if not exists languages_available text[] not null default '{kinyarwanda,english,french}';
+
+alter table public.laws
+  drop constraint if exists laws_legal_status_check;
+
+alter table public.laws
+  add constraint laws_legal_status_check
+  check (status in ('active', 'amended', 'repealed'));
+
+alter table public.laws
+  drop constraint if exists laws_type_check;
+
+alter table public.laws
+  add constraint laws_type_check
+  check (type in ('principal', 'amendment'));
 
 alter table public.law_articles
   add column if not exists chunk_type text not null default 'article',
@@ -48,7 +80,7 @@ returns table (
   source_url text,
   summary text,
   subcategories text[],
-  key_obligations text[],
+  key_obligations jsonb,
   applicable_entities text[],
   penalties_non_compliance text[],
   tags text[],
@@ -81,7 +113,7 @@ as $$
     law.source_url,
     law.summary,
     coalesce(law.subcategories, '{}'::text[]),
-    coalesce(law.key_obligations, '{}'::text[]),
+    coalesce(law.key_obligations, '[]'::jsonb),
     coalesce(law.applicable_entities, '{}'::text[]),
     coalesce(law.penalties_non_compliance, '{}'::text[]),
     coalesce(law.tags, '{}'::text[]),

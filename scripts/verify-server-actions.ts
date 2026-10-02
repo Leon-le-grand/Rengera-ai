@@ -55,13 +55,47 @@ for (const file of files) {
   });
 }
 
-// `sort_order` guards the migration-008 regression: `position` is reserved in
-// PostgreSQL and fails as an output column name.
-const migration = readFileSync('supabase/migrations/008_add_law_library_reading_order.sql', 'utf8');
+// SQL guards. These are the two failure modes that produced real outages and
+// that no TypeScript check can catch, because they only exist at runtime.
+const migration = readFileSync(
+  'supabase/migrations/008_add_law_library_reading_order.sql',
+  'utf8',
+);
+
+// `position` is reserved in PostgreSQL and fails as an output column name.
 if (/^\s*position\s+(integer|bigint|text)/m.test(migration)) {
   failures.push(
     'supabase/migrations/008: `position` is reserved in PostgreSQL. Use `sort_order`.',
   );
+}
+
+// `key_obligations` is jsonb (migration 001). Coercing it to text[] fails when
+// the function is created.
+if (/coalesce\s*\(\s*law\.key_obligations\s*,\s*'\{\}'::text\[\]/i.test(migration)) {
+  failures.push(
+    "supabase/migrations/008: key_obligations is jsonb, so it must coalesce to '[]'::jsonb.",
+  );
+}
+
+// Every column the library function reads must be added defensively, otherwise
+// running out of order fails with "column law.<name> does not exist".
+for (const column of [
+  'gazette_reference',
+  'status',
+  'superseded_by',
+  'affected_articles',
+  'type',
+  'amends_law_reference',
+  'repealed_articles',
+  'inserted_articles',
+  'retroactive_effective_date',
+  'languages_available',
+]) {
+  if (!new RegExp(`add column if not exists ${column}\\b`).test(migration)) {
+    failures.push(
+      `supabase/migrations/008: add "add column if not exists ${column}" so the migration cannot fail out of order.`,
+    );
+  }
 }
 
 if (failures.length) {
