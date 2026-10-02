@@ -286,8 +286,8 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
               )}
 
               <div>
-                <label htmlFor="admin-email" className="mb-2 block text-sm font-semibold text-slate-700">
-                  Email address
+                <label htmlFor="account-identifier" className="mb-2 block text-sm font-semibold text-slate-700">
+                  {isSignUp ? 'Email address' : 'Email or administrator username'}
                 </label>
                 <div className="relative">
                   <Mail
@@ -295,23 +295,28 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
                     strokeWidth={2.25}
                     className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
                   />
+                  {/* Sign-in accepts the administrator username "admin" as well as an
+                      email address, so this must stay type="text". Using type="email"
+                      makes the browser reject "admin" before the form is submitted. */}
                   <input
-                    id="admin-email"
+                    id="account-identifier"
                     name="email"
-                    type="email"
-                    inputMode="email"
-                    autoComplete="email"
+                    type={isSignUp ? 'email' : 'text'}
+                    inputMode={isSignUp ? 'email' : 'text'}
+                    autoComplete={isSignUp ? 'email' : 'username'}
                     required
+                    maxLength={200}
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-950 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
-                    placeholder="you@example.com"
+                    placeholder={isSignUp ? 'you@example.com' : 'admin or you@example.com'}
                   />
                 </div>
                 {!isSignUp && (
                   <p className="mt-2 text-xs leading-5 text-slate-400">
-                    The administrator signs in here on the Sign in tab. Citizens use the same tab
-                    with their own email and password.
+                    The administrator signs in here with the username from{' '}
+                    <code className="rounded bg-slate-100 px-1 py-0.5 font-mono">ADMIN_EMAIL</code>.
+                    Citizens use the same tab with their email.
                   </p>
                 )}
               </div>

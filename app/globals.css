@@ -1,14 +1,68 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Design reference: the debriefsmith project.
+   Motion vocabulary (float, border-glow), the radius ladder, and the
+   gradient bar treatment are taken from it. The gold brand accent and the
+   Squada One wordmark stay RENGERA-specific. */
 @theme {
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-brand: var(--font-squada), ui-serif, Georgia, serif;
 
   --color-emerald-500: #10b981;
   --color-emerald-600: #059669;
   --color-navy-900: #0f172a;
   --color-gold-400: #fbbf24;
+  --color-gold-500: #b69d74;
+
+  /* Reference indigo, used only for the animated accent bar. */
+  --color-brand-glow: #6366f1;
+
+  /* Rounded-corner ladder. Cards read as friendlier and more deliberate
+     than Tailwind's stock radii at the same padding. */
+  --radius-card: 1.05rem;
+  --radius-panel: 1.35rem;
+  --radius-hero: 1.65rem;
+}
+
+/* ---- Motion (ported from debriefsmith) ---- */
+@keyframes rengera-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: rengera-float 3s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: rengera-float 3s ease-in-out 1.5s infinite;
+}
+
+@keyframes rengera-border-glow {
+  0%, 100% { border-color: #6366f1; box-shadow: 0 0 15px rgba(99, 102, 241, 0.45); }
+  33% { border-color: #b69d74; box-shadow: 0 0 15px rgba(182, 157, 116, 0.45); }
+  66% { border-color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.45); }
+}
+
+.animate-border-glow {
+  animation: rengera-border-glow 4s infinite ease-in-out;
+}
+
+@keyframes rengera-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: rengera-shimmer 2.5s linear infinite;
+}
+
+@keyframes rengera-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @layer base {
@@ -41,6 +95,25 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-teal-500;
+  }
+
+  /* Indigo through gold to emerald, echoing the debriefsmith accent bar
+     while keeping the Rengera palette. */
+  .accent-bar {
+    @apply bg-gradient-to-r from-indigo-500 via-amber-500 to-emerald-500;
+  }
+
+  .card {
+    @apply rounded-[1.05rem] border border-slate-200 bg-white shadow-sm;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-emerald-300;
+  }
+
+  /* Entrance used by landing sections. */
+  .rise-in {
+    animation: rengera-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .scrollbar-hide {

@@ -7,11 +7,12 @@ import RengeraLogo from '@/components/brand/RengeraLogo';
 export default function Hero({ onStartFree }: { onStartFree: () => void }) {
   return (
     <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
-      {/* Background Mesh/Gradients */}
+      {/* Background orbs. Motion vocabulary borrowed from debriefsmith: slow
+          vertical float so the page never feels frozen. */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 bg-slate-50">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-200/40 blur-[100px]" />
-        <div className="absolute top-[20%] right-[-5%] w-[30%] h-[30%] rounded-full bg-teal-200/40 blur-[100px]" />
-        <div className="absolute bottom-[-10%] left-[20%] w-[50%] h-[50%] rounded-full bg-blue-100/40 blur-[120px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-200/40 blur-[100px] animate-float" />
+        <div className="absolute top-[20%] right-[-5%] w-[30%] h-[30%] rounded-full bg-indigo-200/40 blur-[100px] animate-float-delayed" />
+        <div className="absolute bottom-[-10%] left-[20%] w-[50%] h-[50%] rounded-full bg-amber-100/50 blur-[120px] animate-float" />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -23,7 +24,7 @@ export default function Hero({ onStartFree }: { onStartFree: () => void }) {
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-sm font-semibold mb-6 border border-emerald-200/50">
-              <ShieldCheck size={16} />
+              <ShieldCheck size={16} strokeWidth={2.5} />
               <span>Know Your Rights. Protect Your Future.</span>
             </div>
             <h1 className="text-5xl md:text-7xl font-bold text-slate-900 tracking-tight leading-[1.1] mb-6">
@@ -33,21 +34,25 @@ export default function Hero({ onStartFree }: { onStartFree: () => void }) {
               Rengera transforms complex legal language into simple, practical guidance that every citizen can understand. Empowering you with AI-driven clarity.
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-              <button
+              <motion.button
                 type="button"
                 onClick={onStartFree}
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.97 }}
                 className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-semibold text-lg transition-all shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
               >
                 Start Free
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 type="button"
                 onClick={() => document.getElementById('interactive-demo')?.scrollIntoView({ behavior: 'smooth' })}
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.97 }}
                 className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 rounded-full font-semibold text-lg transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
               >
                 Watch Demo
-              </button>
+              </motion.button>
             </div>
             
             <div className="mt-10 flex items-center justify-center lg:justify-start gap-6 text-sm text-slate-500 font-medium">
@@ -63,8 +68,8 @@ export default function Hero({ onStartFree }: { onStartFree: () => void }) {
             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
           >
             {/* Abstract Illustration replacing image */}
-            <div className="relative w-full aspect-square md:aspect-[4/3] lg:aspect-square rounded-[2rem] bg-gradient-to-br from-slate-900 to-slate-800 p-8 shadow-2xl overflow-hidden flex flex-col border border-slate-700">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 rounded-full blur-[80px]" />
+            <div className="relative w-full aspect-square md:aspect-[4/3] lg:aspect-square rounded-[1.65rem] bg-gradient-to-br from-slate-900 to-slate-800 p-8 shadow-2xl overflow-hidden flex flex-col border border-slate-700 animate-border-glow">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 rounded-full blur-[80px] animate-float" />
               
               <div className="flex items-center gap-4 mb-8">
                 <RengeraLogo size={72} />
@@ -106,7 +111,7 @@ export default function Hero({ onStartFree }: { onStartFree: () => void }) {
               </div>
               
               {/* Decorative UI elements */}
-              <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-slate-700/50 rounded-2xl border border-slate-600/50 backdrop-blur-md transform rotate-12" />
+              <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-slate-700/50 rounded-2xl border border-slate-600/50 backdrop-blur-md transform rotate-12 animate-float-delayed" />
               <div className="absolute -bottom-10 right-10 w-24 h-24 bg-emerald-600/20 rounded-full blur-xl" />
             </div>
           </motion.div>
