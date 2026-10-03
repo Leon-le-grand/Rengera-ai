@@ -4,14 +4,20 @@
   "description": "AI-powered legal literacy platform for Rwanda.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#B69D74",
+  "background_color": "#0B1B35",
   "theme_color": "#0B1B35",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/rengera-logo-light.png",
+      "sizes": "614x578",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/rengera-logo-dark.png",
+      "sizes": "614x578",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

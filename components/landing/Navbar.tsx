@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useScroll, useMotionValueEvent } from 'motion/react';
 import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import RengeraLogo from '@/components/brand/RengeraLogo';
+import Image from 'next/image';
 
 interface NavbarProps {
   onEnterApp: () => void;
@@ -29,12 +29,22 @@ export default function Navbar({ onEnterApp, onLogin }: NavbarProps) {
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         <div className="flex items-center gap-3 text-slate-900">
-          <RengeraLogo size={64} className="drop-shadow-md" />
+          {/* Light-theme mark. The dark-theme variant is kept at
+              public/rengera-logo-dark.png for when a dark theme toggle lands. */}
+          <Image
+            src="/rengera-logo-light.png"
+            alt="Rengera AI"
+            width={34}
+            height={34}
+            className="h-9 w-9"
+            priority
+          />
           <span className="font-brand text-xl tracking-wide">RENGERA AI</span>
         </div>
 
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
           <a href="#features" className="hover:text-emerald-600 transition-colors">Features</a>
+          <a href="#pricing" className="hover:text-emerald-600 transition-colors">Pricing</a>
           <a href="#business" className="hover:text-emerald-600 transition-colors">Business</a>
           <a href="#faq" className="hover:text-emerald-600 transition-colors">FAQ</a>
           <div className="w-px h-4 bg-slate-300"></div>
@@ -70,6 +80,7 @@ export default function Navbar({ onEnterApp, onLogin }: NavbarProps) {
       {mobileMenuOpen && (
         <div id="mobile-navigation" className="md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-200 shadow-xl p-6 flex flex-col gap-4">
           <a href="#features" className="text-slate-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Features</a>
+          <a href="#pricing" className="text-slate-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
           <a href="#business" className="text-slate-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Business</a>
           <a href="#faq" className="text-slate-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
           <div className="h-px w-full bg-slate-100 my-2"></div>

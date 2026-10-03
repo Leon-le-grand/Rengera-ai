@@ -8,6 +8,7 @@ import Business from './Business';
 import Stats from './Stats';
 import FAQ from './FAQ';
 import Footer from './Footer';
+import Pricing from './Pricing';
 
 interface LandingPageProps {
   onEnterApp: () => void;
@@ -22,6 +23,7 @@ export default function LandingPage({ onEnterApp, onLogin, onStartFree }: Landin
       <Hero onStartFree={onStartFree} />
       <Features />
       <InteractiveDemo />
+      <Pricing />
       <Business onEnterApp={onEnterApp} />
       <Stats />
       <FAQ />

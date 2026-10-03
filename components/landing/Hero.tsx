@@ -1,119 +1,104 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { ArrowRight, ShieldCheck, FileText } from 'lucide-react';
-import RengeraLogo from '@/components/brand/RengeraLogo';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
+import RibbonGlow from '@/components/brand/RibbonGlow';
+import RadialRevealButton from '@/components/brand/RadialRevealButton';
+import RotatingText from '@/components/brand/RotatingText';
+import LegalChatPreview from './LegalChatPreview';
 
 export default function Hero({ onStartFree }: { onStartFree: () => void }) {
   return (
-    <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
-      {/* Background orbs. Motion vocabulary borrowed from debriefsmith: slow
-          vertical float so the page never feels frozen. */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 bg-slate-50">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-200/40 blur-[100px] animate-float" />
-        <div className="absolute top-[20%] right-[-5%] w-[30%] h-[30%] rounded-full bg-indigo-200/40 blur-[100px] animate-float-delayed" />
-        <div className="absolute bottom-[-10%] left-[20%] w-[50%] h-[50%] rounded-full bg-amber-100/50 blur-[120px] animate-float" />
-      </div>
+    <section className="relative overflow-hidden bg-slate-950 pb-20 pt-32 md:pb-28 md:pt-40">
+      {/* Ribbon glow. The dark ground lets the ribbon read at full strength
+          instead of washing out against a light page. */}
+      <RibbonGlow
+        className="absolute inset-0 -z-10"
+        background="#070A14"
+        color1="#10b981"
+        color2="#b69d74"
+        speed={38}
+        size={118}
+        angle={-140}
+        hover={110}
+        reach={280}
+      />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-slate-950/40 via-slate-950/70 to-slate-950" />
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className="flex flex-col lg:flex-row items-center gap-16">
-          <motion.div 
+      <div className="relative z-10 mx-auto max-w-7xl px-6">
+        <div className="flex flex-col items-center gap-16 lg:flex-row lg:gap-12">
+          <motion.div
             className="flex-1 text-center lg:text-left"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-sm font-semibold mb-6 border border-emerald-200/50">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3.5 py-2 text-sm font-semibold text-emerald-200">
               <ShieldCheck size={16} strokeWidth={2.5} />
-              <span>Know Your Rights. Protect Your Future.</span>
+              Know Your Rights. Protect Your Future.
             </div>
-            <h1 className="text-5xl md:text-7xl font-bold text-slate-900 tracking-tight leading-[1.1] mb-6">
-              Understand Rwanda&apos;s Laws in <span className="text-gradient">Minutes</span>, Not Hours.
+
+            <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-white sm:text-5xl md:text-6xl">
+              Understand Rwanda's Laws in{' '}
+              <span className="text-emerald-400">Minutes</span>, Not{' '}
+              <RotatingText
+                texts={['Hours', 'Weeks', 'Months']}
+                accent="#b69d74"
+                intervalMs={2400}
+                className="inline-block"
+              />
             </h1>
-            <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-              Rengera transforms complex legal language into simple, practical guidance that every citizen can understand. Empowering you with AI-driven clarity.
+
+            <p className="mx-auto mb-10 mt-6 max-w-2xl text-lg leading-relaxed text-slate-300 md:text-xl lg:mx-0">
+              Rengera turns complex legal language into simple, practical guidance. Every answer
+              cites the exact article of the exact law, so you can read it yourself.
             </p>
-            <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-              <motion.button
-                type="button"
+
+            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
+              <RadialRevealButton
                 onClick={onStartFree}
-                whileHover={{ y: -3 }}
-                whileTap={{ scale: 0.97 }}
-                className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-semibold text-lg transition-all shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+                ariaLabel="Start free"
+                rounded={100}
+                fill="#059669"
+                hoverFill="#ffffff"
+                textColor="#ffffff"
+                hoverTextColor="#065f46"
+                padding="1rem 2.25rem"
+                duration={0.5}
+                className="text-lg shadow-lg shadow-emerald-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
               >
                 Start Free
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-              </motion.button>
-              <motion.button
+                <ArrowRight size={19} strokeWidth={2.5} />
+              </RadialRevealButton>
+
+              <button
                 type="button"
-                onClick={() => document.getElementById('interactive-demo')?.scrollIntoView({ behavior: 'smooth' })}
-                whileHover={{ y: -3 }}
-                whileTap={{ scale: 0.97 }}
-                className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 rounded-full font-semibold text-lg transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+                onClick={() =>
+                  document.getElementById('interactive-demo')?.scrollIntoView({ behavior: 'smooth' })
+                }
+                className="w-full rounded-full border border-white/20 px-8 py-4 text-lg font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:-translate-y-px hover:border-white/40 hover:bg-white/5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:w-auto"
               >
                 Watch Demo
-              </motion.button>
+              </button>
             </div>
-            
-            <div className="mt-10 flex items-center justify-center lg:justify-start gap-6 text-sm text-slate-500 font-medium">
-              <div className="flex items-center gap-1.5"><ShieldCheck size={16} className="text-emerald-500" /> Source-linked guidance</div>
-              <div className="flex items-center gap-1.5"><FileText size={16} className="text-emerald-500" /> Emergency routing</div>
+
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-slate-400 lg:justify-start">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck size={16} className="text-emerald-400" /> Source-linked guidance
+              </span>
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck size={16} className="text-emerald-400" /> Read the law yourself
+              </span>
             </div>
           </motion.div>
 
-          <motion.div 
-            className="flex-1 w-full max-w-lg lg:max-w-none relative"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+          <motion.div
+            className="flex-1 w-full lg:max-w-md"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.15, ease: 'easeOut' }}
           >
-            {/* Abstract Illustration replacing image */}
-            <div className="relative w-full aspect-square md:aspect-[4/3] lg:aspect-square rounded-[1.65rem] bg-gradient-to-br from-slate-900 to-slate-800 p-8 shadow-2xl overflow-hidden flex flex-col border border-slate-700 animate-border-glow">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 rounded-full blur-[80px] animate-float" />
-              
-              <div className="flex items-center gap-4 mb-8">
-                <RengeraLogo size={72} />
-                <div>
-                  <div className="font-brand text-xl text-white">RENGERA AI</div>
-                  <div className="text-emerald-400 text-sm">Legal Assistant</div>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-4 flex-1">
-                <motion.div 
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 1, duration: 0.5 }}
-                  className="self-end bg-slate-700 text-white rounded-2xl rounded-tr-sm px-5 py-3 max-w-[85%] text-sm"
-                >
-                  My landlord locked me out because I&apos;m 2 days late on rent. Is this legal?
-                </motion.div>
-
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 2, duration: 0.5 }}
-                  className="self-start bg-emerald-900/50 border border-emerald-800/50 text-slate-200 rounded-2xl rounded-tl-sm px-5 py-4 max-w-[90%] text-sm backdrop-blur-sm"
-                >
-                  <p className="mb-2"><strong className="text-white">No, this is not legal.</strong></p>
-                  <p className="mb-3 text-slate-300 text-xs">According to the <span className="text-emerald-400">Law regulating residential property in Rwanda (Article 45)</span>, a landlord cannot forcefully evict a tenant without a court order.</p>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2 text-xs text-white bg-slate-800/50 p-2 rounded-lg">
-                      <ShieldCheck size={14} className="text-emerald-400" />
-                      Take photos of the locked door
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-white bg-slate-800/50 p-2 rounded-lg">
-                      <FileText size={14} className="text-emerald-400" />
-                      Contact local authorities (RIB)
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-              
-              {/* Decorative UI elements */}
-              <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-slate-700/50 rounded-2xl border border-slate-600/50 backdrop-blur-md transform rotate-12 animate-float-delayed" />
-              <div className="absolute -bottom-10 right-10 w-24 h-24 bg-emerald-600/20 rounded-full blur-xl" />
-            </div>
+            <LegalChatPreview />
           </motion.div>
         </div>
       </div>
