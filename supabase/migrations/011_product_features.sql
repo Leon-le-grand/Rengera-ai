@@ -70,7 +70,7 @@ create index if not exists usage_events_type_idx
 -- Law-change alerts
 -- ---------------------------------------------------------------------------
 create table if not exists public.law_change_alerts (
-  id uuid primary default gen_random_uuid(),
+  id uuid primary key default gen_random_uuid(),
   law_id text not null,
   law_title text not null,
   law_reference text,
