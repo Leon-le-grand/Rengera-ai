@@ -92,7 +92,7 @@ returns table (
   publication_date date,
   effective_date date,
   summary text,
-  key_obligations text[],
+  key_obligations jsonb,
   applicable_entities text[],
   penalties_non_compliance text[],
   article_count bigint
@@ -112,7 +112,7 @@ as $$
     law.publication_date,
     law.effective_date,
     law.summary,
-    coalesce(law.key_obligations, '{}'::text[]),
+    coalesce(law.key_obligations, '[]'::jsonb),
     coalesce(law.applicable_entities, '{}'::text[]),
     coalesce(law.penalties_non_compliance, '{}'::text[]),
     (
