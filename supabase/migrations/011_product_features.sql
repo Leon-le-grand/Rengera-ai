@@ -95,6 +95,8 @@ alter table public.law_change_alerts enable row level security;
 -- ---------------------------------------------------------------------------
 -- Analytics rollup used by the admin dashboard
 -- ---------------------------------------------------------------------------
+drop function if exists public.usage_analytics(integer);
+
 create or replace function public.usage_analytics(days_back integer default 30)
 returns jsonb
 language sql

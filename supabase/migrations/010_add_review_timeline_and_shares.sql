@@ -13,6 +13,10 @@ create index if not exists laws_reviewed_idx
 
 -- Amendment timeline: every law that amends another, ordered chronologically.
 -- Powers the "how has this law changed over time" view.
+-- Same rule as 009: a function whose OUT row type changes cannot be replaced
+-- in place, so it is dropped and rebuilt.
+drop function if exists public.law_amendment_timeline(uuid);
+
 create or replace function public.law_amendment_timeline(target_law_id uuid)
 returns table (
   amendment_id uuid,
@@ -72,6 +76,8 @@ $$;
 grant execute on function public.law_amendment_timeline(uuid) to anon, authenticated;
 
 -- Two laws compared side by side, each with its ordered article list.
+drop function if exists public.get_laws_for_comparison(uuid, uuid);
+
 create or replace function public.get_laws_for_comparison(
   first_law_id uuid,
   second_law_id uuid

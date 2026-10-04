@@ -34,6 +34,12 @@ create index if not exists laws_source_pdf_idx
 
 -- The library listing carries the PDF reference so a card can show whether the
 -- original document is available.
+-- `create or replace` cannot widen or change the shape of an existing
+-- function's OUT row type. Migration 008 may already have created this
+-- function, so it is dropped first. The function body is recreated below and
+-- the grants are re-applied, so nothing is lost.
+drop function if exists public.list_law_library();
+
 create or replace function public.list_law_library()
 returns table (
   id uuid,
