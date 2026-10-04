@@ -7,9 +7,11 @@
     "build": "NODE_ENV=production next build",
     "start": "next start",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "clean": "next clean",
     "auth:hash": "node scripts/hash-admin-password.mjs",
-    "verify": "bun run scripts/verify-server-actions.ts && bun run scripts/verify-classification-parser.ts && bun run scripts/verify-legal-article-parser.ts",
+    "verify": "bun run scripts/verify-imports.ts && bun run scripts/verify-server-actions.ts && bun run scripts/verify-classification-parser.ts && bun run scripts/verify-legal-article-parser.ts",
+    "verify:imports": "bun run scripts/verify-imports.ts",
     "verify:classification": "bun run scripts/verify-classification-parser.ts",
     "verify:articles": "bun run scripts/verify-legal-article-parser.ts",
     "verify:server-actions": "bun run scripts/verify-server-actions.ts"

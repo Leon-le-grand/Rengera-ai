@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Send, ShieldCheck, FileText, Download, Building, ArrowRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Send, ShieldCheck, FileText, Download, Building } from 'lucide-react';
 import RengeraLogo from '@/components/brand/RengeraLogo';
 
 export default function InteractiveDemo() {
