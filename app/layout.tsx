@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import { Plus_Jakarta_Sans, Squada_One } from 'next/font/google';
 import './globals.css';
+import PageLoader from '@/components/brand/PageLoader';
 
 const sans = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta' });
 const brand = Squada_One({ subsets: ['latin'], weight: '400', variable: '--font-squada' });
@@ -16,6 +17,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" className="scroll-smooth">
       <body className={`${sans.variable} ${brand.variable} font-sans antialiased bg-white text-slate-900 selection:bg-emerald-500/30`} suppressHydrationWarning>
+        <PageLoader />
         {children}
       </body>
     </html>

@@ -58,6 +58,10 @@ where chunk_type is null;
 create index if not exists law_articles_law_sort_order_idx
   on public.law_articles (law_id, sort_order);
 
+-- The return type changed between 008 and 009, so the old function must be
+-- dropped before the new one is created.
+drop function if exists public.list_law_library();
+
 -- Full library listing: every stored law with its category and article count.
 create or replace function public.list_law_library()
 returns table (

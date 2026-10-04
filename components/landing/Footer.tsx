@@ -1,7 +1,7 @@
 'use client';
 
 import { Globe, Smartphone } from 'lucide-react';
-import VectorWordmark from '@/components/brand/VectorWordmark';
+import WeightHover from '@/components/brand/WeightHover';
 
 const PLATFORM_LINKS = [
   { label: 'AI Assistant', href: '#features' },
@@ -17,11 +17,6 @@ const COMPANY_LINKS = [
   { label: 'Terms of Service', href: '#' },
 ];
 
-/**
- * The Play Store URL is a placeholder until the app is published. Point
- * PLAY_STORE_URL at the real listing and both the footer badge and this link
- * start working without a code change.
- */
 const PLAY_STORE_URL = process.env.NEXT_PUBLIC_PLAY_STORE_URL || '#';
 
 function PlayStoreBadge() {
@@ -44,21 +39,63 @@ function PlayStoreBadge() {
 
 export default function Footer() {
   return (
-    <footer className="border-t border-slate-800 bg-slate-950 py-16">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-4">
-          <div className="md:col-span-2">
-            {/* No logo here on purpose: the animated wordmark above it is the
-                brand mark, and stacking two marks read as clutter. */}
-            <h2 className="sr-only">Rengera AI</h2>
-            <p className="max-w-sm leading-relaxed text-slate-400">
-              Empowering Rwandan citizens through accessible, AI-driven legal education. Know your
-              rights, protect your future.
-            </p>
+    <footer className="overflow-hidden border-t border-slate-800 bg-[#050505] pt-24 text-white">
+      {/* Giant Brand Text with mask — inspired by the animated-brand-footer template */}
+      <div
+        className="mb-20 w-full text-center"
+        style={{
+          maskImage: 'linear-gradient(180deg, transparent, black 0%, black 55%, transparent)',
+          WebkitMaskImage: 'linear-gradient(180deg, transparent, black 0%, black 55%, transparent)',
+        }}
+      >
+        <WeightHover
+          label="RENGERA"
+          fromWeight={400}
+          toWeight={900}
+          fontSize={180}
+          color="#141414"
+          className="justify-center"
+        />
+      </div>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+      {/* Links Grid */}
+      <div className="mx-auto max-w-7xl border-t border-slate-800 px-6">
+        <div className="grid grid-cols-1 gap-12 py-16 lg:grid-cols-2">
+          {/* Left: Navigation + App info */}
+          <div className="space-y-8">
+            <div className="grid grid-cols-2 gap-12">
+              <div className="flex flex-col gap-5">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                  Platform
+                </h3>
+                {PLATFORM_LINKS.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    className="text-xs font-medium uppercase tracking-widest text-slate-500 transition-colors hover:text-white"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+              <div className="flex flex-col gap-5">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                  Company
+                </h3>
+                {COMPANY_LINKS.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    className="text-xs font-medium uppercase tracking-widest text-slate-500 transition-colors hover:text-white"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <PlayStoreBadge />
-
               <div className="inline-flex items-center gap-2.5 rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-3">
                 <Globe size={18} strokeWidth={2.25} className="shrink-0 text-emerald-300" />
                 <span className="text-sm font-semibold text-emerald-100">
@@ -68,48 +105,36 @@ export default function Footer() {
             </div>
           </div>
 
-          <div>
-            <h3 className="mb-5 font-semibold text-white">Platform</h3>
-            <ul className="space-y-3.5 text-sm text-slate-400">
-              {PLATFORM_LINKS.map((link) => (
-                <li key={link.label}>
-                  <a href={link.href} className="transition-colors hover:text-emerald-400">
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* Right: Wireframe illustration inspired by the template */}
+          <div className="flex items-center justify-center border-t border-slate-800 pt-12 lg:border-t-0 lg:pt-0">
+            <svg
+              viewBox="0 0 400 120"
+              className="max-h-[160px] w-full opacity-20"
+              preserveAspectRatio="xMidYMid meet"
+              strokeWidth="2"
+            >
+              {/* Pillar 1 */}
+              <path d="M40 100 L50 30 L90 30 L100 100" stroke="white" strokeWidth="1" fill="none" />
+              <rect x="50" y="20" width="40" height="10" stroke="white" strokeWidth="1" fill="none" />
 
-          <div>
-            <h3 className="mb-5 font-semibold text-white">Company</h3>
-            <ul className="space-y-3.5 text-sm text-slate-400">
-              {COMPANY_LINKS.map((link) => (
-                <li key={link.label}>
-                  <a href={link.href} className="transition-colors hover:text-emerald-400">
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
+              {/* Pillar 2 */}
+              <path d="M120 100 L130 10 L170 10 L180 100" stroke="white" strokeWidth="1" fill="none" />
+              <rect x="130" y="5" width="40" height="5" stroke="white" strokeWidth="1" fill="none" />
+
+              {/* Gate / Portico */}
+              <g transform="translate(200, 10)">
+                <path d="M15 25 Q15 20 20 20 L40 20 Q45 20 45 25 L45 80 Q45 90 30 90 Q15 90 15 80 Z" stroke="white" strokeWidth="1" fill="none" />
+                <path d="M25 0 L25 10 L20 10 L20 20 L40 20 L40 10 L35 10 L35 0 Z" stroke="white" strokeWidth="1" fill="none" />
+                <rect x="15" y="60" width="30" height="30" fill="#b69d74" opacity="0.3" />
+              </g>
+            </svg>
           </div>
         </div>
+      </div>
 
-        {/* The animated wordmark sits on its own band so it reads as a
-            signature rather than competing with the links. */}
-        <div className="mt-14 h-24 w-full overflow-hidden rounded-2xl border border-white/5 bg-slate-900/40">
-          <VectorWordmark
-            text="RENGERA AI"
-            background="transparent"
-            textColor="#e2e8f0"
-            shade="#334155"
-            accent="#b69d74"
-            handles={{ size: 86, spread: 27, labels: false }}
-            style={{ width: '100%', height: '100%' }}
-          />
-        </div>
-
-        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-slate-800 pt-8 md:flex-row">
+      {/* Bottom bar */}
+      <div className="border-t border-slate-800">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-8 md:flex-row">
           <p className="text-sm text-slate-500">
             © {new Date().getFullYear()} RENGERA AI. All rights reserved. Made in Kigali.
           </p>
