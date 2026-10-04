@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { analyzeContract, type ContractReview } from '@/app/product-actions';
 import LanguageMenu, { useStoredLanguage } from '@/components/chat/LanguageMenu';
+import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 
 const SEVERITY_STYLES = {
   high: 'bg-red-50 text-red-700 ring-red-200',
@@ -153,7 +154,19 @@ export default function BusinessDashboard() {
             )}
           </div>
 
-          {review && (
+          {isAnalyzing && (
+            <div className="grid grid-cols-1 gap-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <Skeleton key={index} className="h-28 w-full" />
+                ))}
+              </div>
+              <SkeletonCard lines={4} />
+              <SkeletonCard lines={3} />
+            </div>
+          )}
+
+          {!isAnalyzing && review && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <StatCard

@@ -26,6 +26,7 @@ import type { ElementType } from 'react';
 import { getLawLibrary, type LawLibraryCategory, type LawLibraryEntry } from '@/app/legal-actions';
 import LawComparison from './LawComparison';
 import { cn } from '@/lib/utils';
+import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 
 interface LawLibraryProps {
   /** Law and article the reader should open. Null closes the reader. */
@@ -313,9 +314,11 @@ export default function LawLibrary({
   );
 
   const body = isLoading ? (
-    <div className="flex flex-col items-center justify-center gap-3 py-24 text-slate-400">
-      <Loader2 size={28} className="animate-spin" />
-      <p className="text-sm font-medium">Loading the official laws…</p>
+    /* Skeleton first, spinner never: the page keeps its shape while the laws load. */
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <SkeletonCard key={index} media lines={2} />
+      ))}
     </div>
   ) : error ? (
     <div className="mx-auto max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">

@@ -29,6 +29,7 @@ import {
   type UsageAnalytics,
 } from '@/app/product-actions';
 import { LANGUAGE_DEFINITIONS, type AnswerLanguage } from '@/lib/answer-language';
+import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 
 type AdminTab = 'overview' | 'ingest' | 'quality' | 'library';
 
@@ -175,6 +176,14 @@ export default function AdminDashboard() {
               <Database size={14} />
               Knowledge base
             </h2>
+            {statCards.length === 0 && (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <Skeleton key={index} className="h-24 w-full" />
+                ))}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {statCards.map((card) => (
                 <div
@@ -399,9 +408,10 @@ export default function AdminDashboard() {
           {editingLaw && <AdminEditLaw law={editingLaw} onSaved={loadLaws} />}
 
           {isLoading ? (
-            <div className="flex items-center gap-3 py-8 text-slate-400">
-              <Loader2 size={20} className="animate-spin" />
-              <p className="text-sm font-medium">Loading the stored laws…</p>
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <SkeletonCard key={index} lines={1} />
+              ))}
             </div>
           ) : laws.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">

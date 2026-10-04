@@ -55,7 +55,9 @@ export default function AppShell({ initialAdmin, initialAccount }: AppShellProps
     } finally {
       setAdminUser(null);
       setAccountUser(null);
-      setCurrentView('app');
+      // Signing out returns to the sign-in screen rather than dropping the
+      // user into an anonymous session without explanation.
+      setCurrentView('login');
     }
   };
 

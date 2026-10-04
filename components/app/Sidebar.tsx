@@ -61,8 +61,7 @@ function NavButton({
   active: boolean;
   onClick: () => void;
 }) {
-  const isDanger = item.tone === 'danger';
-  const isAdminItem = item.tone === 'admin';
+  const isUrgent = item.tone === 'danger';
 
   return (
     <button
@@ -70,46 +69,30 @@ function NavButton({
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'group relative flex w-full items-center gap-3 overflow-hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
+        'group relative flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#d8b485]',
         active
-          ? isDanger
-            ? 'bg-red-50 text-red-700 shadow-sm'
-            : isAdminItem
-              ? 'bg-violet-50 text-violet-700 shadow-sm'
-              : 'bg-[#d8b485] text-zinc-950'
-          : isDanger
-            ? 'text-red-400 hover:bg-red-500/10'
-            : isAdminItem
-              ? 'text-violet-300 hover:bg-violet-500/10'
-              : 'text-zinc-400 hover:bg-white/5 hover:text-white',
+          ? 'bg-[#d8b485] font-semibold text-zinc-950'
+          : 'text-zinc-400 hover:bg-white/5 hover:text-white',
       )}
     >
       <span
         className={cn(
-          'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-200',
+          'flex h-8 w-8 shrink-0 items-center justify-center border transition-colors duration-200',
           active
-            ? isDanger
-              ? 'bg-white/10 text-red-300'
-              : isAdminItem
-                ? 'bg-white/10 text-violet-200'
-                : 'bg-zinc-950/10 text-zinc-950'
-            : isDanger
-              ? 'bg-red-500/10 text-red-400'
-              : isAdminItem
-                ? 'bg-violet-500/10 text-violet-300'
-                : 'bg-white/5 text-zinc-400 group-hover:text-white',
+            ? 'border-zinc-950/20 bg-zinc-950/5 text-zinc-950'
+            : 'border-white/10 text-zinc-500 group-hover:border-[#d8b485]/40 group-hover:text-[#d8b485]',
         )}
       >
-        <item.icon size={16} strokeWidth={2.25} />
+        <item.icon size={16} strokeWidth={1.75} />
       </span>
 
       <span className="truncate">{item.label}</span>
 
       <span
         className={cn(
-          'ml-auto h-1.5 w-1.5 shrink-0 rounded-full transition-all duration-300',
-          active ? 'scale-100 opacity-100' : 'scale-0 opacity-0',
-          isDanger ? 'bg-red-500' : isAdminItem ? 'bg-violet-500' : 'bg-emerald-400',
+          'ml-auto h-1.5 w-1.5 shrink-0 transition-opacity duration-300',
+          active ? 'opacity-100' : 'opacity-0',
+          isUrgent ? 'bg-red-500' : 'bg-zinc-950/40',
         )}
       />
     </button>
@@ -118,7 +101,7 @@ function NavButton({
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+    <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#d8b485]/60">
       {children}
     </p>
   );
@@ -202,34 +185,16 @@ export default function Sidebar({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-white/5 bg-[#09090b] p-3">
-        <div
-          className={cn(
-            'mb-2 flex items-center gap-3 rounded-xl border px-3 py-3',
-            isAdmin
-              ? 'border-emerald-200 bg-emerald-50'
-              : isSignedIn
-                ? 'border-slate-200 bg-white'
-                : 'border-slate-200 bg-white',
-          )}
-        >
-          <span
-            className={cn(
-              'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold',
-              isAdmin
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : isSignedIn
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-500',
-            )}
-          >
-            {isAdmin || isSignedIn ? (initials || <UserRound size={16} />) : <UserRound size={16} />}
+      <div className="shrink-0 border-t border-white/5 p-3">
+        <div className="mb-2 flex items-center gap-3 border border-white/10 bg-white/[0.02] px-3 py-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-[#d8b485]/40 text-[11px] font-bold text-[#d8b485]">
+            {isAdmin || isSignedIn ? (initials || <UserRound size={15} />) : <UserRound size={15} />}
           </span>
           <div className="flex min-w-0 flex-col">
-            <span className="truncate text-sm font-bold text-slate-950">
+            <span className="truncate text-sm font-semibold text-white">
               {isAdmin || isSignedIn ? userName || 'Member' : 'Public access'}
             </span>
-            <span className="truncate text-xs text-slate-500">
+            <span className="truncate text-[10px] uppercase tracking-widest text-zinc-500">
               {isAdmin ? 'Administrator' : isSignedIn ? roleLabel || 'Citizen account' : 'No account required'}
             </span>
           </div>
@@ -239,10 +204,10 @@ export default function Sidebar({
           <button
             type="button"
             onClick={onLogout}
-            className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-500 transition-all duration-200 hover:bg-white hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+            className="mt-1 flex w-full items-center gap-3 border border-white/10 px-3 py-2.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400 transition-colors duration-200 hover:border-white/25 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#d8b485]"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-colors duration-200 group-hover:bg-red-100">
-              <Power size={16} strokeWidth={2.25} />
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-white/10 text-zinc-400 transition-colors group-hover:border-[#d8b485]/40 group-hover:text-[#d8b485]">
+              <Power size={15} strokeWidth={1.75} />
             </span>
             Sign out
           </button>
@@ -250,10 +215,10 @@ export default function Sidebar({
           <button
             type="button"
             onClick={onLogin}
-            className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-950 transition-all duration-200 hover:-translate-y-px hover:bg-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 active:translate-y-0"
+            className="mt-1 flex w-full items-center gap-3 border border-[#d8b485]/40 px-3 py-2.5 text-[10px] font-bold uppercase tracking-widest text-[#d8b485] transition-colors duration-200 hover:bg-[#d8b485] hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#d8b485]"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 transition-colors duration-200">
-              <UserRound size={16} strokeWidth={2.25} />
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-[#d8b485]/30">
+              <UserRound size={15} strokeWidth={1.75} />
             </span>
             Sign in or create account
           </button>
