@@ -23,12 +23,7 @@ import {
   FileText,
   Lightbulb,
   Lock,
-  Mic,
-  MoreHorizontal,
-  Pencil,
   Plus,
-  Search,
-  Sparkles,
   X,
   Loader2,
 } from 'lucide-react';
@@ -123,29 +118,13 @@ export function ChatTopBar({
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         {children}
         {actions ?? (
-          <>
-            <IconButton label="Rename chat" onClick={onEdit}>
-              <Pencil size={15} strokeWidth={2} />
-            </IconButton>
-            <IconButton label="Assist" onClick={onMore}>
-              <Sparkles size={15} strokeWidth={2} />
-            </IconButton>
-            <button
-              type="button"
-              onClick={onShare}
-              className="rounded-full border border-[#dadce0] px-3.5 py-[7px] text-[12px] font-medium text-[#1f1f1f] outline-none transition-colors hover:bg-[#f6f7f8] active:bg-[#f1f3f4]"
-            >
-              Share
-            </button>
-            <IconButton label="More" onClick={onMore} filled>
-              <MoreHorizontal size={15} strokeWidth={2} />
-            </IconButton>
-            {onClose && (
-              <IconButton label="Close" onClick={onClose} filled>
-                <X size={15} strokeWidth={2.5} />
-              </IconButton>
-            )}
-          </>
+          <button
+            type="button"
+            onClick={onShare}
+            className="rounded-full border border-[#dadce0] px-3.5 py-[7px] text-[12px] font-medium text-[#1f1f1f] outline-none transition-colors hover:bg-[#f6f7f8] active:bg-[#f1f3f4]"
+          >
+            Share
+          </button>
         )}
       </div>
     </div>
@@ -474,49 +453,16 @@ export function ComposerChip({
   );
 }
 
-export function ComposerToolbar({
-  modelLabel = 'Rengera 3 Pro',
-  modelBadge = 'Beta',
-  onAdd,
-  onModel,
-  onSearch,
-  onAssist,
-  onMore,
-}: {
-  modelLabel?: string;
-  modelBadge?: string;
-  onAdd?: () => void;
-  onModel?: () => void;
-  onSearch?: () => void;
-  onAssist?: () => void;
-  onMore?: () => void;
-}) {
+/**
+ * The composer rail is deliberately minimal: attach, type, send. The model
+ * picker, web search, assistant sparkle and overflow menu were decoration that
+ * did nothing, so they are gone rather than left as dead controls.
+ */
+export function ComposerToolbar({ onAdd }: { onAdd?: () => void }) {
   return (
     <div className="mt-2 flex items-center gap-1.5">
       <ComposerAction label="Add attachment" onClick={onAdd}>
         <Plus size={16} strokeWidth={2.25} />
-      </ComposerAction>
-
-      <button
-        type="button"
-        onClick={onModel}
-        className="inline-flex items-center gap-1.5 rounded-full bg-[#f1f3f4] px-3 py-[7px] text-[12px] font-medium text-[#1f1f1f] outline-none transition-colors hover:bg-[#e8eaed]"
-      >
-        <Sparkles size={13} strokeWidth={2} className="text-[#1a73e8]" />
-        {modelLabel}
-        <span className="rounded-[4px] bg-white px-1 py-[1px] text-[10px] font-medium text-[#5f6368] ring-1 ring-[#e8eaed]">
-          {modelBadge}
-        </span>
-      </button>
-
-      <ComposerAction label="Search the law" onClick={onSearch}>
-        <Search size={15} strokeWidth={2.25} />
-      </ComposerAction>
-      <ComposerAction label="Assist" onClick={onAssist}>
-        <Sparkles size={15} strokeWidth={2.25} />
-      </ComposerAction>
-      <ComposerAction label="More" onClick={onMore}>
-        <MoreHorizontal size={15} strokeWidth={2.25} />
       </ComposerAction>
     </div>
   );
@@ -545,13 +491,11 @@ function ComposerAction({
 }
 
 export function ComposerActions({
-  onVoice,
   onSend,
   sendDisabled,
   sending,
   className,
 }: {
-  onVoice?: () => void;
   onSend?: () => void;
   sendDisabled?: boolean;
   sending?: boolean;
@@ -559,14 +503,6 @@ export function ComposerActions({
 }) {
   return (
     <div className={cn('mt-2 flex items-center justify-end gap-2', className)}>
-      <button
-        type="button"
-        aria-label="Use voice"
-        onClick={onVoice}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e0e0e0] bg-white text-[#5f6368] outline-none transition-colors hover:bg-[#f1f3f4] hover:text-[#1f1f1f]"
-      >
-        <Mic size={15} strokeWidth={2.25} />
-      </button>
       <button
         type="button"
         aria-label="Send message"

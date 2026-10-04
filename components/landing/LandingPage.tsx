@@ -7,6 +7,7 @@ import AuraMission from './aura/AuraMission';
 import AuraApproach from './aura/AuraApproach';
 import AuraCoverage from './aura/AuraCoverage';
 import AuraContact from './aura/AuraContact';
+import AuraFAQ from './aura/AuraFAQ';
 import AuraFooter from './aura/AuraFooter';
 
 interface LandingPageProps {
@@ -45,6 +46,7 @@ export default function LandingPage({ onEnterApp, onLogin, onStartFree }: Landin
         <AuraMission onStartFree={onStartFree} />
         <AuraApproach onStartFree={onStartFree} />
         <AuraCoverage />
+        <AuraFAQ />
         <AuraContact onStartFree={onEnterApp} />
       </main>
 

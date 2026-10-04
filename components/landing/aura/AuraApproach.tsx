@@ -7,35 +7,38 @@ import AuraReveal from './AuraReveal';
 import { cn } from '@/lib/utils';
 
 /**
- * "Our Approach" — the workflow orbit.
+ * "Our Approach" — how the RAG architecture actually works.
  *
- * Geometry is taken straight from the reference: three numbered nodes on a
- * dashed circle (top, bottom-right, bottom-left), a solid white arc sweeping
- * clockwise from the first node to the last, the active node rendered as a black
- * pill, and the active step written in the middle of the circle. The Rengera
- * mark sits at the centre of that circle, lit by the same halo treatment used in
- * the dark brand section.
+ * The construction comes straight from the reference: three numbered nodes on a
+ * dashed circle (top, bottom-right, bottom-left), a solid arc sweeping clockwise
+ * from the first node to the last, the active node drawn as a filled pill, and
+ * the active step written in the middle of the circle. The palette is the
+ * landing page's own deep navy with the gold accent, so it reads as part of the
+ * page instead of a foreign orange block.
  */
 
 const STEPS = [
   {
     number: '01',
-    title: 'Find the law',
-    description: 'Tell Rengera what happened, in your own words.',
+    title: 'Ingest the law',
+    description:
+      'Official Rwandan legislation is uploaded, split into articles, and stored with its citation and gazette reference.',
     pill: { left: '50%', top: '12.5%', className: '-translate-x-1/2 -translate-y-[190%]' },
     dot: { cx: 200, cy: 50 },
   },
   {
     number: '02',
-    title: 'Read the article',
-    description: 'We pull the exact clause from official Rwandan law.',
+    title: 'Retrieve the article',
+    description:
+      'Your question is matched against every article we hold. The system pulls the exact clauses that apply — not a summary.',
     pill: { left: '82.48%', top: '68.75%', className: 'translate-x-[18%] translate-y-[10%]' },
     dot: { cx: 329.9, cy: 275 },
   },
   {
     number: '03',
-    title: 'Act with proof',
-    description: 'You get the next step, and the citation to back it up.',
+    title: 'Answer with proof',
+    description:
+      'The model writes plain guidance using only the retrieved text, and every sentence points back to the article it came from.',
     pill: { left: '17.52%', top: '68.75%', className: '-translate-x-[118%] translate-y-[10%]' },
     dot: { cx: 70.1, cy: 275 },
   },
@@ -47,7 +50,7 @@ export default function AuraApproach({ onStartFree }: { onStartFree: () => void 
   useEffect(() => {
     const timer = window.setInterval(() => {
       setActive((index) => (index + 1) % STEPS.length);
-    }, 3600);
+    }, 4200);
 
     return () => window.clearInterval(timer);
   }, []);
@@ -55,23 +58,35 @@ export default function AuraApproach({ onStartFree }: { onStartFree: () => void 
   return (
     <section
       id="approach"
-      className="relative w-full scroll-mt-24 overflow-hidden bg-[radial-gradient(120%_120%_at_15%_0%,#FF7A18_0%,#F4551A_45%,#DE3A11_100%)] py-24 text-white"
+      className="relative w-full scroll-mt-24 overflow-hidden bg-[radial-gradient(120%_120%_at_15%_0%,#101a2c_0%,#0a1120_45%,#05070d_100%)] py-24 text-white"
     >
-      <div className="mx-auto flex max-w-[1400px] flex-col items-center px-6">
+      <div className="pointer-events-none absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-[0.07]" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#05070d] via-transparent to-[#05070d]" />
+
+      <div className="relative mx-auto flex max-w-[1400px] flex-col items-center px-6">
         <AuraReveal className="text-center">
-          <h2 className="text-4xl font-bold tracking-tight md:text-6xl">Our Approach</h2>
-          <p className="mt-4 text-base text-white/85 md:text-lg">Stop guessing. Start citing.</p>
+          <div className="mb-6 flex items-center gap-4">
+            <div className="h-px w-12 bg-[#d8b485]" />
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#d8b485]">
+              Our Architecture
+            </p>
+            <div className="h-px w-12 bg-[#d8b485]" />
+          </div>
+          <h2 className="text-4xl font-bold tracking-tight text-white md:text-6xl">Our Approach</h2>
+          <p className="mx-auto mt-4 max-w-xl text-base text-zinc-400 md:text-lg">
+            A retrieval system, not a chatbot with a good personality. Three steps, no fourth step where
+            it invents the law.
+          </p>
         </AuraReveal>
 
         <div className="relative mt-10 aspect-square w-full max-w-[620px]">
-          {/* Orbit */}
           <svg viewBox="0 0 400 400" className="absolute inset-0 h-full w-full">
             <circle
               cx="200"
               cy="200"
               r="150"
               fill="none"
-              stroke="rgba(255,255,255,0.45)"
+              stroke="rgba(216,180,133,0.35)"
               strokeWidth="1"
               strokeDasharray="3 7"
               strokeLinecap="round"
@@ -79,7 +94,7 @@ export default function AuraApproach({ onStartFree }: { onStartFree: () => void 
             <motion.path
               d="M 200 50 A 150 150 0 1 1 70.1 275"
               fill="none"
-              stroke="#ffffff"
+              stroke="#d8b485"
               strokeWidth="2"
               strokeLinecap="round"
               initial={{ pathLength: 0, opacity: 0 }}
@@ -93,7 +108,7 @@ export default function AuraApproach({ onStartFree }: { onStartFree: () => void 
                 cx={step.dot.cx}
                 cy={step.dot.cy}
                 r="6"
-                fill="#000000"
+                fill="#d8b485"
                 initial={{ scale: 0 }}
                 whileInView={{ scale: 1 }}
                 viewport={{ once: true, amount: 0.3 }}
@@ -103,7 +118,6 @@ export default function AuraApproach({ onStartFree }: { onStartFree: () => void 
             ))}
           </svg>
 
-          {/* Step pills */}
           {STEPS.map((step, index) => (
             <button
               key={step.number}
@@ -114,23 +128,21 @@ export default function AuraApproach({ onStartFree }: { onStartFree: () => void 
                 'absolute inline-flex items-center gap-2.5 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-medium transition-all duration-300',
                 step.pill.className,
                 index === active
-                  ? 'bg-black text-white'
-                  : 'bg-black/25 text-white/90 hover:bg-black/40',
+                  ? 'bg-[#d8b485] text-zinc-950'
+                  : 'border border-white/15 bg-white/5 text-zinc-300 hover:border-[#d8b485]/50 hover:text-white',
               )}
             >
-              <span className={cn('text-[11px]', index === active ? 'text-white/70' : 'text-white/70')}>
+              <span className={cn('text-[11px]', index === active ? 'text-zinc-700' : 'text-[#d8b485]/70')}>
                 {step.number}
               </span>
               {step.title}
             </button>
           ))}
 
-          {/* Centre: mark + active step */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center px-[18%] text-center">
-            <span className="mb-6 block h-16 w-px bg-white/40" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center px-[17%] text-center">
+            <span className="mb-6 block h-14 w-px bg-white/15" />
             <div className="relative mb-8 flex h-24 w-24 items-center justify-center">
-              <span className="absolute inset-0 rounded-full bg-[#0b0b0d] shadow-[0_0_60px_18px_rgba(0,0,0,0.35)]" />
-              <span className="absolute inset-0 animate-ping rounded-full bg-white/10" />
+              <span className="absolute inset-0 rounded-full bg-[#05070d] shadow-[0_0_60px_18px_rgba(216,180,133,0.12)]" />
               <RengeraLogo size={56} label="Rengera AI" className="relative" />
             </div>
 
@@ -142,8 +154,13 @@ export default function AuraApproach({ onStartFree }: { onStartFree: () => void 
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
               >
-                <h3 className="text-3xl font-bold tracking-tight md:text-4xl">{STEPS[active].title}</h3>
-                <p className="mx-auto mt-3 max-w-[280px] text-sm leading-relaxed text-white/90">
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#d8b485]/70">
+                  Step {STEPS[active].number}
+                </p>
+                <h3 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
+                  {STEPS[active].title}
+                </h3>
+                <p className="mx-auto mt-3 max-w-[290px] text-sm leading-relaxed text-zinc-400">
                   {STEPS[active].description}
                 </p>
               </motion.div>
@@ -151,19 +168,22 @@ export default function AuraApproach({ onStartFree }: { onStartFree: () => void 
           </div>
         </div>
 
-        <AuraReveal delay={0.1} className="mt-12 flex flex-col items-center gap-6 sm:flex-row sm:gap-8">
+        <AuraReveal
+          delay={0.1}
+          className="mt-12 flex flex-col items-center gap-6 sm:flex-row sm:gap-8"
+        >
           <button
             type="button"
             onClick={onStartFree}
-            className="inline-flex w-full items-center justify-center bg-black px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-[#111] sm:w-auto"
+            className="aura-lift inline-flex w-full items-center justify-center bg-[#d8b485] px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-950 hover:bg-[#c2a277] sm:w-auto"
           >
             Run your first question →
           </button>
           <a
-            href="#interface"
-            className="inline-flex w-full items-center justify-center border-b border-white/60 pb-1 text-[10px] font-bold uppercase tracking-widest text-white transition-colors hover:border-white sm:w-auto"
+            href="#coverage"
+            className="inline-flex w-full items-center justify-center border-b border-white/30 pb-1 text-[10px] font-bold uppercase tracking-widest text-white transition-colors hover:border-white sm:w-auto"
           >
-            See The Interface
+            See The Coverage
           </a>
         </AuraReveal>
       </div>

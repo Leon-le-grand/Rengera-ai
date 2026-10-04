@@ -17,6 +17,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { signIn, signUp, type AuthResult } from '@/app/auth-actions';
+import RengeraLogo from '@/components/brand/RengeraLogo';
 
 interface LoginUser {
   name: string;
@@ -141,6 +142,7 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
               <Scale size={19} strokeWidth={2.25} />
             </span>
+            <RengeraLogo size={34} label="" />
             <span className="font-brand text-lg tracking-wide">RENGERA AI</span>
           </button>
 

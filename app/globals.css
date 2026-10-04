@@ -151,6 +151,79 @@
   }
 }
 
+/* --------------------------------------------------------------------------
+   Product theme
+   --------------------------------------------------------------------------
+   The in-app surfaces (law library, business workspace, admin console) share
+   the landing page's palette: zinc-950 canvas, #0c0c0e panels, hairline
+   white/5 borders and the gold accent. The chat keeps its own light design on
+   purpose — it is the reference window.
+
+   These rules remap the light slate utilities those screens already use, so a
+   screen can adopt the product theme with one class instead of a rewrite. */
+.app-dark {
+  background-color: #09090b;
+  color: #d4d4d8;
+}
+
+.app-dark .bg-white,
+.app-dark .bg-slate-50,
+.app-dark .bg-slate-100 {
+  background-color: #0c0c0e;
+}
+
+.app-dark .bg-slate-200 {
+  background-color: #17171a;
+}
+
+.app-dark .border-slate-100,
+.app-dark .border-slate-200,
+.app-dark .border-slate-300,
+.app-dark .divide-slate-200 {
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.app-dark .text-slate-950,
+.app-dark .text-slate-900 {
+  color: #ffffff;
+}
+
+.app-dark .text-slate-800,
+.app-dark .text-slate-700 {
+  color: #d4d4d8;
+}
+
+.app-dark .text-slate-600,
+.app-dark .text-slate-500 {
+  color: #a1a1aa;
+}
+
+.app-dark .text-slate-400 {
+  color: #71717a;
+}
+
+.app-dark input,
+.app-dark textarea,
+.app-dark select {
+  color: #ffffff;
+}
+
+.app-dark input::placeholder,
+.app-dark textarea::placeholder {
+  color: #52525b;
+}
+
+.app-dark .shadow-sm,
+.app-dark .shadow,
+.app-dark .shadow-md,
+.app-dark .shadow-lg {
+  box-shadow: none;
+}
+
+.app-dark :focus-visible {
+  outline-color: #d8b485;
+}
+
 @media print {
   body {
     background: #fff !important;

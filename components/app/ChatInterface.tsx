@@ -44,7 +44,6 @@ import {
   ComposerChip,
   ComposerFrame,
   ComposerToolbar,
-  ContextChip,
   GeneratingRow,
   ScrollDownButton,
   SourceList,
@@ -364,9 +363,6 @@ export default function ChatInterface({
                         transition={{ duration: 0.25, ease: 'easeOut' }}
                         className="flex flex-col gap-2"
                       >
-                        <ContextChip icon={<Sparkles size={11} strokeWidth={2.5} />}>
-                          Legal consultation
-                        </ContextChip>
                         <UserBubble>{msg.content}</UserBubble>
                       </motion.div>
                     );
@@ -650,7 +646,7 @@ export default function ChatInterface({
             />
 
             <div className="mt-1 flex items-end justify-between gap-2">
-              <ComposerToolbar modelLabel="Rengera 3 Pro" />
+              <ComposerToolbar />
               <ComposerActions
                 onSend={() => handleSubmit()}
                 sendDisabled={!input.trim() || isLoading}

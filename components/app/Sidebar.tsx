@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { ElementType, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import RengeraLogo from '@/components/brand/RengeraLogo';
 
 export type AppView = 'chat' | 'library' | 'bookmarks' | 'emergency' | 'complaints' | 'business' | 'admin';
 
@@ -74,12 +75,12 @@ function NavButton({
             ? 'bg-red-50 text-red-700 shadow-sm'
             : isAdminItem
               ? 'bg-violet-50 text-violet-700 shadow-sm'
-              : 'bg-slate-950 text-white shadow-md shadow-slate-950/20'
+              : 'bg-[#d8b485] text-zinc-950'
           : isDanger
-            ? 'text-red-600 hover:bg-red-50'
+            ? 'text-red-400 hover:bg-red-500/10'
             : isAdminItem
-              ? 'text-violet-600 hover:bg-violet-50'
-              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950',
+              ? 'text-violet-300 hover:bg-violet-500/10'
+              : 'text-zinc-400 hover:bg-white/5 hover:text-white',
       )}
     >
       <span
@@ -87,15 +88,15 @@ function NavButton({
           'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-200',
           active
             ? isDanger
-              ? 'bg-white text-red-600'
+              ? 'bg-white/10 text-red-300'
               : isAdminItem
-                ? 'bg-white text-violet-600'
-                : 'bg-white/10 text-white'
+                ? 'bg-white/10 text-violet-200'
+                : 'bg-zinc-950/10 text-zinc-950'
             : isDanger
-              ? 'bg-red-100 text-red-600 group-hover:bg-white'
+              ? 'bg-red-500/10 text-red-400'
               : isAdminItem
-                ? 'bg-violet-100 text-violet-600 group-hover:bg-white'
-                : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-slate-900',
+                ? 'bg-violet-500/10 text-violet-300'
+                : 'bg-white/5 text-zinc-400 group-hover:text-white',
         )}
       >
         <item.icon size={16} strokeWidth={2.25} />
@@ -141,15 +142,15 @@ export default function Sidebar({
   const initials = userName.trim() ? userName.trim().slice(0, 2).toUpperCase() : null;
 
   return (
-    <aside className="flex h-full w-72 flex-col border-r border-slate-200 bg-white text-slate-600 shadow-2xl lg:shadow-none">
-      <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 px-5">
-        <div className="flex items-center gap-3 text-slate-950">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-white shadow-sm">
-            <Scale size={17} strokeWidth={2.25} />
-          </span>
+    <aside className="app-dark flex h-full w-72 flex-col border-r border-white/5 bg-[#0c0c0e] text-zinc-400">
+      <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/5 px-5">
+        <div className="flex items-center gap-3 text-white">
+          <RengeraLogo size={36} label="" />
           <div className="leading-tight">
-            <span className="font-brand block text-lg tracking-wide">RENGERA AI</span>
-            <span className="text-xs font-medium text-slate-500">Rwanda legal AI</span>
+            <span className="font-brand block text-lg tracking-wide text-white">RENGERA AI</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#d8b485]">
+              Rwanda legal AI
+            </span>
           </div>
         </div>
       </div>
@@ -200,7 +201,7 @@ export default function Sidebar({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-slate-200 bg-slate-50 p-3">
+      <div className="shrink-0 border-t border-white/5 bg-[#09090b] p-3">
         <div
           className={cn(
             'mb-2 flex items-center gap-3 rounded-xl border px-3 py-3',

@@ -107,7 +107,7 @@ export default function AdminDashboard() {
   const peakDay = analytics?.daily.reduce((max, day) => Math.max(max, day.questions), 0) || 1;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 p-6 md:p-8">
+    <div className="app-dark mx-auto max-w-7xl space-y-8 p-6 md:p-8">
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-4">

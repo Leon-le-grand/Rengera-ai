@@ -58,7 +58,7 @@ export default function BusinessDashboard() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 p-6 md:p-8">
+    <div className="app-dark mx-auto max-w-7xl space-y-8 p-6 md:p-8">
       {/* Header */}
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>

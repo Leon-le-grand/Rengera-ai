@@ -1,19 +1,100 @@
 'use client';
 
+import RengeraLogo from '@/components/brand/RengeraLogo';
+import AuraReveal from './AuraReveal';
+
+/**
+ * Footer, following the supplied reference: an oversized wordmark that bleeds off
+ * the top of the block, a hairline divider, two link columns and an outlined
+ * object study on the right.
+ */
+
+const COLUMNS = [
+  {
+    heading: 'Product',
+    links: [
+      { label: 'AI Assistant', href: '#home' },
+      { label: 'Law Library', href: '#coverage' },
+      { label: 'Our Approach', href: '#approach' },
+      { label: 'Coverage', href: '#coverage' },
+    ],
+  },
+  {
+    heading: 'Company',
+    links: [
+      { label: 'About Us', href: '#about' },
+      { label: 'Our Services', href: '#services' },
+      { label: 'Contact', href: '#contact' },
+      { label: 'Instagram', href: '#contact' },
+      { label: 'X / Twitter', href: '#contact' },
+    ],
+  },
+];
+
 export default function AuraFooter() {
   return (
-    <footer className="relative z-10 mt-auto border-t border-white/5 bg-zinc-950">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 py-12 md:flex-row">
-        <span className="font-brand text-base tracking-tighter text-zinc-400">RENGERA AI</span>
+    <footer className="relative z-10 mt-auto overflow-hidden border-t border-white/5 bg-black">
+      {/* Oversized wordmark */}
+      <div className="relative select-none px-6 pt-16">
+        <AuraReveal>
+          <p
+            aria-hidden="true"
+            className="pointer-events-none whitespace-nowrap text-center text-[19vw] font-bold leading-[0.75] tracking-[-0.04em] text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.09)]"
+          >
+            RENGERA
+          </p>
+        </AuraReveal>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black to-transparent" />
+      </div>
 
-        <div className="flex items-center gap-6 text-xs text-zinc-600">
-          <a href="#about" className="transition-colors hover:text-zinc-300">
-            Privacy Policy
-          </a>
-          <a href="#services" className="transition-colors hover:text-zinc-300">
-            Terms of Service
-          </a>
-          <span>© 2026 Rengera AI. All rights reserved.</span>
+      <div className="relative mx-auto max-w-[1400px] border-t border-white/5 px-6">
+        <div className="grid grid-cols-1 gap-12 py-16 lg:grid-cols-[1fr_1fr_1.2fr]">
+          {/* Brand */}
+          <div>
+            <div className="flex items-center gap-3">
+              <RengeraLogo size={36} label="" />
+              <span className="font-brand text-lg tracking-wide text-white">RENGERA AI</span>
+            </div>
+            <p className="mt-4 max-w-xs text-[11px] leading-relaxed text-zinc-500">
+              Know Your Rights. Protect Your Future.
+              <br />
+              © 2026 Rengera AI. Every answer cites the exact article.
+            </p>
+          </div>
+
+          {/* Link columns */}
+          {COLUMNS.map((column) => (
+            <div key={column.heading}>
+              <p className="mb-6 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                {column.heading}
+              </p>
+              <ul className="space-y-4">
+                {column.links.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      className="text-[11px] font-medium uppercase tracking-widest text-white/70 transition-colors hover:text-[#d8b485]"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
+          {/* Outlined object study — the reference's right-hand visual */}
+          <div className="flex items-end justify-start lg:justify-end" aria-hidden="true">
+            <svg viewBox="0 0 320 160" className="h-32 w-full max-w-sm text-white/15">
+              <g fill="none" stroke="currentColor" strokeWidth="1.25">
+                <path d="M40 150 L58 96 H96 L114 150" />
+                <path d="M120 150 L142 70 H178 L200 150" />
+                <path d="M232 150 V104 a14 14 0 0 1 14 -14 h8 V62 h14 V90 h8 a14 14 0 0 1 14 14 V150" />
+                <path d="M228 150 H300" />
+              </g>
+              <path d="M246 150 V124 a14 14 0 0 1 28 0 V150 Z" fill="#d8b485" opacity="0.25" />
+            </svg>
+          </div>
         </div>
       </div>
     </footer>

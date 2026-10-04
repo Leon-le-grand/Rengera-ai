@@ -9,6 +9,7 @@ import BusinessDashboard from './BusinessDashboard';
 import AdminDashboard from './AdminDashboard';
 import { Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { cn } from '@/lib/utils';
 
 export interface DashboardAdminUser {
   name: string;
@@ -77,7 +78,7 @@ export default function AppDashboard({
   };
 
   return (
-    <div className="flex h-dvh bg-slate-100">
+    <div className="flex h-dvh bg-[#09090b]">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
@@ -102,8 +103,8 @@ export default function AppDashboard({
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-dvh overflow-hidden relative bg-slate-100">
-        <header className="print:hidden h-16 border-b border-slate-200 flex items-center px-4 lg:hidden bg-white shrink-0 shadow-sm z-10">
+      <div className="flex-1 flex flex-col h-dvh overflow-hidden relative bg-[#09090b]">
+        <header className="print:hidden h-16 border-b border-white/5 flex items-center px-4 lg:hidden bg-[#09090b] shrink-0 z-10">
           <button 
             onClick={() => setSidebarOpen(true)}
             className="p-2 -ml-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
@@ -121,7 +122,7 @@ export default function AppDashboard({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="h-full"
+              className={cn('h-full', currentView !== 'chat' && 'app-dark')}
             >
               {currentView === 'chat' && (
                 <ChatInterface
