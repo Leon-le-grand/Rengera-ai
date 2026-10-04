@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getSharedConsultation } from '@/app/share-actions';
 import ShareConsultationView from './ShareConsultationView';
+import ShareActions from './ShareActions';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +39,12 @@ export default async function SharedConsultationPage({ params }: PageProps) {
       </header>
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+            Forward this answer
+          </p>
+          <ShareActions title={consultation.question.slice(0, 90)} />
+        </div>
         <ShareConsultationView consultation={consultation} />
       </div>
     </main>

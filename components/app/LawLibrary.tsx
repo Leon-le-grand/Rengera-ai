@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Search,
   BookOpen,
+  MessageSquareText,
   ChevronRight,
   X,
   Loader2,
@@ -33,6 +34,15 @@ interface LawLibraryProps {
   onOpenLaw: (lawId: string, articleNumber?: string | null) => void;
   onCloseReader: () => void;
   isAdmin?: boolean;
+  /** Sends the open law or article into the chat as a grounded follow-up. */
+  onAskAboutArticle?: (ask: {
+    prompt: string;
+    lawId: string;
+    lawTitle: string;
+    referenceNumber: string | null;
+    articleNumber: string | null;
+    text: string | null;
+  }) => void;
 }
 
 const CATEGORY_STYLES: { match: RegExp; icon: ElementType; tone: string }[] = [
@@ -178,6 +188,7 @@ export default function LawLibrary({
   onOpenLaw,
   onCloseReader,
   isAdmin = false,
+  onAskAboutArticle,
 }: LawLibraryProps) {
   const [categories, setCategories] = useState<LawLibraryCategory[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
@@ -457,6 +468,7 @@ export default function LawLibrary({
               lawId={openLawId}
               focusArticle={openArticleNumber ?? null}
               onBack={onCloseReader}
+              onAskAboutArticle={onAskAboutArticle}
             />
           </motion.div>
         ) : (
@@ -609,10 +621,12 @@ function LawReader({
   lawId,
   focusArticle,
   onBack,
+  onAskAboutArticle,
 }: {
   lawId: string;
   focusArticle: string | null;
   onBack: () => void;
+  onAskAboutArticle?: LawLibraryProps['onAskAboutArticle'];
 }) {
   const [detail, setDetail] = useState<Awaited<ReturnType<typeof import('@/app/legal-actions').getLawDetail>>>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -929,6 +943,28 @@ function LawReader({
                               <h2 className="mt-3 text-base font-bold text-slate-900">
                                 {article.article_title}
                               </h2>
+                            )}
+
+                            {onAskAboutArticle && !isPreamble && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onAskAboutArticle({
+                                    prompt: `Explain Article ${article.article_number} of ${
+                                      detail?.reference_number || detail?.title || 'this law'
+                                    } in simple words, and tell me what it means for me.`,
+                                    lawId,
+                                    lawTitle: detail?.title || '',
+                                    referenceNumber: detail?.reference_number ?? null,
+                                    articleNumber: article.article_number,
+                                    text: article.content,
+                                  })
+                                }
+                                className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 transition-all duration-200 hover:-translate-y-px hover:bg-emerald-100 hover:shadow-sm"
+                              >
+                                <MessageSquareText size={13} strokeWidth={2.25} />
+                                Ask Rengera about this article
+                              </button>
                             )}
 
                             <p className="mt-3 whitespace-pre-wrap text-[15px] leading-7 text-slate-700">

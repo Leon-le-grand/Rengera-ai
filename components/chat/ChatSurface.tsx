@@ -17,6 +17,7 @@
 import type { ReactNode } from 'react';
 import {
   ArrowUp,
+  BadgeCheck,
   ChevronDown,
   Eye,
   FileText,
@@ -87,6 +88,7 @@ export function ChatTopBar({
   onMore,
   onClose,
   actions,
+  children,
 }: {
   title?: string;
   privateLabel?: string;
@@ -97,6 +99,8 @@ export function ChatTopBar({
   onClose?: () => void;
   /** Optional custom icon rail (the app swaps this in for its own controls). */
   actions?: ReactNode;
+  /** Extra controls rendered between the title and the icon rail. */
+  children?: ReactNode;
 }) {
   return (
     <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-3 sm:px-5">
@@ -117,6 +121,7 @@ export function ChatTopBar({
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        {children}
         {actions ?? (
           <>
             <IconButton label="Rename chat" onClick={onEdit}>
@@ -357,10 +362,12 @@ export function GeneratingRow({ label }: { label: string }) {
 export function SourceList({
   countLabel,
   items,
+  onSelect,
   className,
 }: {
   countLabel: string;
-  items: { key: string; title: string; icon?: ReactNode; active?: boolean }[];
+  items: { key: string; title: string; icon?: ReactNode; active?: boolean; verified?: boolean }[];
+  onSelect?: (key: string) => void;
   className?: string;
 }) {
   return (
@@ -371,6 +378,7 @@ export function SourceList({
           <li key={item.key}>
             <button
               type="button"
+              onClick={() => onSelect?.(item.key)}
               className={cn(
                 'flex w-full items-center gap-2.5 py-2 text-left text-[13px] text-[#1f1f1f] outline-none transition-colors hover:underline',
                 item.active && 'font-semibold',
@@ -380,6 +388,12 @@ export function SourceList({
                 {item.icon ?? <FileText size={12} strokeWidth={2} />}
               </span>
               <span className="min-w-0 truncate">{item.title}</span>
+              {item.verified && (
+                <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-[1px] text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-200">
+                  <BadgeCheck size={9} strokeWidth={3} />
+                  Verified
+                </span>
+              )}
             </button>
           </li>
         ))}

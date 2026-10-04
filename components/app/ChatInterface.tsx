@@ -1,26 +1,39 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Loader2,
-  ShieldAlert,
-  Phone,
-  RotateCcw,
+  AlarmClock,
   Car,
+  Check,
+  Download,
   FileText,
   Home,
-  Shield,
-  Check,
   Link2,
-  Download,
+  Loader2,
+  Phone,
+  RotateCcw,
+  Shield,
+  ShieldAlert,
   Sparkles,
 } from 'lucide-react';
 import type { ElementType } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { generateLegalAdvice, type LegalSource } from '@/app/actions';
+import { generateLegalAdvice, type ArticleContext, type LegalSource } from '@/app/actions';
 import { shareConsultation } from '@/app/share-actions';
+import {
+  createDeadline,
+  logUsageEvent,
+} from '@/app/product-actions';
 import { detectEmergencyRisk } from '@/lib/safety';
+import { UI_STRINGS, type AnswerLanguage } from '@/lib/answer-language';
+import AnswerFeedback from '@/components/chat/AnswerFeedback';
+import DeadlinesPanel, {
+  extractDeadlineSuggestions,
+  isoDateInDays,
+} from '@/components/chat/DeadlinesPanel';
+import LanguageMenu, { useStoredLanguage } from '@/components/chat/LanguageMenu';
+import LawChangeBanner from '@/components/chat/LawChangeBanner';
 import {
   AssistantBlock,
   ChatDisclaimer,
@@ -46,74 +59,79 @@ interface Message {
   sources?: LegalSource[];
 }
 
+/** A question handed over from the Law Library: "explain this article to me". */
+export interface PendingArticleAsk {
+  prompt: string;
+  context: ArticleContext;
+}
+
 interface ChatInterfaceProps {
   /** Opens one article of one law inside the Law Library reader. */
   onOpenLaw?: (lawId: string, articleNumber?: string | null) => void;
+  /** Set when the user asks a follow-up from inside a law. */
+  pendingAsk?: PendingArticleAsk | null;
+  onPendingAskHandled?: () => void;
 }
-
-const INITIAL_MESSAGE: Message = {
-  id: 'msg-0',
-  role: 'assistant',
-  content: `Muraho! I am Rengera, your legal assistant.
-
-Describe your situation in any language. I will read the official Rwandan laws, quote the exact article, and tell you what to do next.`,
-};
 
 const SESSION_STORAGE_KEY = 'rengera_ai_chat_session_v1';
 
-const SCENARIOS: { id: string; label: string; icon: ElementType; prompt: string }[] = [
-  {
-    id: 'tenant',
-    label: 'Tenant problem',
-    icon: Home,
-    prompt: 'My landlord locked me out. What are my rights?',
-  },
-  {
-    id: 'employment',
-    label: 'Employment',
-    icon: FileText,
-    prompt: 'My employer refuses to pay me for overtime. What should I do?',
-  },
-  {
-    id: 'privacy',
-    label: 'Privacy',
-    icon: Shield,
-    prompt: 'Someone shared my private photos without my consent. Is this illegal?',
-  },
-  {
-    id: 'traffic',
-    label: 'Traffic',
-    icon: Car,
-    prompt: 'The police stopped me and asked for a bribe. What are my rights?',
-  },
+const SCENARIOS: { id: string; label: keyof ReturnType<typeof labelsFor>; icon: ElementType; prompt: string }[] = [
+  { id: 'tenant', label: 'tenant', icon: Home, prompt: 'My landlord locked me out. What are my rights?' },
+  { id: 'employment', label: 'employment', icon: FileText, prompt: 'My employer refuses to pay me for overtime. What should I do?' },
+  { id: 'privacy', label: 'privacy', icon: Shield, prompt: 'Someone shared my private photos without my consent. Is this illegal?' },
+  { id: 'traffic', label: 'traffic', icon: Car, prompt: 'The police stopped me and asked for a bribe. What are my rights?' },
 ];
 
+function labelsFor(language: AnswerLanguage) {
+  return UI_STRINGS[language].scenarios;
+}
+
+function greetingFor(language: AnswerLanguage): Message {
+  return { id: 'msg-0', role: 'assistant', content: UI_STRINGS[language].greeting };
+}
+
 function loadStoredMessages(): Message[] {
-  if (typeof window === 'undefined') return [INITIAL_MESSAGE];
+  if (typeof window === 'undefined') return [greetingFor('en')];
 
   try {
     const stored = window.localStorage.getItem(SESSION_STORAGE_KEY);
-    if (!stored) return [INITIAL_MESSAGE];
+    if (!stored) return [greetingFor('en')];
     const parsed = JSON.parse(stored) as { messages?: Message[] };
     return Array.isArray(parsed.messages) && parsed.messages.length > 0
       ? parsed.messages
-      : [INITIAL_MESSAGE];
+      : [greetingFor('en')];
   } catch {
-    return [INITIAL_MESSAGE];
+    return [greetingFor('en')];
   }
 }
 
-export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
+export default function ChatInterface({
+  onOpenLaw,
+  pendingAsk = null,
+  onPendingAskHandled,
+}: ChatInterfaceProps = {}) {
+  const [language, setLanguage] = useStoredLanguage();
   const [messages, setMessages] = useState<Message[]>(loadStoredMessages);
   const [input, setInput] = useState('');
+  const [articleContext, setArticleContext] = useState<ArticleContext | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [printStatus, setPrintStatus] = useState('');
   const [sharingMessageId, setSharingMessageId] = useState<string | null>(null);
   const [sharedMessageId, setSharedMessageId] = useState<string | null>(null);
   const [shareNotice, setShareNotice] = useState('');
   const [showShareNotice, setShowShareNotice] = useState(false);
+  const [showDeadlines, setShowDeadlines] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const streamRef = useRef<HTMLDivElement>(null);
+  const sessionId = useRef<string>('');
   const emergencyRisk = detectEmergencyRisk(input);
+  const strings = UI_STRINGS[language];
+  const scenarios = useMemo(() => labelsFor(language), [language]);
+
+  if (!sessionId.current && typeof window !== 'undefined') {
+    sessionId.current = window.localStorage.getItem('rengera_session_id') || crypto.randomUUID();
+    window.localStorage.setItem('rengera_session_id', sessionId.current);
+  }
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -123,28 +141,47 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
   }, [messages]);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: 'smooth',
-      });
+    if (streamRef.current) {
+      streamRef.current.scrollTo({ top: streamRef.current.scrollHeight, behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, isLoading]);
+
+  // A follow-up launched from the Law Library arrives with its article attached.
+  useEffect(() => {
+    if (!pendingAsk) return;
+    setArticleContext(pendingAsk.context);
+    setInput(pendingAsk.prompt);
+    onPendingAskHandled?.();
+  }, [pendingAsk, onPendingAskHandled]);
+
+  // Translating an untouched welcome screen is free; translating a live thread
+  // is not attempted because the answer would no longer match the question.
+  useEffect(() => {
+    setMessages((current) =>
+      current.length === 1 && current[0].id === 'msg-0'
+        ? [greetingFor(language)]
+        : current,
+    );
+  }, [language]);
 
   const handleSubmit = async (e?: React.FormEvent, presetPrompt?: string) => {
     if (e) e.preventDefault();
-    const query = presetPrompt || input.trim();
+    const query = (presetPrompt || input).trim();
     if (!query || isLoading) return;
 
-    const userMessage: Message = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: query,
-    };
+    const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content: query };
 
     setMessages((prev) => [...prev, userMessage]);
-    if (!presetPrompt) setInput('');
+    setInput('');
     setIsLoading(true);
+
+    void logUsageEvent({
+      eventType: 'question_asked',
+      language,
+      surface: 'chat',
+      query,
+      sessionId: sessionId.current,
+    });
 
     try {
       const history = messages
@@ -154,7 +191,7 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
           content: message.content,
         })) as { role: 'user' | 'model'; content: string }[];
 
-      const answer = await generateLegalAdvice(userMessage.content, history);
+      const answer = await generateLegalAdvice(query, history, { language, articleContext });
 
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
@@ -164,18 +201,31 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+
+      void logUsageEvent({
+        eventType: 'answer_given',
+        language,
+        surface: 'chat',
+        query,
+        sessionId: sessionId.current,
+        lawReferences: (answer.sources || []).map(
+          (source) => `${source.referenceNumber || source.title}${source.articleNumber ? ` Art. ${source.articleNumber}` : ''}`,
+        ),
+      });
     } catch (error) {
       console.error(error);
     } finally {
+      setArticleContext(null);
       setIsLoading(false);
     }
   };
 
   const handleNewChat = () => {
-    setMessages([INITIAL_MESSAGE]);
+    setMessages([greetingFor(language)]);
     setInput('');
+    setArticleContext(null);
     setShowShareNotice(false);
-    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    streamRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleShare = async (message: Message) => {
@@ -205,6 +255,8 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
       }
 
       setSharedMessageId(message.id);
+      void logUsageEvent({ eventType: 'share_created', language, surface: 'chat', sessionId: sessionId.current });
+
       try {
         await navigator.clipboard.writeText(result.shareUrl || '');
         setShareNotice('Link copied to your clipboard.');
@@ -212,9 +264,7 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
         setShareNotice(`Share link: ${result.shareUrl}`);
       }
     } catch (error) {
-      setShareNotice(
-        error instanceof Error ? error.message : 'The link could not be created.',
-      );
+      setShareNotice(error instanceof Error ? error.message : 'The link could not be created.');
     } finally {
       setSharingMessageId(null);
     }
@@ -230,6 +280,11 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
 
   const lastAssistant = [...messages].reverse().find((message) => message.role === 'assistant');
   const hasConversation = messages.some((message) => message.role === 'user');
+
+  const openLaw = (lawId: string, articleNumber?: string | null) => {
+    onOpenLaw?.(lawId, articleNumber);
+    void logUsageEvent({ eventType: 'law_opened', language, surface: 'chat', sessionId: sessionId.current });
+  };
 
   const renderMarkdown = (content: string) => (
     <ReactMarkdown
@@ -250,12 +305,7 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
           </li>
         ),
         a: ({ node, ...props }) => (
-          <a
-            className="text-[#1a73e8] underline underline-offset-2"
-            target="_blank"
-            rel="noreferrer noopener"
-            {...props}
-          />
+          <a className="text-[#1a73e8] underline underline-offset-2" target="_blank" rel="noreferrer noopener" {...props} />
         ),
         strong: ({ node, ...props }) => <strong className="font-semibold text-[#1f1f1f]" {...props} />,
         blockquote: ({ node, ...props }) => (
@@ -271,9 +321,11 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
   );
 
   return (
-    <div className="flex h-full w-full justify-center bg-[#e6e6e6] p-0 sm:p-4">
-      <ChatFrame className="chat-print-area h-full max-w-[760px]">
-        <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col">
+    <div className="relative flex h-full w-full justify-center bg-[#e6e6e6] p-0 sm:p-4">
+      <ChatFrame className="chat-print-area relative h-full max-w-[760px]">
+        <LawChangeBanner />
+
+        <div className="flex min-h-0 flex-1 flex-col">
           <ChatTopBar
             title={hasConversation ? 'Rengera consultation' : 'New Rengera chat'}
             onNewChat={handleNewChat}
@@ -287,157 +339,230 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
                 setShowShareNotice(true);
               }
             }}
-          />
+          >
+            <button
+              type="button"
+              onClick={() => setShowDeadlines(true)}
+              aria-label="Open deadlines"
+              className="hidden h-8 w-8 items-center justify-center rounded-full text-[#5f6368] transition-colors hover:bg-[#f1f3f4] hover:text-[#1f1f1f] sm:flex"
+            >
+              <AlarmClock size={15} strokeWidth={2} />
+            </button>
+            <LanguageMenu value={language} onChange={setLanguage} className="ml-auto sm:ml-0" />
+          </ChatTopBar>
 
-          <ChatStream>
-            {messages.map((msg) => {
-              if (msg.role === 'user') {
-                return (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25, ease: 'easeOut' }}
-                    className="flex flex-col gap-2"
-                  >
-                    <ContextChip icon={<Sparkles size={11} strokeWidth={2.5} />}>
-                      Legal consultation
-                    </ContextChip>
-                    <UserBubble>{msg.content}</UserBubble>
-                  </motion.div>
-                );
-              }
-
-              const sources = msg.sources || [];
-              const isWelcome = msg.id === 'msg-0';
-
-              return (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, ease: 'easeOut' }}
-                  className="flex flex-col gap-3"
-                >
-                  <AssistantBlock>
-                    {isWelcome ? (
-                      <p className="text-[13px] leading-[1.65] text-[#1f1f1f]">{msg.content}</p>
-                    ) : (
-                      renderMarkdown(msg.content)
-                    )}
-                  </AssistantBlock>
-
-                  {isWelcome && (
-                    <div className="flex flex-wrap gap-2">
-                      {SCENARIOS.map((scenario) => (
-                        <button
-                          key={scenario.id}
-                          type="button"
-                          onClick={() => handleSubmit(undefined, scenario.prompt)}
-                          className="inline-flex items-center gap-2 rounded-full border border-[#e8eaed] bg-white px-3 py-[7px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
-                        >
-                          <scenario.icon size={13} strokeWidth={2} className="text-[#5f6368]" />
-                          {scenario.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {!isWelcome && sources.length > 0 && (
-                    <>
-                      <ViewedRow
-                        source={
-                          sources[0].articleNumber
-                            ? `Art. ${sources[0].articleNumber}`
-                            : sources[0].referenceNumber || sources[0].title
-                        }
-                      />
-                      <SourceList
-                        countLabel={`${sources.length} result${sources.length === 1 ? '' : 's'}`}
-                        items={sources.map((source, index) => ({
-                          key: `${source.lawId}-${source.articleNumber ?? index}-${index}`,
-                          title: `${source.referenceNumber || source.title}${
-                            source.articleNumber ? ` — Article ${source.articleNumber}` : ''
-                          }`,
-                          icon: <FileText size={12} strokeWidth={2} />,
-                          active: index === 0,
-                        }))}
-                      />
-                      {onOpenLaw && (
-                        <button
-                          type="button"
-                          onClick={() => onOpenLaw(sources[0].lawId, sources[0].articleNumber)}
-                          className="self-start text-[12px] font-medium text-[#1a73e8] outline-none hover:underline"
-                        >
-                          Open the full article in the Law Library
-                        </button>
-                      )}
-                    </>
-                  )}
-
-                  {!isWelcome && (
-                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowShareNotice(true);
-                          handleShare(msg);
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-[#e8eaed] bg-white px-3 py-[6px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
+          <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col">
+            <div ref={streamRef} className="scrollbar-hide min-h-0 flex-1 overflow-y-auto">
+              <div className="mx-auto flex w-full max-w-[560px] flex-col gap-5 px-5 pb-6 pt-2 sm:px-7">
+                {messages.map((msg) => {
+                  if (msg.role === 'user') {
+                    return (
+                      <motion.div
+                        key={msg.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25, ease: 'easeOut' }}
+                        className="flex flex-col gap-2"
                       >
-                        {sharingMessageId === msg.id ? (
-                          <Loader2 size={12} className="animate-spin" />
-                        ) : sharedMessageId === msg.id ? (
-                          <Check size={12} className="text-[#1a73e8]" />
+                        <ContextChip icon={<Sparkles size={11} strokeWidth={2.5} />}>
+                          Legal consultation
+                        </ContextChip>
+                        <UserBubble>{msg.content}</UserBubble>
+                      </motion.div>
+                    );
+                  }
+
+                  const sources = msg.sources || [];
+                  const isWelcome = msg.id === 'msg-0';
+                  const question = messages[Math.max(0, messages.indexOf(msg) - 1)]?.content || '';
+                  const deadlineHints = isWelcome ? [] : extractDeadlineSuggestions(msg.content);
+
+                  return (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeOut' }}
+                      className="flex flex-col gap-3"
+                    >
+                      <AssistantBlock>
+                        {isWelcome ? (
+                          <p className="text-[13px] leading-[1.65] text-[#1f1f1f]">{msg.content}</p>
                         ) : (
-                          <Link2 size={12} strokeWidth={2} />
+                          renderMarkdown(msg.content)
                         )}
-                        {sharingMessageId === msg.id
-                          ? 'Creating link…'
-                          : sharedMessageId === msg.id
-                            ? 'Link copied'
-                            : 'Share answer'}
-                      </button>
+                      </AssistantBlock>
 
-                      <button
-                        type="button"
-                        onClick={handleSaveAsPdf}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-[#e8eaed] bg-white px-3 py-[6px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
-                      >
-                        <Download size={12} strokeWidth={2} />
-                        Save as PDF
-                      </button>
+                      {isWelcome && (
+                        <div className="flex flex-wrap gap-2">
+                          {SCENARIOS.map((scenario) => (
+                            <button
+                              key={scenario.id}
+                              type="button"
+                              onClick={() => handleSubmit(undefined, scenario.prompt)}
+                              className="inline-flex items-center gap-2 rounded-full border border-[#e8eaed] bg-white px-3 py-[7px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
+                            >
+                              <scenario.icon size={13} strokeWidth={2} className="text-[#5f6368]" />
+                              {scenarios[scenario.label]}
+                            </button>
+                          ))}
+                        </div>
+                      )}
 
-                      <button
-                        type="button"
-                        onClick={handleNewChat}
-                        className="inline-flex items-center gap-1.5 rounded-full px-2 py-[6px] text-[12px] font-medium text-[#5f6368] outline-none transition-colors hover:bg-[#f1f3f4]"
-                      >
-                        <RotateCcw size={12} strokeWidth={2} />
-                        New chat
-                      </button>
-                    </div>
+                      {!isWelcome && deadlineHints.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2 rounded-[14px] border border-[#e8eaed] bg-white p-3">
+                          <AlarmClock size={14} strokeWidth={2} className="text-[#1a73e8]" />
+                          <span className="text-[12px] text-[#3c4043]">Time limit found — save it?</span>
+                          {deadlineHints.map((hint) => (
+                            <button
+                              key={hint.label}
+                              type="button"
+                              onClick={async () => {
+                                await createDeadline({
+                                  label: hint.label,
+                                  dueDate: isoDateInDays(hint.days),
+                                  sourceLawTitle: sources[0]?.referenceNumber || sources[0]?.title || null,
+                                  sourceArticle: sources[0]?.articleNumber || null,
+                                });
+                                setShowDeadlines(true);
+                              }}
+                              className="rounded-full bg-[#e8f0fe] px-2.5 py-1 text-[11px] font-medium text-[#1967d2] transition-colors hover:bg-[#d2e3fc]"
+                            >
+                              {hint.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {!isWelcome && sources.length > 0 && (
+                        <>
+                          <ViewedRow
+                            source={
+                              sources[0].articleNumber
+                                ? `Art. ${sources[0].articleNumber}`
+                                : sources[0].referenceNumber || sources[0].title
+                            }
+                          />
+                          <SourceList
+                            countLabel={`${sources.length} result${sources.length === 1 ? '' : 's'}`}
+                            onSelect={(key) => {
+                              const source = sources.find((item) => `${item.lawId}-${item.articleNumber ?? ''}` === key);
+                              if (source) openLaw(source.lawId, source.articleNumber);
+                            }}
+                            items={sources.map((source, index) => ({
+                              key: `${source.lawId}-${source.articleNumber ?? index}`,
+                              title: `${source.referenceNumber || source.title}${
+                                source.articleNumber ? ` — Article ${source.articleNumber}` : ''
+                              }`,
+                              icon: <FileText size={12} strokeWidth={2} />,
+                              active: index === 0,
+                              verified: Boolean(source.reviewed),
+                            }))}
+                          />
+                          <div className="flex flex-wrap items-center gap-3">
+                            {onOpenLaw && (
+                              <button
+                                type="button"
+                                onClick={() => openLaw(sources[0].lawId, sources[0].articleNumber)}
+                                className="text-[12px] font-medium text-[#1a73e8] outline-none hover:underline"
+                              >
+                                Open the full article in the Law Library
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setArticleContext({
+                                  lawTitle: sources[0].title,
+                                  referenceNumber: sources[0].referenceNumber,
+                                  articleNumber: sources[0].articleNumber,
+                                });
+                                setInput('Explain this article in simpler words: ');
+                              }}
+                              className="text-[12px] font-medium text-[#1a73e8] outline-none hover:underline"
+                            >
+                              Ask a follow-up about this article
+                            </button>
+                          </div>
+                        </>
+                      )}
+
+                      {!isWelcome && (
+                        <>
+                          <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowShareNotice(true);
+                                handleShare(msg);
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-[#e8eaed] bg-white px-3 py-[6px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
+                            >
+                              {sharingMessageId === msg.id ? (
+                                <Loader2 size={12} className="animate-spin" />
+                              ) : sharedMessageId === msg.id ? (
+                                <Check size={12} className="text-[#1a73e8]" />
+                              ) : (
+                                <Link2 size={12} strokeWidth={2} />
+                              )}
+                              {sharingMessageId === msg.id
+                                ? 'Creating link…'
+                                : sharedMessageId === msg.id
+                                  ? strings.share
+                                  : strings.share}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={handleSaveAsPdf}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-[#e8eaed] bg-white px-3 py-[6px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
+                            >
+                              <Download size={12} strokeWidth={2} />
+                              {strings.savePdf}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={handleNewChat}
+                              className="inline-flex items-center gap-1.5 rounded-full px-2 py-[6px] text-[12px] font-medium text-[#5f6368] outline-none transition-colors hover:bg-[#f1f3f4]"
+                            >
+                              <RotateCcw size={12} strokeWidth={2} />
+                              {strings.newChat}
+                            </button>
+                          </div>
+
+                          <AnswerFeedback
+                            messageId={msg.id}
+                            question={question}
+                            citedLaws={sources.map((source) => source.citation || source.title)}
+                            language={language}
+                          />
+                        </>
+                      )}
+                    </motion.div>
+                  );
+                })}
+
+                <AnimatePresence>
+                  {isLoading && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="flex flex-col gap-3"
+                    >
+                      <GeneratingRow label={strings.generating} />
+                    </motion.div>
                   )}
-                </motion.div>
-              );
-            })}
-
-            <AnimatePresence>
-              {isLoading && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col gap-3"
-                >
-                  <GeneratingRow label="Reading the law library…" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </ChatStream>
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <ScrollDownButton onClick={() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })} />
+        <ScrollDownButton
+          onClick={() => streamRef.current?.scrollTo({ top: streamRef.current.scrollHeight, behavior: 'smooth' })}
+        />
 
         <ComposerFrame
           emergency={
@@ -477,10 +602,7 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
             </AnimatePresence>
           }
         >
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col"
-          >
+          <form onSubmit={handleSubmit} className="flex flex-col">
             {showShareNotice && shareNotice && (
               <div className="mb-2 flex items-center justify-between gap-3 rounded-[10px] bg-white px-3 py-2 text-[12px] text-[#3c4043] ring-1 ring-[#e8eaed]">
                 <span className="truncate">{shareNotice}</span>
@@ -495,9 +617,17 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
               </div>
             )}
 
-            {emergencyRisk.level === 'urgent' && (
-              <div className="mb-2">
-                <ComposerChip label="Urgent case" />
+            {(emergencyRisk.level === 'urgent' || articleContext) && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {emergencyRisk.level === 'urgent' && <ComposerChip label="Urgent case" />}
+                {articleContext && (
+                  <ComposerChip
+                    label={`${articleContext.referenceNumber || articleContext.lawTitle || 'Article'}${
+                      articleContext.articleNumber ? ` · Art. ${articleContext.articleNumber}` : ''
+                    }`}
+                    onRemove={() => setArticleContext(null)}
+                  />
+                )}
               </div>
             )}
 
@@ -507,20 +637,20 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
             <textarea
               id="rengera-chat-input"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything about your rights…"
+              onChange={(event) => setInput(event.target.value)}
+              placeholder={strings.placeholder}
               rows={1}
               className="scrollbar-hide max-h-32 min-h-[40px] w-full resize-none border-none bg-transparent px-1 py-1 text-[16px] leading-[1.5] text-[#1f1f1f] outline-none placeholder:text-[#9aa0a6]"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  handleSubmit(event);
                 }
               }}
             />
 
             <div className="mt-1 flex items-end justify-between gap-2">
-              <ComposerToolbar />
+              <ComposerToolbar modelLabel="Rengera 3 Pro" />
               <ComposerActions
                 onSend={() => handleSubmit()}
                 sendDisabled={!input.trim() || isLoading}
@@ -530,13 +660,13 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
           </form>
         </ComposerFrame>
 
-        <ChatDisclaimer>
-          Rengera AI can make mistakes. Verify important information with official sources.
-        </ChatDisclaimer>
+        <ChatDisclaimer>{strings.disclaimer}</ChatDisclaimer>
 
         <p className="sr-only" role="status" aria-live="polite">
           {printStatus}
         </p>
+
+        <DeadlinesPanel open={showDeadlines} onClose={() => setShowDeadlines(false)} />
       </ChatFrame>
     </div>
   );

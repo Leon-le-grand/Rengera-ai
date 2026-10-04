@@ -1,6 +1,8 @@
 'use server';
 
 import { getDb } from '@/lib/db';
+import { LANGUAGE_DEFINITIONS, resolveAnswerLanguage } from '@/lib/answer-language';
+import { getSupabaseAdminClient } from '@/lib/supabase';
 import { buildEmergencyMarkdown, detectEmergencyRisk } from '@/lib/safety';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { retrieveSupabaseLegalContext } from '@/lib/supabase-retrieval';
@@ -65,6 +67,30 @@ function cosineSimilarity(a: number[], b: number[]) {
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
+/**
+ * Which of these laws have been checked by a human administrator. Drives the
+ * "Verified" badge on a citation. A lookup failure must never break an answer,
+ * so it degrades to an empty set.
+ */
+async function loadReviewedLawIds(lawIds: string[]): Promise<Set<string>> {
+  const unique = Array.from(new Set(lawIds)).filter(Boolean);
+  if (unique.length === 0 || !isSupabaseConfigured()) return new Set();
+
+  try {
+    const { data, error } = await getSupabaseAdminClient()
+      .from('laws')
+      .select('id')
+      .in('id', unique)
+      .not('classification_reviewed_at', 'is', null);
+
+    if (error) throw error;
+    return new Set(((data || []) as { id: string }[]).map((row) => String(row.id)));
+  } catch (error) {
+    console.error('Reviewed-law lookup failed:', error);
+    return new Set();
+  }
+}
+
 export interface LegalSource {
   lawId: string;
   title: string;
@@ -73,6 +99,8 @@ export interface LegalSource {
   citation: string;
   sourceUrl: string | null;
   score: number;
+  /** True when an administrator has reviewed this law's classification. */
+  reviewed?: boolean;
 }
 
 export interface LegalAnswer {
@@ -80,9 +108,23 @@ export interface LegalAnswer {
   sources: LegalSource[];
 }
 
+/** Context handed over when the user asks a follow-up from inside the library. */
+export interface ArticleContext {
+  lawTitle?: string | null;
+  referenceNumber?: string | null;
+  articleNumber?: string | null;
+  text?: string | null;
+}
+
+export interface AdviceOptions {
+  language?: string;
+  articleContext?: ArticleContext | null;
+}
+
 export async function generateLegalAdvice(
   query: string,
   chatHistory: { role: 'user' | 'model'; content: string }[] = [],
+  options: AdviceOptions = {},
 ): Promise<LegalAnswer> {
   const runtime = getSpaceBunnyRuntime();
   const collectedSources: LegalSource[] = [];
@@ -99,7 +141,15 @@ export async function generateLegalAdvice(
       try {
         const retrieval = await retrieveSupabaseLegalContext(query, 8);
         contextText = retrieval?.context || 'No relevant laws found in Supabase.';
-        collectedSources.push(...(retrieval?.sources || []));
+        const reviewedIds = await loadReviewedLawIds(
+          (retrieval?.sources || []).map((source) => source.lawId),
+        );
+        collectedSources.push(
+          ...(retrieval?.sources || []).map((source) => ({
+            ...source,
+            reviewed: reviewedIds.has(source.lawId),
+          })),
+        );
       } catch (error) {
         console.error('Supabase retrieval error:', error);
         contextText = 'Legal search is temporarily unavailable.';
@@ -167,12 +217,22 @@ export async function generateLegalAdvice(
 RETRIEVED LEGAL CONTEXT:
 ${contextText}
 
+${options.articleContext ? `ARTICLE THE USER IS READING (answer about this specific article first):\n${options.articleContext.lawTitle || ''} ${options.articleContext.referenceNumber || ''} Article ${options.articleContext.articleNumber || ''}\n${(options.articleContext.text || '').slice(0, 4000)}\n` : ''}
 USER QUERY:
 ${query}
 `;
 
+    const language = resolveAnswerLanguage(options.language);
+    const languageInstruction = LANGUAGE_DEFINITIONS[language].instruction;
+    const articleInstruction = options.articleContext
+      ? ' The user opened this article from the Law Library: explain that article first, then how it applies to their question.'
+      : '';
+
     const messages: SpaceBunnyMessage[] = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      {
+        role: 'system',
+        content: `${SYSTEM_PROMPT}\n\nLANGUAGE:\n${languageInstruction}${articleInstruction}`,
+      },
       {
         role: 'assistant',
         content:

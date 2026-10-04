@@ -5,7 +5,6 @@ import AuraHero from './aura/AuraHero';
 import AuraPillars from './aura/AuraPillars';
 import AuraMission from './aura/AuraMission';
 import AuraApproach from './aura/AuraApproach';
-import AuraInterface from './aura/AuraInterface';
 import AuraCoverage from './aura/AuraCoverage';
 import AuraContact from './aura/AuraContact';
 import AuraFooter from './aura/AuraFooter';
@@ -21,8 +20,9 @@ interface LandingPageProps {
  * zinc-950 canvas with its layered background, the fixed 10px uppercase
  * navigation, the oversized hero wordmark, the four-column expertise strip, the
  * mission/services split, the 3/2 coverage tiles, the 2x2 reach grid, the contact
- * block and the hairline footer. Two sections are added on top of that skeleton:
- * the "Our Approach" workflow orbit and the product interface showcase.
+ * block and the hairline footer. One section is added on top of that skeleton:
+ * the "Our Approach" workflow orbit. The chat itself is deliberately not shown
+ * here — it lives in the product, not on the marketing page.
  */
 export default function LandingPage({ onEnterApp, onLogin, onStartFree }: LandingPageProps) {
   return (
@@ -44,7 +44,6 @@ export default function LandingPage({ onEnterApp, onLogin, onStartFree }: Landin
         <AuraPillars />
         <AuraMission onStartFree={onStartFree} />
         <AuraApproach onStartFree={onStartFree} />
-        <AuraInterface />
         <AuraCoverage />
         <AuraContact onStartFree={onEnterApp} />
       </main>

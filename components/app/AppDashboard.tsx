@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Sidebar, { type AppView } from './Sidebar';
-import ChatInterface from './ChatInterface';
+import ChatInterface, { type PendingArticleAsk } from './ChatInterface';
 import LawLibrary from './LawLibrary';
 import Complaints from './Complaints';
 import Emergency from './Emergency';
@@ -57,6 +57,25 @@ export default function AppDashboard({
 
   const closeLawReader = () => setOpenLaw(null);
 
+  // "Ask Rengera about this article" — the reader hands its article to the chat,
+  // which then answers against that article instead of searching cold.
+  const [pendingAsk, setPendingAsk] = useState<PendingArticleAsk | null>(null);
+
+  const askAboutArticle: NonNullable<React.ComponentProps<typeof LawLibrary>['onAskAboutArticle']> = (
+    ask,
+  ) => {
+    setPendingAsk({
+      prompt: ask.prompt,
+      context: {
+        lawTitle: ask.lawTitle,
+        referenceNumber: ask.referenceNumber,
+        articleNumber: ask.articleNumber,
+        text: ask.text,
+      },
+    });
+    setCurrentView('chat');
+  };
+
   return (
     <div className="flex h-dvh bg-slate-100">
       {/* Mobile Sidebar Overlay */}
@@ -104,7 +123,13 @@ export default function AppDashboard({
               transition={{ duration: 0.2 }}
               className="h-full"
             >
-              {currentView === 'chat' && <ChatInterface onOpenLaw={openLawReader} />}
+              {currentView === 'chat' && (
+                <ChatInterface
+                  onOpenLaw={openLawReader}
+                  pendingAsk={pendingAsk}
+                  onPendingAskHandled={() => setPendingAsk(null)}
+                />
+              )}
               {currentView === 'library' && (
                 <LawLibrary
                   openLawId={openLaw?.lawId ?? null}
@@ -112,6 +137,7 @@ export default function AppDashboard({
                   onOpenLaw={openLawReader}
                   onCloseReader={closeLawReader}
                   isAdmin={isAdmin}
+                  onAskAboutArticle={askAboutArticle}
                 />
               )}
               {currentView === 'complaints' && <Complaints />}
