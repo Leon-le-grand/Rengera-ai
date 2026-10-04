@@ -61,11 +61,90 @@ const TONE_CLASSES: Record<string, { icon: string; badge: string; ring: string }
 
 const DEFAULT_TONE = { icon: 'bg-slate-100 text-slate-600', badge: 'bg-slate-100 text-slate-700', ring: 'hover:border-slate-400' };
 
+/**
+ * Cover art for the card artwork. Each entry is a plain photo id so the card can
+ * render it with a plain <img> and no remote-loader configuration. If a photo
+ * ever fails to load the tile falls back to its gradient (see `CardArtwork`).
+ */
+const CATEGORY_ART: Record<string, { src: string; wash: string; alt: string }> = {
+  blue: {
+    src: 'photo-1521737604893-d14cc237f11d',
+    wash: 'from-blue-100 via-blue-50 to-slate-50',
+    alt: 'Colleagues working together in an office',
+  },
+  emerald: {
+    src: 'photo-1560518883-ce09059eeffa',
+    wash: 'from-emerald-100 via-emerald-50 to-slate-50',
+    alt: 'Residential housing',
+  },
+  purple: {
+    src: 'photo-1511895426328-dc8714191300',
+    wash: 'from-purple-100 via-purple-50 to-slate-50',
+    alt: 'A family at home',
+  },
+  amber: {
+    src: 'photo-1449965408869-eaa3f722e40d',
+    wash: 'from-amber-100 via-amber-50 to-slate-50',
+    alt: 'A road with traffic',
+  },
+  indigo: {
+    src: 'photo-1454165804606-c3d57bc86b40',
+    wash: 'from-indigo-100 via-indigo-50 to-slate-50',
+    alt: 'A business planning session',
+  },
+  rose: {
+    src: 'photo-1589829545856-d10d557cf95f',
+    wash: 'from-rose-100 via-rose-50 to-slate-50',
+    alt: 'Law books on a desk',
+  },
+  teal: {
+    src: 'photo-1563013544-824ae1b704d3',
+    wash: 'from-teal-100 via-teal-50 to-slate-50',
+    alt: 'Digital privacy and security',
+  },
+  orange: {
+    src: 'photo-1441974231531-c6227db76b6e',
+    wash: 'from-orange-100 via-orange-50 to-slate-50',
+    alt: 'A green landscape',
+  },
+  lime: {
+    src: 'photo-1576091160399-112ba8d25d1d',
+    wash: 'from-lime-100 via-lime-50 to-slate-50',
+    alt: 'A medical professional',
+  },
+  slate: {
+    src: 'photo-1450101499163-c8848c66ca85',
+    wash: 'from-slate-200 via-slate-100 to-slate-50',
+    alt: 'Official documents',
+  },
+};
+
 function toneFor(category: string) {
   const style = CATEGORY_STYLES.find((entry) => entry.match.test(category));
-  const classes = style ? TONE_CLASSES[style.tone] : DEFAULT_TONE;
+  const tone = style ? style.tone : 'slate';
+  const classes = TONE_CLASSES[tone] ?? DEFAULT_TONE;
+  const art = CATEGORY_ART[tone] ?? CATEGORY_ART.slate;
   // `Icon` is the component; `icon` stays the class list. Keep the names apart.
-  return { Icon: style?.icon || BookOpen, ...classes };
+  return { Icon: style?.icon || BookOpen, tone, art, ...classes };
+}
+
+/** Card artwork: photo on a tone-matched wash, with a graceful fallback. */
+function CardArtwork({ art, className }: { art: { src: string; wash: string; alt: string }; className?: string }) {
+  return (
+    <div className={cn('relative overflow-hidden bg-gradient-to-br', art.wash, className)}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`https://images.unsplash.com/${art.src}?auto=format&fit=crop&q=80`}
+        alt={art.alt}
+        loading="lazy"
+        onError={(event) => {
+          event.currentTarget.style.display = 'none';
+        }}
+        className="h-full w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.12]"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-900/35 via-transparent to-white/10" />
+    </div>
+  );
 }
 
 function formatDate(value: string | null): string | null {
@@ -252,12 +331,12 @@ export default function LawLibrary({
         All categories
       </button>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+      <div className="mb-6 flex items-center gap-3 sm:gap-4">
         {(() => {
           const tone = toneFor(activeGroup.category);
           const Icon = tone.Icon;
           return (
-            <div className="mb-5 flex items-center gap-3 sm:gap-4">
+            <>
               <div className={cn('rounded-xl p-3', tone.icon)}>
                 <Icon size={26} strokeWidth={2.25} />
               </div>
@@ -267,21 +346,21 @@ export default function LawLibrary({
                   {activeGroup.laws.length} {activeGroup.laws.length === 1 ? 'law' : 'laws'}
                 </p>
               </div>
-            </div>
+            </>
           );
         })()}
+      </div>
 
-        <div className="space-y-3">
-          {activeGroup.laws.map((law) => (
-            <LawCard
-              key={law.id}
-              law={law}
-              onOpen={onOpenLaw}
-              isCompared={compareIds.includes(law.id)}
-              onToggleCompare={toggleCompare}
-            />
-          ))}
-        </div>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 2xl:grid-cols-3">
+        {activeGroup.laws.map((law) => (
+          <LawCard
+            key={law.id}
+            law={law}
+            onOpen={onOpenLaw}
+            isCompared={compareIds.includes(law.id)}
+            onToggleCompare={toggleCompare}
+          />
+        ))}
       </div>
     </div>
   ) : visibleCategories.length === 0 ? (
@@ -291,8 +370,8 @@ export default function LawLibrary({
     </div>
   ) : (
     <div>
-      <h2 className="mb-4 text-lg font-bold text-slate-900">Browse Categories</h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <h2 className="mb-6 text-lg font-bold text-slate-900">Browse Categories</h2>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {visibleCategories.map((group) => {
           const tone = toneFor(group.category);
           const Icon = tone.Icon;
@@ -300,25 +379,43 @@ export default function LawLibrary({
             <motion.button
               key={group.category}
               type="button"
-              whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedCategory(group.category)}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -8 }}
+              whileTap={{ scale: 0.985 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className={cn(
-                'group flex flex-col rounded-xl border border-slate-200 bg-white p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
+                'group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm outline-none transition-shadow duration-500 hover:shadow-[0_28px_60px_-24px_rgba(15,23,42,0.45)] focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
                 tone.ring,
               )}
             >
-              <div
+              <span
                 className={cn(
-                  'mb-3 flex h-11 w-11 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-110',
+                  'absolute left-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-xl shadow-sm backdrop-blur transition-all duration-500 group-hover:scale-110',
                   tone.icon,
                 )}
               >
-                <Icon size={21} strokeWidth={2.25} />
+                <Icon size={19} strokeWidth={2} />
+              </span>
+
+              <CardArtwork art={tone.art} className="h-40 w-full sm:h-48" />
+
+              <div className="flex flex-1 flex-col p-5 sm:p-6">
+                <h3 className="text-lg font-bold leading-snug text-slate-900">{group.category}</h3>
+                <p className="mt-1.5 line-clamp-2 text-sm leading-6 text-slate-500">
+                  {group.laws.length} {group.laws.length === 1 ? 'law' : 'laws'} · every article
+                  searchable and citable.
+                </p>
+                <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-slate-400 transition-colors duration-300 group-hover:text-emerald-600">
+                  Open category
+                  <ChevronRight
+                    size={14}
+                    strokeWidth={2.5}
+                    className="transition-transform duration-300 group-hover:translate-x-1"
+                  />
+                </span>
               </div>
-              <h3 className="mb-1 text-base font-bold text-slate-900">{group.category}</h3>
-              <p className="text-xs text-slate-500">
-                {group.laws.length} {group.laws.length === 1 ? 'law' : 'laws'}
-              </p>
             </motion.button>
           );
         })}
@@ -400,25 +497,71 @@ function LawCard({
   const published = formatDate(law.publication_date);
 
   return (
-    <motion.button
-      type="button"
-      whileTap={{ scale: 0.995 }}
+    <motion.div
+      role="button"
+      tabIndex={0}
       onClick={() => onOpen(law.id)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onOpen(law.id);
+        }
+      }}
+      whileHover={{ y: -8 }}
+      whileTap={{ scale: 0.985 }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        'group flex w-full items-start justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left transition-all duration-200 hover:-translate-y-px hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
+        'group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm outline-none transition-shadow duration-500 hover:shadow-[0_28px_60px_-24px_rgba(15,23,42,0.45)] focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
         tone.ring,
       )}
     >
-      <div className="min-w-0">
-        <h3 className="text-base font-bold leading-snug text-slate-900 sm:text-lg">{law.title}</h3>
-        {law.reference_number && (
-          <p className="mt-1 text-sm font-medium text-slate-600">{law.reference_number}</p>
+      <div className="relative">
+        <CardArtwork art={tone.art} className="h-44 w-full sm:h-48" />
+
+        <span
+          className={cn(
+            'absolute left-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-xl shadow-sm backdrop-blur transition-all duration-500 group-hover:scale-110',
+            tone.icon,
+          )}
+        >
+          <tone.Icon size={19} strokeWidth={2} />
+        </span>
+
+        {onToggleCompare && (
+          <button
+            type="button"
+            aria-pressed={isCompared}
+            aria-label={`Compare ${law.reference_number || law.title}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleCompare(law.id);
+            }}
+            className={cn(
+              'absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur transition-all duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
+              isCompared
+                ? 'border-emerald-600 bg-emerald-600 text-white'
+                : 'border-white/70 bg-white/85 text-slate-400 hover:border-emerald-400 hover:text-emerald-600',
+            )}
+          >
+            <Check size={15} strokeWidth={3} />
+          </button>
         )}
-        {law.summary && (
-          <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">{law.summary}</p>
+      </div>
+
+      <div className="flex flex-1 flex-col p-5 sm:p-6">
+        {law.reference_number && (
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+            {law.reference_number}
+          </p>
         )}
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <h3 className="text-lg font-bold leading-snug text-slate-900">{law.title}</h3>
+
+        {law.summary && (
+          <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-500">{law.summary}</p>
+        )}
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <span className={cn('rounded-md px-2 py-1 text-xs font-bold', tone.badge)}>
             {law.article_count} {law.article_count === 1 ? 'article' : 'articles'}
           </span>
@@ -446,34 +589,17 @@ function LawCard({
             </span>
           ))}
         </div>
-      </div>
 
-      <div className="flex shrink-0 flex-col items-center gap-3">
-        {onToggleCompare && (
-          <button
-            type="button"
-            aria-pressed={isCompared}
-            aria-label={`Compare ${law.reference_number || law.title}`}
-            onClick={(event) => {
-              event.stopPropagation();
-              onToggleCompare(law.id);
-            }}
-            className={cn(
-              'flex h-7 w-7 items-center justify-center rounded-lg border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
-              isCompared
-                ? 'border-emerald-600 bg-emerald-600 text-white'
-                : 'border-slate-300 bg-white text-slate-400 hover:border-emerald-400 hover:text-emerald-600',
-            )}
-          >
-            <Check size={14} strokeWidth={3} />
-          </button>
-        )}
-        <ChevronRight
-          size={20}
-          className="text-slate-300 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-emerald-500"
-        />
+        <span className="mt-5 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-slate-400 transition-colors duration-300 group-hover:text-emerald-600">
+          Read the law
+          <ChevronRight
+            size={14}
+            strokeWidth={2.5}
+            className="transition-transform duration-300 group-hover:translate-x-1"
+          />
+        </span>
       </div>
-    </motion.button>
+    </motion.div>
   );
 }
 
