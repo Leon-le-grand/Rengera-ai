@@ -105,8 +105,9 @@ security invoker
 set search_path = public
 as $$
   with events_window as (
-    select created_at, event_type, category, language, query
-    from public.usage_events
+    -- Every column is carried through the CTE. Naming them explicitly once was
+    -- how `session_id` went missing from the aggregate below.
+    select * from public.usage_events
     where created_at >= now() - make_interval(days => greatest(days_back, 1))
   )
   select jsonb_build_object(
