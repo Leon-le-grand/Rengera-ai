@@ -216,7 +216,7 @@ export default function DeadlinesPanel({
                         'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors',
                         done
                           ? 'border-emerald-500 bg-emerald-500 text-white'
-                          : 'border-[#dadce0] text-transparent hover:border-emerald-400',
+                          : 'border-[var(--chat-border)] text-transparent hover:border-emerald-400',
                       )}
                     >
                       <Check size={12} strokeWidth={3} />

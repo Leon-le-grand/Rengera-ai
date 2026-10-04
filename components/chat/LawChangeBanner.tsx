@@ -46,11 +46,11 @@ export default function LawChangeBanner() {
   };
 
   return (
-    <div className="flex flex-col gap-2 border-b border-[#f1f3f4] bg-[#fef7e0] px-5 py-3 sm:px-7">
+    <div className="flex flex-col gap-2 border-b border-[var(--chat-chip)] bg-[var(--chat-user)] px-5 py-3 sm:px-7">
       {visible.map((alert) => (
         <div key={alert.id} className="flex items-start gap-2.5">
-          <Megaphone size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-[#b06000]" />
-          <p className="min-w-0 flex-1 text-[12px] leading-[1.55] text-[#7a4b00]">
+          <Megaphone size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-[#d8b485]" />
+          <p className="min-w-0 flex-1 text-[12px] leading-[1.55] text-[var(--chat-muted)]">
             <span className="font-semibold">Law update:</span>{' '}
             {alert.law_reference || alert.law_title}
             {alert.summary ? ` — ${alert.summary}` : ''}
@@ -59,7 +59,7 @@ export default function LawChangeBanner() {
             type="button"
             onClick={() => dismiss(alert.id)}
             aria-label="Dismiss law update"
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[#b06000] transition-colors hover:bg-black/5"
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[var(--chat-muted)] transition-colors hover:bg-[var(--chat-hover)]"
           >
             <X size={12} strokeWidth={2.5} />
           </button>

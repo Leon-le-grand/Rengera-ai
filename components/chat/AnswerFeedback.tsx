@@ -109,8 +109,8 @@ export default function AnswerFeedback({
       </div>
 
       {rating === -1 && (
-        <div className="flex flex-col gap-1.5 rounded-[14px] border border-[#f1c7c7] bg-[#fdf2f2] p-3">
-          <p className="text-[12px] font-medium text-[#a50e0e]">What went wrong?</p>
+        <div className="flex flex-col gap-1.5 rounded-[14px] border border-[var(--chat-border)] bg-[var(--chat-user)] p-3">
+          <p className="text-[12px] font-medium text-[#e5a3a3]">What went wrong?</p>
           <div className="flex flex-wrap gap-1.5">
             {NEGATIVE_REASONS.map((option) => (
               <button
@@ -123,8 +123,8 @@ export default function AnswerFeedback({
                 className={cn(
                   'rounded-full border px-2.5 py-1 text-[11px] transition-colors',
                   reason === option
-                    ? 'border-red-300 bg-white text-[#a50e0e]'
-                    : 'border-[#f1c7c7] bg-white/70 text-[#c5221f] hover:bg-white',
+                    ? 'border-[var(--chat-border)] bg-[var(--chat-panel)] text-[#e5a3a3]'
+                    : 'border-[var(--chat-border)] bg-[var(--chat-panel)] text-[#d98c8c] hover:bg-[var(--chat-hover)]',
                 )}
               >
                 {option}
@@ -137,7 +137,7 @@ export default function AnswerFeedback({
             onChange={(event) => setComment(event.target.value)}
             placeholder="Tell us what the correct answer should have been…"
             rows={2}
-            className="mt-1 w-full resize-none rounded-[10px] border border-[#f1c7c7] bg-white p-2 text-[12px] text-[var(--chat-text)] outline-none placeholder:text-[var(--chat-muted-2)]"
+            className="mt-1 w-full resize-none rounded-[10px] border border-[var(--chat-border)] bg-white p-2 text-[12px] text-[var(--chat-text)] outline-none placeholder:text-[var(--chat-muted-2)]"
           />
           <button
             type="button"

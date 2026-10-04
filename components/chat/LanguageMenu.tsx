@@ -68,7 +68,7 @@ export default function LanguageMenu({
         onClick={() => setOpen((current) => !current)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="inline-flex items-center gap-1.5 rounded-full border border-[#dadce0] px-3 py-[7px] text-[12px] font-medium text-[var(--chat-text)] outline-none transition-colors hover:bg-[var(--chat-hover)]"
+        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--chat-border)] px-3 py-[7px] text-[12px] font-medium text-[var(--chat-text)] outline-none transition-colors hover:bg-[var(--chat-hover)]"
       >
         <Globe size={13} strokeWidth={2} className="text-[var(--chat-muted)]" />
         {LANGUAGE_DEFINITIONS[value].native}

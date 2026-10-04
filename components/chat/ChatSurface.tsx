@@ -120,7 +120,7 @@ export function ChatTopBar({
           <button
             type="button"
             onClick={onShare}
-            className="rounded-full border border-[#dadce0] px-3.5 py-[7px] text-[12px] font-medium text-[var(--chat-text)] outline-none transition-colors hover:bg-[var(--chat-hover)] active:bg-[var(--chat-chip)]"
+            className="rounded-full border border-[var(--chat-border)] px-3.5 py-[7px] text-[12px] font-medium text-[var(--chat-text)] outline-none transition-colors hover:bg-[var(--chat-hover)] active:bg-[var(--chat-chip)]"
           >
             Share
           </button>

@@ -289,29 +289,29 @@ export default function ChatInterface({
     <ReactMarkdown
       components={{
         h3: ({ node, ...props }) => (
-          <h3 className="mt-4 mb-1.5 text-[14px] font-semibold tracking-[-0.01em] text-[#1f1f1f] first:mt-0" {...props} />
+          <h3 className="mt-4 mb-1.5 text-[14px] font-semibold tracking-[-0.01em] text-[var(--chat-text)] first:mt-0" {...props} />
         ),
         h4: ({ node, ...props }) => (
-          <h4 className="mt-3 mb-1 text-[13px] font-semibold text-[#1f1f1f]" {...props} />
+          <h4 className="mt-3 mb-1 text-[13px] font-semibold text-[var(--chat-text)]" {...props} />
         ),
         p: ({ node, ...props }) => <p className="mb-2.5 mt-0 text-[13px] leading-[1.65]" {...props} />,
         ul: ({ node, ...props }) => <ul className="my-2 space-y-1.5 pl-0" {...props} />,
         ol: ({ node, ...props }) => <ol className="my-2 list-decimal space-y-1.5 pl-5" {...props} />,
         li: ({ node, ...props }) => (
           <li className="flex gap-2 text-[13px] leading-[1.65]">
-            <span className="mt-[7px] h-[3px] w-[3px] shrink-0 rounded-full bg-[#5f6368]" />
+            <span className="mt-[7px] h-[3px] w-[3px] shrink-0 rounded-full bg-[var(--chat-muted)]" />
             <span className="min-w-0">{props.children}</span>
           </li>
         ),
         a: ({ node, ...props }) => (
           <a className="text-[#1a73e8] underline underline-offset-2" target="_blank" rel="noreferrer noopener" {...props} />
         ),
-        strong: ({ node, ...props }) => <strong className="font-semibold text-[#1f1f1f]" {...props} />,
+        strong: ({ node, ...props }) => <strong className="font-semibold text-[var(--chat-text)]" {...props} />,
         blockquote: ({ node, ...props }) => (
-          <blockquote className="my-2 border-l-2 border-[#e8eaed] pl-3 text-[#5f6368]" {...props} />
+          <blockquote className="my-2 border-l-2 border-[var(--chat-border-soft)] pl-3 text-[var(--chat-muted)]" {...props} />
         ),
         code: ({ node, ...props }) => (
-          <code className="rounded-[4px] bg-[#f1f3f4] px-1 py-[1px] font-mono text-[12px] text-[#3c4043]" {...props} />
+          <code className="rounded-[4px] bg-[var(--chat-chip)] px-1 py-[1px] font-mono text-[12px] text-[var(--chat-text-2)]" {...props} />
         ),
       }}
     >
@@ -320,7 +320,7 @@ export default function ChatInterface({
   );
 
   return (
-    <div className="relative flex h-full w-full justify-center bg-[#e6e6e6] p-0 sm:p-4">
+    <div className="relative flex h-full w-full justify-center bg-[var(--chat-surround)] p-0 sm:p-4">
       <ChatFrame className="chat-print-area relative h-full max-w-[820px]">
         <LawChangeBanner />
 
@@ -343,7 +343,7 @@ export default function ChatInterface({
               type="button"
               onClick={() => setShowDeadlines(true)}
               aria-label="Open deadlines"
-              className="hidden h-8 w-8 items-center justify-center rounded-full text-[#5f6368] transition-colors hover:bg-[#f1f3f4] hover:text-[#1f1f1f] sm:flex"
+              className="hidden h-8 w-8 items-center justify-center rounded-full text-[var(--chat-muted)] transition-colors hover:bg-[var(--chat-chip)] hover:text-[var(--chat-text)] sm:flex"
             >
               <AlarmClock size={15} strokeWidth={2} />
             </button>
@@ -383,7 +383,7 @@ export default function ChatInterface({
                     >
                       <AssistantBlock>
                         {isWelcome ? (
-                          <p className="text-[13px] leading-[1.65] text-[#1f1f1f]">{msg.content}</p>
+                          <p className="text-[13px] leading-[1.65] text-[var(--chat-text)]">{msg.content}</p>
                         ) : (
                           renderMarkdown(msg.content)
                         )}
@@ -396,9 +396,9 @@ export default function ChatInterface({
                               key={scenario.id}
                               type="button"
                               onClick={() => handleSubmit(undefined, scenario.prompt)}
-                              className="inline-flex items-center gap-2 rounded-full border border-[#e8eaed] bg-[var(--chat-panel)] px-3 py-[7px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
+                              className="inline-flex items-center gap-2 rounded-full border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] px-3 py-[7px] text-[12px] font-medium text-[var(--chat-text-2)] outline-none transition-colors hover:bg-[var(--chat-chip)]"
                             >
-                              <scenario.icon size={13} strokeWidth={2} className="text-[#5f6368]" />
+                              <scenario.icon size={13} strokeWidth={2} className="text-[var(--chat-muted)]" />
                               {scenarios[scenario.label]}
                             </button>
                           ))}
@@ -406,9 +406,9 @@ export default function ChatInterface({
                       )}
 
                       {!isWelcome && deadlineHints.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-2 rounded-[14px] border border-[#e8eaed] bg-[var(--chat-panel)] p-3">
+                        <div className="flex flex-wrap items-center gap-2 rounded-[14px] border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] p-3">
                           <AlarmClock size={14} strokeWidth={2} className="text-[#1a73e8]" />
-                          <span className="text-[12px] text-[#3c4043]">Time limit found — save it?</span>
+                          <span className="text-[12px] text-[var(--chat-text-2)]">Time limit found — save it?</span>
                           {deadlineHints.map((hint) => (
                             <button
                               key={hint.label}
@@ -422,7 +422,7 @@ export default function ChatInterface({
                                 });
                                 setShowDeadlines(true);
                               }}
-                              className="rounded-full bg-[#e8f0fe] px-2.5 py-1 text-[11px] font-medium text-[#1967d2] transition-colors hover:bg-[#d2e3fc]"
+                              className="rounded-full bg-[var(--chat-blue-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--chat-blue)] transition-colors hover:bg-[var(--chat-blue-soft)]"
                             >
                               {hint.label}
                             </button>
@@ -492,7 +492,7 @@ export default function ChatInterface({
                                 setShowShareNotice(true);
                                 handleShare(msg);
                               }}
-                              className="inline-flex items-center gap-1.5 rounded-full border border-[#e8eaed] bg-[var(--chat-panel)] px-3 py-[6px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
+                              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] px-3 py-[6px] text-[12px] font-medium text-[var(--chat-text-2)] outline-none transition-colors hover:bg-[var(--chat-chip)]"
                             >
                               {sharingMessageId === msg.id ? (
                                 <Loader2 size={12} className="animate-spin" />
@@ -511,7 +511,7 @@ export default function ChatInterface({
                             <button
                               type="button"
                               onClick={handleSaveAsPdf}
-                              className="inline-flex items-center gap-1.5 rounded-full border border-[#e8eaed] bg-[var(--chat-panel)] px-3 py-[6px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
+                              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] px-3 py-[6px] text-[12px] font-medium text-[var(--chat-text-2)] outline-none transition-colors hover:bg-[var(--chat-chip)]"
                             >
                               <Download size={12} strokeWidth={2} />
                               {strings.savePdf}
@@ -520,7 +520,7 @@ export default function ChatInterface({
                             <button
                               type="button"
                               onClick={handleNewChat}
-                              className="inline-flex items-center gap-1.5 rounded-full px-2 py-[6px] text-[12px] font-medium text-[#5f6368] outline-none transition-colors hover:bg-[#f1f3f4]"
+                              className="inline-flex items-center gap-1.5 rounded-full px-2 py-[6px] text-[12px] font-medium text-[var(--chat-muted)] outline-none transition-colors hover:bg-[var(--chat-chip)]"
                             >
                               <RotateCcw size={12} strokeWidth={2} />
                               {strings.newChat}
@@ -600,12 +600,12 @@ export default function ChatInterface({
         >
           <form onSubmit={handleSubmit} className="flex flex-col">
             {showShareNotice && shareNotice && (
-              <div className="mb-2 flex items-center justify-between gap-3 rounded-[10px] bg-[var(--chat-panel)] px-3 py-2 text-[12px] text-[#3c4043] ring-1 ring-[#e8eaed]">
+              <div className="mb-2 flex items-center justify-between gap-3 rounded-[10px] bg-[var(--chat-panel)] px-3 py-2 text-[12px] text-[var(--chat-text-2)] ring-1 ring-[var(--chat-border-soft)]">
                 <span className="truncate">{shareNotice}</span>
                 <button
                   type="button"
                   onClick={() => setShowShareNotice(false)}
-                  className="text-[#5f6368] outline-none hover:text-[#1f1f1f]"
+                  className="text-[var(--chat-muted)] outline-none hover:text-[var(--chat-text)]"
                   aria-label="Dismiss"
                 >
                   ×
@@ -636,7 +636,7 @@ export default function ChatInterface({
               onChange={(event) => setInput(event.target.value)}
               placeholder={strings.placeholder}
               rows={1}
-              className="scrollbar-hide max-h-32 min-h-[40px] w-full resize-none border-none bg-transparent px-1 py-1 text-[16px] leading-[1.5] text-[#1f1f1f] outline-none placeholder:text-[#9aa0a6]"
+              className="scrollbar-hide max-h-32 min-h-[40px] w-full resize-none border-none bg-transparent px-1 py-1 text-[16px] leading-[1.5] text-[var(--chat-text)] outline-none placeholder:text-[var(--chat-muted-2)]"
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {
                   event.preventDefault();
