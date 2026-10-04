@@ -27,6 +27,7 @@ import {
   getSupabasePublicClient,
   SupabaseConfigurationError,
 } from '@/lib/supabase';
+import { getPublicPdfUrl, LEGAL_PDF_BUCKET } from '@/lib/supabase-pdf';
 
 export interface LawListItem {
   id: string;
@@ -78,6 +79,11 @@ export interface LawLibraryEntry {
   tags: string[];
   category: string | null;
   article_count: number;
+  /** Original PDF kept so the reader can show the real document. */
+  source_pdf_path: string | null;
+  source_pdf_name: string | null;
+  source_pdf_size: number | null;
+  pdf_url: string | null;
   created_at: string;
 }
 
@@ -107,6 +113,8 @@ export interface ClassificationStoreResult {
   lawId?: string;
   articleCount?: number;
   classification?: ClassifiedLaw;
+  pdfStored?: boolean;
+  warning?: string;
   error?: string;
 }
 
@@ -163,6 +171,71 @@ async function readRawLegalText(formData: FormData): Promise<string> {
   return '';
 }
 
+const PDF_BUCKET = LEGAL_PDF_BUCKET;
+const MAX_PDF_BYTES = 25 * 1024 * 1024;
+
+function safePdfFileName(name: string): string {
+  const cleaned = name
+    .replace(/\.[^.]+$/, '')
+    .replace(/[^a-zA-Z0-9-_]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+    .toLowerCase();
+  return cleaned || 'law';
+}
+
+/**
+ * Keep the original PDF so the library reader can show the real document
+ * beside the summary. Failures are non-fatal: the text is already extracted,
+ * so a storage error must not discard the ingestion.
+ */
+async function uploadSourcePdf(
+  pdf: File | null,
+  contentHash: string,
+): Promise<{ path: string | null; name: string | null; size: number | null; warning?: string }> {
+  if (!pdf || pdf.size === 0) {
+    return { path: null, name: null, size: null };
+  }
+
+  if (pdf.size > MAX_PDF_BYTES) {
+    return {
+      path: null,
+      name: null,
+      size: pdf.size,
+      warning: `The PDF is ${Math.round(pdf.size / 1024 / 1024)} MB and was not stored. Article text is still indexed.`,
+    };
+  }
+
+  try {
+    const supabase = getSupabaseAdminClient();
+    const objectPath = `${contentHash.slice(0, 16)}-${safePdfFileName(pdf.name)}.pdf`;
+
+    const { error } = await supabase.storage
+      .from(PDF_BUCKET)
+      .upload(objectPath, pdf, { contentType: 'application/pdf', upsert: true });
+
+    if (error) {
+      return {
+        path: null,
+        name: pdf.name,
+        size: pdf.size,
+        warning: `The PDF could not be stored (${error.message}). Article text is still indexed.`,
+      };
+    }
+
+    return { path: objectPath, name: pdf.name, size: pdf.size };
+  } catch (error) {
+    return {
+      path: null,
+      name: pdf.name,
+      size: pdf.size,
+      warning: `The PDF could not be stored (${
+        error instanceof Error ? error.message : 'unknown error'
+      }). Article text is still indexed.`,
+    };
+  }
+}
+
 function detectAvailableLanguages(
   rawContent: string,
   documentLanguage: string | null,
@@ -210,6 +283,11 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
     );
     const parsedClassification = parseClassificationResponse(rawResponse);
     const contentHash = createHash('sha256').update(rawContent, 'utf8').digest('hex');
+    const submittedPdf = formData.get('pdf');
+    const uploadedPdf = await uploadSourcePdf(
+      submittedPdf instanceof File ? submittedPdf : null,
+      contentHash,
+    );
     const language = parsedClassification.language || detectLegalLanguage(rawContent);
     const sourceUrl = parsedClassification.source_url || RLRC_SOURCE_URL;
     const classification = {
@@ -267,6 +345,9 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
         applicable_entities: classification.applicable_entities,
         penalties_non_compliance: classification.penalties_non_compliance,
         tags: classification.tags,
+        source_pdf_path: uploadedPdf.path,
+        source_pdf_name: uploadedPdf.name,
+        source_pdf_size: uploadedPdf.size,
         raw_content: rawContent,
         classification_model: getSpaceBunnyRuntime().model,
         classification_prompt_version: CLASSIFICATION_PROMPT_VERSION,
@@ -331,6 +412,8 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
       lawId,
       articleCount: articles.length,
       classification,
+      pdfStored: Boolean(uploadedPdf.path),
+      warning: uploadedPdf.warning,
     };
   } catch (error) {
     if (error instanceof SpaceBunnyConfigurationError || error instanceof SupabaseConfigurationError) {
@@ -444,6 +527,14 @@ function castLibraryRows(data: unknown): LawLibraryEntry[] {
       tags: castStringArray(item.tags),
       category: typeof item.category === 'string' ? item.category : null,
       article_count: Number(item.article_count) || 0,
+      source_pdf_path: typeof item.source_pdf_path === 'string' ? item.source_pdf_path : null,
+      source_pdf_name: typeof item.source_pdf_name === 'string' ? item.source_pdf_name : null,
+      source_pdf_size: item.source_pdf_size === null || item.source_pdf_size === undefined
+        ? null
+        : Number(item.source_pdf_size),
+      pdf_url: getPublicPdfUrl(
+        typeof item.source_pdf_path === 'string' ? item.source_pdf_path : null,
+      ),
       created_at: String(item.created_at || ''),
     };
   });

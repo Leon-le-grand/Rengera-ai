@@ -16,6 +16,8 @@ import {
   Shield,
   Map,
   ScrollText,
+  ExternalLink,
+  Layers,
 } from 'lucide-react';
 import type { ElementType } from 'react';
 import { getLawLibrary, type LawLibraryCategory, type LawLibraryEntry } from '@/app/legal-actions';
@@ -382,6 +384,8 @@ function LawCard({
   );
 }
 
+type ReaderTab = 'document' | 'summary' | 'articles';
+
 function LawReader({
   lawId,
   focusArticle,
@@ -394,6 +398,14 @@ function LawReader({
   const [detail, setDetail] = useState<Awaited<ReturnType<typeof import('@/app/legal-actions').getLawDetail>>>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [tab, setTab] = useState<ReaderTab>('document');
+
+  // Deep-linking to an article means the reader must open on the text.
+  useEffect(() => {
+    if (focusArticle) {
+      setTab('articles');
+    }
+  }, [focusArticle]);
 
   useEffect(() => {
     let cancelled = false;
@@ -428,11 +440,20 @@ function LawReader({
   }, [focusArticle, isLoading, lawId]);
 
   const tone = toneFor(detail?.category || '');
+  const pdfUrl = detail?.pdf_url ?? null;
+  const hasPdf = Boolean(pdfUrl);
+  const articleCount = detail?.article_count ?? 0;
+
+  const TABS: { key: ReaderTab; label: string; icon: ElementType }[] = [
+    { key: 'document', label: 'Document', icon: FileText },
+    { key: 'summary', label: 'Summary', icon: Layers },
+    { key: 'articles', label: `Articles (${articleCount})`, icon: ScrollText },
+  ];
 
   return (
     <>
       <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-6xl">
           <button
             type="button"
             onClick={onBack}
@@ -488,65 +509,255 @@ function LawReader({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-4 py-6 sm:px-6">
-        <div className="mx-auto max-w-3xl">
+      {/* Mobile: tabs across the top, one panel at a time. Desktop: the PDF
+          sits beside the tab rail so the law and its explanation are read
+          against each other. */}
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+        <aside className="shrink-0 border-b border-slate-200 bg-white lg:w-64 lg:border-b-0 lg:border-r">
+          <div className="flex overflow-x-auto lg:flex-col">
+            {TABS.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setTab(item.key)}
+                aria-selected={tab === item.key}
+                role="tab"
+                className={cn(
+                  'flex shrink-0 items-center gap-2.5 border-b-2 px-4 py-3 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500 lg:w-full lg:border-b-0 lg:border-r-2 lg:px-4 lg:text-left',
+                  tab === item.key
+                    ? 'border-emerald-600 bg-emerald-50/60 text-emerald-800'
+                    : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900',
+                )}
+              >
+                <item.icon size={16} strokeWidth={2.25} className="shrink-0" />
+                <span className="truncate">{item.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {hasPdf && (
+            <div className="hidden border-t border-slate-200 p-4 lg:block">
+              <a
+                href={pdfUrl as string}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-px hover:border-emerald-400 hover:text-emerald-700 hover:shadow-md"
+              >
+                <ExternalLink size={14} strokeWidth={2.25} />
+                Open full PDF
+              </a>
+              {detail?.source_pdf_name && (
+                <p className="mt-2 truncate text-xs text-slate-400" title={detail.source_pdf_name}>
+                  {detail.source_pdf_name}
+                </p>
+              )}
+            </div>
+          )}
+        </aside>
+
+        <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50">
           {isLoading ? (
             <div className="flex flex-col items-center gap-3 py-20 text-slate-400">
               <Loader2 size={28} className="animate-spin" />
               <p className="text-sm font-medium">Opening the law…</p>
             </div>
           ) : error ? (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">
-              <p className="text-sm font-bold text-amber-900">{error}</p>
-            </div>
-          ) : detail && detail.articles.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-              <p className="text-base font-bold text-slate-900">No articles indexed yet</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Re-upload the PDF from the administration workspace to split this law into articles.
-              </p>
+            <div className="mx-auto max-w-xl p-6">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">
+                <p className="text-sm font-bold text-amber-900">{error}</p>
+              </div>
             </div>
           ) : (
-            <ol className="space-y-3">
-              {detail?.articles.map((article) => {
-                const isPreamble = article.chunk_type === 'preamble';
-                return (
-                  <li
-                    key={article.id}
-                    id={anchorId(lawId, article.article_number)}
-                    className="scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={cn(
-                          'rounded-lg px-2.5 py-1 text-xs font-bold',
-                          isPreamble ? 'bg-slate-100 text-slate-700' : tone.badge,
-                        )}
-                      >
-                        {isPreamble ? 'Front matter' : `Article ${article.article_number}`}
-                      </span>
-                      <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold capitalize text-slate-600">
-                        {article.language}
-                      </span>
+            <div className="flex h-full min-h-0 flex-col">
+              {/* Document pane */}
+              {tab === 'document' && (
+                <div className="flex h-full min-h-0 flex-1 flex-col p-4">
+                  {hasPdf ? (
+                    <object
+                      data={`${pdfUrl}#view=FitH`}
+                      type="application/pdf"
+                      className="min-h-[70vh] w-full flex-1 rounded-2xl border border-slate-200 bg-white shadow-sm"
+                      aria-label={`Original PDF of ${detail?.title ?? 'the law'}`}
+                    >
+                      {/* Browsers without a built-in PDF viewer land here. */}
+                      <div className="flex h-full flex-col items-center justify-center gap-3 p-10 text-center">
+                        <FileText size={32} className="text-slate-300" />
+                        <p className="text-sm text-slate-500">
+                          Your browser cannot display this PDF inline.
+                        </p>
+                        <a
+                          href={pdfUrl as string}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white"
+                        >
+                          Open the PDF
+                        </a>
+                      </div>
+                    </object>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+                      <FileText size={30} className="mx-auto text-slate-300" />
+                      <p className="mt-4 text-base font-bold text-slate-900">
+                        No original PDF stored
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">
+                        This law was indexed from text only. Re-upload the PDF from{' '}
+                        <strong>Administrator / Law Ingestion</strong> to keep the original
+                        document here.
+                      </p>
+                      {detail?.source_url && (
+                        <a
+                          href={detail.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 underline underline-offset-2"
+                        >
+                          <ExternalLink size={14} strokeWidth={2.25} />
+                          Open the official source
+                        </a>
+                      )}
                     </div>
+                  )}
+                </div>
+              )}
 
-                    {article.article_title && !isPreamble && (
-                      <h2 className="mt-3 text-base font-bold text-slate-900">
-                        {article.article_title}
-                      </h2>
-                    )}
+              {tab === 'summary' && detail && (
+                <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
+                  {detail.summary && (
+                    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-emerald-700">
+                        Summary
+                      </h3>
+                      <p className="text-[15px] leading-7 text-slate-700">{detail.summary}</p>
+                    </section>
+                  )}
 
-                    <p className="mt-3 whitespace-pre-wrap text-[15px] leading-7 text-slate-700">
-                      {article.content}
-                    </p>
-                  </li>
-                );
-              })}
-            </ol>
+                  {detail.key_obligations.length > 0 && (
+                    <SummaryList title="Key obligations" items={detail.key_obligations} />
+                  )}
+                  {detail.applicable_entities.length > 0 && (
+                    <SummaryList title="Who it applies to" items={detail.applicable_entities} />
+                  )}
+                  {detail.penalties_non_compliance.length > 0 && (
+                    <SummaryList
+                      title="Penalties for non-compliance"
+                      items={detail.penalties_non_compliance}
+                      tone="rose"
+                    />
+                  )}
+                  {detail.affected_articles.length > 0 && (
+                    <SummaryList title="Articles affected" items={detail.affected_articles} />
+                  )}
+                  {detail.repealed_articles.length > 0 && (
+                    <SummaryList title="Repealed articles" items={detail.repealed_articles} tone="rose" />
+                  )}
+                  {detail.inserted_articles.length > 0 && (
+                    <SummaryList title="Inserted articles" items={detail.inserted_articles} tone="emerald" />
+                  )}
+                  {Object.keys(detail.retroactive_effective_date).length > 0 && (
+                    <SummaryList
+                      title="Applied retroactively from"
+                      items={Object.entries(detail.retroactive_effective_date).map(
+                        ([article, date]) => `${article} — ${date}`,
+                      )}
+                      tone="amber"
+                    />
+                  )}
+                  {detail.subcategories.length > 0 && (
+                    <SummaryList title="Subcategories" items={detail.subcategories} />
+                  )}
+                </div>
+              )}
+
+              {tab === 'articles' && (
+                <div className="mx-auto max-w-3xl p-4 sm:p-6">
+                  {detail && detail.articles.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+                      <p className="text-base font-bold text-slate-900">No articles indexed yet</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">
+                        Re-upload the PDF from the administration workspace to split this law into
+                        articles.
+                      </p>
+                    </div>
+                  ) : (
+                    <ol className="space-y-3">
+                      {detail?.articles.map((article) => {
+                        const isPreamble = article.chunk_type === 'preamble';
+                        return (
+                          <li
+                            key={article.id}
+                            id={anchorId(lawId, article.article_number)}
+                            className="scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                          >
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className={cn(
+                                  'rounded-lg px-2.5 py-1 text-xs font-bold',
+                                  isPreamble ? 'bg-slate-100 text-slate-700' : tone.badge,
+                                )}
+                              >
+                                {isPreamble
+                                  ? 'Front matter'
+                                  : `Article ${article.article_number}`}
+                              </span>
+                              <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold capitalize text-slate-600">
+                                {article.language}
+                              </span>
+                            </div>
+
+                            {article.article_title && !isPreamble && (
+                              <h2 className="mt-3 text-base font-bold text-slate-900">
+                                {article.article_title}
+                              </h2>
+                            )}
+
+                            <p className="mt-3 whitespace-pre-wrap text-[15px] leading-7 text-slate-700">
+                              {article.content}
+                            </p>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
     </>
+  );
+}
+
+function SummaryList({
+  title,
+  items,
+  tone = 'slate',
+}: {
+  title: string;
+  items: string[];
+  tone?: 'slate' | 'emerald' | 'rose' | 'amber';
+}) {
+  const dot = {
+    slate: 'bg-slate-400',
+    emerald: 'bg-emerald-500',
+    rose: 'bg-rose-500',
+    amber: 'bg-amber-500',
+  }[tone];
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">{title}</h3>
+      <ul className="space-y-2">
+        {items.map((item) => (
+          <li key={item} className="flex items-start gap-2.5 text-[15px] leading-6 text-slate-700">
+            <span className={cn('mt-2 h-1.5 w-1.5 shrink-0 rounded-full', dot)} />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
