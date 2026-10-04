@@ -34,7 +34,7 @@ export default function LandingPage({ onEnterApp, onLogin, onStartFree }: Landin
   return (
     <div
       className={cn(
-        'relative flex min-h-screen w-full flex-col bg-zinc-950 text-zinc-300 antialiased selection:bg-zinc-800 selection:text-white',
+        'landing-page relative flex min-h-screen w-full flex-col bg-zinc-950 text-zinc-300 antialiased selection:bg-zinc-800 selection:text-white',
         theme === 'light' && 'landing-light',
       )}
     >

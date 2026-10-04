@@ -284,6 +284,31 @@
 }
 
 /* --------------------------------------------------------------------------
+   Corner treatment
+   --------------------------------------------------------------------------
+   One rule for the whole product: cards and buttons carry a 3px radius. It
+   keeps the layout crisp and square (which is what the landing page wants)
+   while stopping buttons and inputs from looking like blunt slabs. Anything
+   that opts out — the chat window, the scroll-down button, avatars, the send
+   button — keeps its own radius. */
+.app-surface button,
+.app-surface input,
+.app-surface textarea,
+.app-surface select,
+.app-surface .rounded-lg,
+.app-surface .rounded-xl,
+.app-surface .rounded-2xl,
+.landing-page button,
+.landing-page input,
+.landing-page textarea,
+.landing-page select,
+.landing-page .rounded-lg,
+.landing-page .rounded-xl,
+.landing-page .rounded-2xl {
+  border-radius: 3px;
+}
+
+/* --------------------------------------------------------------------------
    Landing page — light theme
    --------------------------------------------------------------------------
    The marketing page is authored dark. In light mode the same utilities are

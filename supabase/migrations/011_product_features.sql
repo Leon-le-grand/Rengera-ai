@@ -104,28 +104,28 @@ stable
 security invoker
 set search_path = public
 as $$
-  with window as (
+  with events_window as (
     select created_at, event_type, category, language, query
     from public.usage_events
     where created_at >= now() - make_interval(days => greatest(days_back, 1))
   )
   select jsonb_build_object(
-    'total_events', (select count(*) from window),
-    'questions', (select count(*) from window where event_type = 'question_asked'),
-    'answers', (select count(*) from window where event_type = 'answer_given'),
-    'active_sessions', (select count(distinct session_id) from window),
-    'unique_days', (select count(distinct date_trunc('day', created_at)) from window),
+    'total_events', (select count(*) from events_window),
+    'questions', (select count(*) from events_window where event_type = 'question_asked'),
+    'answers', (select count(*) from events_window where event_type = 'answer_given'),
+    'active_sessions', (select count(distinct session_id) from events_window),
+    'unique_days', (select count(distinct date_trunc('day', created_at)) from events_window),
     'avg_questions_per_day', round(
       (
-        select count(*) from window where event_type = 'question_asked'
-      )::numeric / nullif((select count(distinct date_trunc('day', created_at)) from window), 0),
+        select count(*) from events_window where event_type = 'question_asked'
+      )::numeric / nullif((select count(distinct date_trunc('day', created_at)) from events_window), 0),
       1
     ),
     'top_categories', (
       select coalesce(jsonb_agg(item), '[]'::jsonb)
       from (
         select jsonb_build_object('category', category, 'count', count(*)) as item
-        from window
+        from events_window
         where category is not null
         group by category
         order by count(*) desc
@@ -142,7 +142,7 @@ as $$
             'questions', count(*) filter (where event_type = 'question_asked'),
             'answers', count(*) filter (where event_type = 'answer_given')
           ) as item
-        from window
+        from events_window
         group by 1
         order by 1
       ) rows
@@ -151,7 +151,7 @@ as $$
       select coalesce(jsonb_agg(item), '[]'::jsonb)
       from (
         select jsonb_build_object('language', language, 'count', count(*)) as item
-        from window
+        from events_window
         where language is not null
         group by language
         order by count(*) desc

@@ -321,7 +321,7 @@ export default function ChatInterface({
 
   return (
     <div className="relative flex h-full w-full justify-center bg-[#e6e6e6] p-0 sm:p-4">
-      <ChatFrame className="chat-print-area relative h-full max-w-[760px]">
+      <ChatFrame className="chat-print-area relative h-full max-w-[820px]">
         <LawChangeBanner />
 
         <div className="flex min-h-0 flex-1 flex-col">

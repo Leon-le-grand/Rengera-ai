@@ -60,8 +60,7 @@ export function ChatFrame({
   return (
     <div
       className={cn(
-        'relative flex w-full flex-col overflow-hidden rounded-[28px] border border-[var(--chat-border)] bg-[var(--chat-panel)]',
-        'shadow-[0_28px_80px_-20px_rgba(0,0,0,0.28)]',
+        'relative flex w-full flex-col overflow-hidden rounded-[3px]',
         className,
       )}
     >
