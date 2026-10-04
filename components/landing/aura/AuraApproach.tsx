@@ -58,12 +58,12 @@ export default function AuraApproach({ onStartFree }: { onStartFree: () => void 
   return (
     <section
       id="approach"
-      className="relative w-full scroll-mt-24 overflow-hidden bg-[radial-gradient(120%_120%_at_15%_0%,#101a2c_0%,#0a1120_45%,#05070d_100%)] py-24 text-white"
+      className="relative w-full scroll-mt-24 overflow-hidden bg-[radial-gradient(120%_120%_at_15%_0%,#101a2c_0%,#0a1120_45%,#05070d_100%)] py-20 text-white"
     >
       <div className="pointer-events-none absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-[0.07]" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#05070d] via-transparent to-[#05070d]" />
 
-      <div className="relative mx-auto flex max-w-[1400px] flex-col items-center px-6">
+      <div className="relative mx-auto flex w-full max-w-[1600px] flex-col items-center px-4 sm:px-6">
         <AuraReveal className="text-center">
           <div className="mb-6 flex items-center gap-4">
             <div className="h-px w-12 bg-[#d8b485]" />
@@ -79,7 +79,7 @@ export default function AuraApproach({ onStartFree }: { onStartFree: () => void 
           </p>
         </AuraReveal>
 
-        <div className="relative mt-10 aspect-square w-full max-w-[620px]">
+        <div className="relative mt-8 aspect-square w-full max-w-[880px]">
           <svg viewBox="0 0 400 400" className="absolute inset-0 h-full w-full">
             <circle
               cx="200"
@@ -139,38 +139,36 @@ export default function AuraApproach({ onStartFree }: { onStartFree: () => void 
             </button>
           ))}
 
-          <div className="absolute inset-0 flex flex-col items-center justify-center px-[17%] text-center">
-            <span className="mb-6 block h-14 w-px bg-white/15" />
-            <div className="relative mb-8 flex h-24 w-24 items-center justify-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="relative mb-6 flex h-24 w-24 items-center justify-center">
               <span className="absolute inset-0 rounded-full bg-[#05070d] shadow-[0_0_60px_18px_rgba(216,180,133,0.12)]" />
               <RengeraLogo size={56} label="Rengera AI" className="relative" />
             </div>
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={STEPS[active].number}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#d8b485]/70">
-                  Step {STEPS[active].number}
-                </p>
-                <h3 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
-                  {STEPS[active].title}
-                </h3>
-                <p className="mx-auto mt-3 max-w-[290px] text-sm leading-relaxed text-zinc-400">
-                  {STEPS[active].description}
-                </p>
-              </motion.div>
-            </AnimatePresence>
           </div>
+        </div>
+
+        <div className="mt-10 w-full max-w-3xl px-2 text-center">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={STEPS[active].number}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#d8b485]/70">
+                Step {STEPS[active].number} — {STEPS[active].title}
+              </p>
+              <p className="mx-auto max-w-2xl text-sm leading-relaxed text-zinc-400 md:text-base">
+                {STEPS[active].description}
+              </p>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         <AuraReveal
           delay={0.1}
-          className="mt-12 flex flex-col items-center gap-6 sm:flex-row sm:gap-8"
+          className="mt-10 flex flex-col items-center gap-6 sm:flex-row sm:gap-8"
         >
           <button
             type="button"
