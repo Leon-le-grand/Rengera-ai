@@ -137,12 +137,9 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
           <button
             type="button"
             onClick={onExit}
-            className="flex w-fit items-center gap-3 rounded-xl text-left transition-opacity duration-200 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+            className="flex w-fit items-center gap-3 rounded-xl text-left transition-opacity duration-200 hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d8b485] focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b]"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
-              <Scale size={19} strokeWidth={2.25} />
-            </span>
-            <RengeraLogo size={34} label="" />
+            <RengeraLogo size={40} label="" />
             <span className="font-brand text-lg tracking-wide">RENGERA AI</span>
           </button>
 
@@ -151,7 +148,7 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: 'easeOut' }}
-              className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3.5 py-2 text-sm font-semibold text-emerald-200"
+              className="mb-6 inline-flex items-center gap-2 border border-[#d8b485]/30 bg-[#d8b485]/10 px-3.5 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#d8b485]"
             >
               <ShieldCheck size={16} strokeWidth={2.25} />
               Secure accounts, grounded answers
@@ -172,16 +169,16 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-xl border border-white/10 bg-white/5 p-3.5 transition-colors duration-300 hover:border-emerald-400/30 hover:bg-white/[0.08]"
+                className="border border-white/10 bg-white/[0.03] p-3.5 transition-colors duration-300 hover:border-[#d8b485]/40"
               >
-                <stat.icon size={18} strokeWidth={2.25} className="mb-2 text-emerald-400" />
+                <stat.icon size={18} strokeWidth={2.25} className="mb-2 text-[#d8b485]" />
                 <div className="text-sm font-semibold text-white">{stat.label}</div>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="order-1 flex items-center justify-center overflow-y-auto bg-white px-5 py-8 text-slate-900 sm:px-8 lg:order-2 lg:rounded-l-[2rem] lg:px-12">
+        <section className="aura-form order-1 flex items-center justify-center overflow-y-auto px-5 py-8 text-white sm:px-8 lg:order-2 lg:px-12">
           <div className="w-full max-w-sm py-6">
             <button
               type="button"

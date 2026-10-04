@@ -10,13 +10,13 @@ import {
   Database,
   Power,
   UserRound,
-  Scale,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 import type { ElementType, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import RengeraLogo from '@/components/brand/RengeraLogo';
 
-export type AppView = 'chat' | 'library' | 'bookmarks' | 'emergency' | 'complaints' | 'business' | 'admin';
+export type AppView = 'chat' | 'library' | 'bookmarks' | 'emergency' | 'complaints' | 'business' | 'admin' | 'settings';
 
 interface NavItem {
   icon: ElementType;
@@ -43,6 +43,7 @@ const CITIZEN_NAV: NavItem[] = [
   { icon: FileSignature, label: 'Complaints', view: 'complaints' },
   { icon: Bookmark, label: 'Saved Answers', view: 'bookmarks' },
   { icon: ShieldAlert, label: 'Emergency', view: 'emergency', tone: 'danger' },
+  { icon: SettingsIcon, label: 'Settings', view: 'settings' },
 ];
 
 const BUSINESS_NAV: NavItem[] = [{ icon: Briefcase, label: 'Business', view: 'business' }];
@@ -142,7 +143,7 @@ export default function Sidebar({
   const initials = userName.trim() ? userName.trim().slice(0, 2).toUpperCase() : null;
 
   return (
-    <aside className="app-dark flex h-full w-72 flex-col border-r border-white/5 bg-[#0c0c0e] text-zinc-400">
+    <aside className="app-surface flex h-full w-72 flex-col border-r border-white/5 bg-[#0c0c0e] text-zinc-400">
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/5 px-5">
         <div className="flex items-center gap-3 text-white">
           <RengeraLogo size={36} label="" />

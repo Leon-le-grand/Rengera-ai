@@ -7,6 +7,7 @@ import Complaints from './Complaints';
 import Emergency from './Emergency';
 import BusinessDashboard from './BusinessDashboard';
 import AdminDashboard from './AdminDashboard';
+import Settings from './Settings';
 import { Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -57,6 +58,10 @@ export default function AppDashboard({
   };
 
   const closeLawReader = () => setOpenLaw(null);
+
+  const handleLogoutProp = async () => {
+    onLogout();
+  };
 
   // "Ask Rengera about this article" — the reader hands its article to the chat,
   // which then answers against that article instead of searching cold.
@@ -122,7 +127,7 @@ export default function AppDashboard({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className={cn('h-full', currentView !== 'chat' && 'app-dark')}
+              className={cn('h-full', currentView !== 'chat' && 'app-surface')}
             >
               {currentView === 'chat' && (
                 <ChatInterface
@@ -145,6 +150,16 @@ export default function AppDashboard({
               {currentView === 'emergency' && <Emergency />}
               {currentView === 'business' && <BusinessDashboard />}
               {currentView === 'admin' && isAdmin && <AdminDashboard />}
+              {currentView === 'settings' && (
+                <Settings
+                  userName={displayName}
+                  isSignedIn={Boolean(accountUser)}
+                  isAdmin={isAdmin}
+                  roleLabel={accountUser?.role === 'staff' ? 'Staff account' : 'Citizen account'}
+                  onLogin={onLogin}
+                  onLogout={() => void handleLogoutProp()}
+                />
+              )}
               {currentView === 'bookmarks' && (
                 <div className="p-8 h-full flex flex-col items-center justify-center text-center max-w-md mx-auto">
                    <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-6">

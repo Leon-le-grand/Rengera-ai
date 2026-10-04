@@ -60,7 +60,7 @@ export function ChatFrame({
   return (
     <div
       className={cn(
-        'relative flex w-full flex-col overflow-hidden rounded-[28px] border border-[#e4e4e4] bg-white',
+        'relative flex w-full flex-col overflow-hidden rounded-[28px] border border-[var(--chat-border)] bg-white',
         'shadow-[0_28px_80px_-20px_rgba(0,0,0,0.28)]',
         className,
       )}
@@ -103,13 +103,13 @@ export function ChatTopBar({
         <button
           type="button"
           onClick={onNewChat}
-          className="group flex shrink-0 items-center gap-1 text-[13px] font-semibold tracking-[-0.01em] text-[#1f1f1f] outline-none transition-opacity hover:opacity-70"
+          className="group flex shrink-0 items-center gap-1 text-[13px] font-semibold tracking-[-0.01em] text-[var(--chat-text)] outline-none transition-opacity hover:opacity-70"
         >
           <span className="truncate">{title}</span>
-          <ChevronDown size={14} strokeWidth={2.5} className="text-[#5f6368]" />
+          <ChevronDown size={14} strokeWidth={2.5} className="text-[var(--chat-muted)]" />
         </button>
 
-        <span className="hidden items-center gap-1 rounded-full bg-[#f1f3f4] px-2 py-[3px] text-[11px] font-medium text-[#5f6368] sm:inline-flex">
+        <span className="hidden items-center gap-1 rounded-full bg-[var(--chat-chip)] px-2 py-[3px] text-[11px] font-medium text-[var(--chat-muted)] sm:inline-flex">
           <Lock size={10} strokeWidth={2.5} />
           {privateLabel}
         </span>
@@ -121,7 +121,7 @@ export function ChatTopBar({
           <button
             type="button"
             onClick={onShare}
-            className="rounded-full border border-[#dadce0] px-3.5 py-[7px] text-[12px] font-medium text-[#1f1f1f] outline-none transition-colors hover:bg-[#f6f7f8] active:bg-[#f1f3f4]"
+            className="rounded-full border border-[#dadce0] px-3.5 py-[7px] text-[12px] font-medium text-[var(--chat-text)] outline-none transition-colors hover:bg-[var(--chat-hover)] active:bg-[var(--chat-chip)]"
           >
             Share
           </button>
@@ -152,8 +152,8 @@ function IconButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'flex h-8 w-8 items-center justify-center rounded-full text-[#5f6368] outline-none transition-colors hover:bg-[#f1f3f4] hover:text-[#1f1f1f]',
-        filled && 'bg-[#f1f3f4]',
+        'flex h-8 w-8 items-center justify-center rounded-full text-[var(--chat-muted)] outline-none transition-colors hover:bg-[var(--chat-chip)] hover:text-[var(--chat-text)]',
+        filled && 'bg-[var(--chat-chip)]',
         disabled && 'pointer-events-none opacity-40',
       )}
     >
@@ -211,10 +211,10 @@ export function UserBubble({
 }) {
   return (
     <div className={cn('flex items-start justify-end gap-2.5', className)}>
-      <div className="max-w-[85%] rounded-[20px] bg-[#f0f0f0] px-4 py-2.5 text-[13px] leading-[1.55] text-[#1f1f1f]">
+      <div className="max-w-[85%] rounded-[20px] bg-[var(--chat-user)] px-4 py-2.5 text-[13px] leading-[1.55] text-[var(--chat-text)]">
         {children}
       </div>
-      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1f1f1f]">
+      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--chat-text)]">
         {avatar ?? <RengeraLogo size={22} label="" />}
       </div>
     </div>
@@ -232,7 +232,7 @@ export function AssistantBlock({
   return (
     <div
       className={cn(
-        'text-[13px] leading-[1.65] text-[#1f1f1f] [&_a]:text-[#1a73e8] [&_a]:underline [&_a]:underline-offset-2',
+        'text-[13px] leading-[1.65] text-[var(--chat-text)] [&_a]:text-[#1a73e8] [&_a]:underline [&_a]:underline-offset-2',
         className,
       )}
     >
@@ -243,7 +243,7 @@ export function AssistantBlock({
 
 export function AssistantHeading({ children }: { children: ReactNode }) {
   return (
-    <h3 className="mt-4 mb-1.5 text-[14px] font-semibold tracking-[-0.01em] text-[#1f1f1f] first:mt-0">
+    <h3 className="mt-4 mb-1.5 text-[14px] font-semibold tracking-[-0.01em] text-[var(--chat-text)] first:mt-0">
       {children}
     </h3>
   );
@@ -252,7 +252,7 @@ export function AssistantHeading({ children }: { children: ReactNode }) {
 /** Small inline citation token that trails a sentence. */
 export function CitationChip({ children }: { children: ReactNode }) {
   return (
-    <span className="mx-0.5 inline-flex translate-y-[-1px] items-center gap-1 rounded-[5px] bg-[#f1f3f4] px-1.5 py-[1px] align-middle text-[10px] font-medium text-[#5f6368]">
+    <span className="mx-0.5 inline-flex translate-y-[-1px] items-center gap-1 rounded-[5px] bg-[var(--chat-chip)] px-1.5 py-[1px] align-middle text-[10px] font-medium text-[var(--chat-muted)]">
       <FileText size={9} strokeWidth={2.5} />
       {children}
     </span>
@@ -270,7 +270,7 @@ export function BulletList({ children }: { children: ReactNode }) {
 export function Bullet({ children }: { children: ReactNode }) {
   return (
     <li className="flex gap-2">
-      <span className="mt-[7px] h-[3px] w-[3px] shrink-0 rounded-full bg-[#5f6368]" />
+      <span className="mt-[7px] h-[3px] w-[3px] shrink-0 rounded-full bg-[var(--chat-muted)]" />
       <span className="min-w-0">{children}</span>
     </li>
   );
@@ -290,8 +290,8 @@ export function StatusRow({
   trailing?: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2 text-[12px] text-[#5f6368]">
-      <span className="flex h-4 w-4 items-center justify-center text-[#5f6368]">{icon}</span>
+    <div className="flex items-center gap-2 text-[12px] text-[var(--chat-muted)]">
+      <span className="flex h-4 w-4 items-center justify-center text-[var(--chat-muted)]">{icon}</span>
       <span className="truncate">{children}</span>
       {trailing}
     </div>
@@ -314,7 +314,7 @@ export function ViewedRow({ label = 'Viewed', source }: { label?: string; source
     <StatusRow
       icon={<Eye size={13} strokeWidth={2} />}
       trailing={
-        <span className="inline-flex items-center gap-1 rounded-[6px] bg-[#e8f0fe] px-2 py-[2px] text-[11px] font-medium text-[#1967d2]">
+        <span className="inline-flex items-center gap-1 rounded-[6px] bg-[var(--chat-blue-soft)] px-2 py-[2px] text-[11px] font-medium text-[var(--chat-blue)]">
           <FileText size={10} strokeWidth={2.5} />
           {source}
         </span>
@@ -327,8 +327,8 @@ export function ViewedRow({ label = 'Viewed', source }: { label?: string; source
 
 export function GeneratingRow({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-2 text-[12px] text-[#5f6368]">
-      <Loader2 size={13} strokeWidth={2} className="animate-spin text-[#5f6368]" />
+    <div className="flex items-center gap-2 text-[12px] text-[var(--chat-muted)]">
+      <Loader2 size={13} strokeWidth={2} className="animate-spin text-[var(--chat-muted)]" />
       <span>{label}</span>
     </div>
   );
@@ -351,19 +351,19 @@ export function SourceList({
 }) {
   return (
     <div className={cn('mt-1', className)}>
-      <p className="mb-1.5 text-[11px] text-[#80868b]">{countLabel}</p>
-      <ul className="divide-y divide-[#f1f3f4]">
+      <p className="mb-1.5 text-[11px] text-[var(--chat-muted-2)]">{countLabel}</p>
+      <ul className="divide-y divide-[var(--chat-chip)]">
         {items.map((item) => (
           <li key={item.key}>
             <button
               type="button"
               onClick={() => onSelect?.(item.key)}
               className={cn(
-                'flex w-full items-center gap-2.5 py-2 text-left text-[13px] text-[#1f1f1f] outline-none transition-colors hover:underline',
+                'flex w-full items-center gap-2.5 py-2 text-left text-[13px] text-[var(--chat-text)] outline-none transition-colors hover:underline',
                 item.active && 'font-semibold',
               )}
             >
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-[#f1f3f4] text-[#5f6368]">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-[var(--chat-chip)] text-[var(--chat-muted)]">
                 {item.icon ?? <FileText size={12} strokeWidth={2} />}
               </span>
               <span className="min-w-0 truncate">{item.title}</span>
@@ -395,7 +395,7 @@ export function ScrollDownButton({
         type="button"
         aria-label="Scroll to latest"
         onClick={onClick}
-        className="pointer-events-auto flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#e0e0e0] bg-white text-[#5f6368] shadow-[0_2px_8px_rgba(0,0,0,0.12)] outline-none transition-colors hover:bg-[#f6f7f8] hover:text-[#1f1f1f]"
+        className="pointer-events-auto flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--chat-border)] bg-white text-[var(--chat-muted)] shadow-[0_2px_8px_rgba(0,0,0,0.12)] outline-none transition-colors hover:bg-[var(--chat-hover)] hover:text-[var(--chat-text)]"
       >
         <ChevronDown size={16} strokeWidth={2.5} />
       </button>
@@ -420,7 +420,7 @@ export function ComposerFrame({
     <div className={cn('shrink-0 px-4 pb-3 pt-1 sm:px-6', className)}>
       <div className="mx-auto w-full max-w-[560px]">
         {emergency}
-        <div className="rounded-[26px] border border-[#e0e0e0] bg-[#f8f9fa] p-3 transition-colors focus-within:border-[#d2d5d9] focus-within:bg-white">
+        <div className="rounded-[26px] border border-[var(--chat-border)] bg-[var(--chat-composer)] p-3 transition-colors focus-within:border-[#d2d5d9] focus-within:bg-white">
           {children}
         </div>
       </div>
@@ -436,16 +436,16 @@ export function ComposerChip({
   onRemove?: () => void;
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e8eaed] bg-white py-1 pl-1 pr-2">
-      <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-[#1f1f1f]">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--chat-border-soft)] bg-white py-1 pl-1 pr-2">
+      <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-[var(--chat-text)]">
         <RengeraLogo size={18} label="" />
       </span>
-      <span className="text-[12px] font-medium text-[#3c4043]">{label}</span>
+      <span className="text-[12px] font-medium text-[var(--chat-text-2)]">{label}</span>
       <button
         type="button"
         aria-label={`Remove ${label}`}
         onClick={onRemove}
-        className="ml-0.5 text-[#80868b] outline-none transition-colors hover:text-[#1f1f1f]"
+        className="ml-0.5 text-[var(--chat-muted-2)] outline-none transition-colors hover:text-[var(--chat-text)]"
       >
         <X size={11} strokeWidth={2.5} />
       </button>
@@ -483,7 +483,7 @@ function ComposerAction({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-full text-[#5f6368] outline-none transition-colors hover:bg-[#ececee] hover:text-[#1f1f1f]"
+      className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--chat-muted)] outline-none transition-colors hover:bg-[var(--chat-hover)] hover:text-[var(--chat-text)]"
     >
       {children}
     </button>
@@ -523,7 +523,7 @@ export function ComposerActions({
 
 export function ChatDisclaimer({ children }: { children: ReactNode }) {
   return (
-    <p className="mx-auto mt-2.5 max-w-[560px] px-4 text-center text-[10px] text-[#9aa0a6]">
+    <p className="mx-auto mt-2.5 max-w-[560px] px-4 text-center text-[10px] text-[var(--chat-muted-2)]">
       {children}
     </p>
   );

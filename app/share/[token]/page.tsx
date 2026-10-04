@@ -29,7 +29,7 @@ export default async function SharedConsultationPage({ params }: PageProps) {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-6 py-5">
           <Image
-            src="/rengera-logo-light.png"
+            src="/rengera-logo.jpg"
             alt="RENGERA AI"
             width={32}
             height={32}

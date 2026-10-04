@@ -152,76 +152,219 @@
 }
 
 /* --------------------------------------------------------------------------
-   Product theme
+   Theme tokens
    --------------------------------------------------------------------------
-   The in-app surfaces (law library, business workspace, admin console) share
-   the landing page's palette: zinc-950 canvas, #0c0c0e panels, hairline
-   white/5 borders and the gold accent. The chat keeps its own light design on
-   purpose — it is the reference window.
+   One place defines every surface colour. `data-theme="dark"` is the default
+   (it is the landing page's palette: zinc-950 canvas, #0c0c0e panels, gold).
+   `data-theme="light"` is a warm off-white — deliberately not pure white, so a
+   long reading session in the law library does not glare.
 
-   These rules remap the light slate utilities those screens already use, so a
-   screen can adopt the product theme with one class instead of a rewrite. */
-.app-dark {
-  background-color: #09090b;
-  color: #d4d4d8;
+   Screens opt in with the `app-surface` class, which remaps the light slate
+   utilities they already use onto the tokens below. */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  --app-bg: #f4f2ef;
+  --app-panel: #ffffff;
+  --app-panel-2: #eceae6;
+  --app-border: rgba(24, 24, 27, 0.09);
+  --app-text: #18181b;
+  --app-text-2: #3f3f46;
+  --app-muted: #71717a;
+  --app-faint: #a1a1aa;
+  --app-accent: #a8813f;
+
+  --chat-surround: #e7e5e1;
+  --chat-panel: #ffffff;
+  --chat-user: #f0efec;
+  --chat-chip: #f1efec;
+  --chat-composer: #faf9f7;
+  --chat-hover: #eceae6;
+  --chat-border: #e0ddd8;
+  --chat-border-soft: #ebe8e3;
+  --chat-text: #1f1f1f;
+  --chat-text-2: #3c4043;
+  --chat-muted: #5f6368;
+  --chat-muted-2: #868b90;
+  --chat-blue-soft: #e8eefb;
+  --chat-blue: #1c5fd0;
 }
 
-.app-dark .bg-white,
-.app-dark .bg-slate-50,
-.app-dark .bg-slate-100 {
-  background-color: #0c0c0e;
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --app-bg: #09090b;
+  --app-panel: #0c0c0e;
+  --app-panel-2: #141417;
+  --app-border: rgba(255, 255, 255, 0.07);
+  --app-text: #ffffff;
+  --app-text-2: #d4d4d8;
+  --app-muted: #a1a1aa;
+  --app-faint: #71717a;
+  --app-accent: #d8b485;
+
+  --chat-surround: #0c0c0e;
+  --chat-panel: #131316;
+  --chat-user: #1d1d21;
+  --chat-chip: #1c1c20;
+  --chat-composer: #161619;
+  --chat-hover: #232327;
+  --chat-border: #2a2a2f;
+  --chat-border-soft: #232327;
+  --chat-text: #f4f4f5;
+  --chat-text-2: #d4d4d8;
+  --chat-muted: #a1a1aa;
+  --chat-muted-2: #71717a;
+  --chat-blue-soft: #16233b;
+  --chat-blue: #8ab4f8;
 }
 
-.app-dark .bg-slate-200 {
-  background-color: #17171a;
+.app-surface {
+  background-color: var(--app-bg);
+  color: var(--app-text-2);
 }
 
-.app-dark .border-slate-100,
-.app-dark .border-slate-200,
-.app-dark .border-slate-300,
-.app-dark .divide-slate-200 {
-  border-color: rgba(255, 255, 255, 0.07);
+.app-surface .bg-white,
+.app-surface .bg-slate-50,
+.app-surface .bg-slate-100 {
+  background-color: var(--app-panel);
 }
 
-.app-dark .text-slate-950,
-.app-dark .text-slate-900 {
-  color: #ffffff;
+.app-surface .bg-slate-200 {
+  background-color: var(--app-panel-2);
 }
 
-.app-dark .text-slate-800,
-.app-dark .text-slate-700 {
-  color: #d4d4d8;
+.app-surface .border-slate-100,
+.app-surface .border-slate-200,
+.app-surface .border-slate-300,
+.app-surface .divide-slate-200 {
+  border-color: var(--app-border);
 }
 
-.app-dark .text-slate-600,
-.app-dark .text-slate-500 {
-  color: #a1a1aa;
+.app-surface .text-slate-950,
+.app-surface .text-slate-900 {
+  color: var(--app-text);
 }
 
-.app-dark .text-slate-400 {
-  color: #71717a;
+.app-surface .text-slate-800,
+.app-surface .text-slate-700 {
+  color: var(--app-text-2);
 }
 
-.app-dark input,
-.app-dark textarea,
-.app-dark select {
-  color: #ffffff;
+.app-surface .text-slate-600,
+.app-surface .text-slate-500 {
+  color: var(--app-muted);
 }
 
-.app-dark input::placeholder,
-.app-dark textarea::placeholder {
-  color: #52525b;
+.app-surface .text-slate-400 {
+  color: var(--app-faint);
 }
 
-.app-dark .shadow-sm,
-.app-dark .shadow,
-.app-dark .shadow-md,
-.app-dark .shadow-lg {
+.app-surface input,
+.app-surface textarea,
+.app-surface select {
+  color: var(--app-text);
+}
+
+.app-surface input::placeholder,
+.app-surface textarea::placeholder {
+  color: var(--app-faint);
+}
+
+.app-surface .shadow-sm,
+.app-surface .shadow,
+.app-surface .shadow-md,
+.app-surface .shadow-lg {
   box-shadow: none;
 }
 
-.app-dark :focus-visible {
+.app-surface :focus-visible {
+  outline-color: var(--app-accent);
+}
+
+/* The sign-in / sign-up panel uses the landing page's grammar so the first
+   screen a visitor sees after clicking "Start Free" is the same product: dark
+   panel, hairline borders, square corners, gold actions. */
+.aura-form {
+  background-color: #0c0c0e;
+  color: #ffffff;
+}
+
+.aura-form .bg-white {
+  background-color: #0c0c0e;
+}
+
+.aura-form .bg-slate-50 {
+  background-color: #131316;
+}
+
+.aura-form .bg-slate-100 {
+  background-color: #161619;
+}
+
+.aura-form .bg-amber-50 {
+  background-color: rgba(216, 180, 133, 0.08);
+}
+
+.aura-form .border-slate-200,
+.aura-form .border-amber-200,
+.aura-form .border-slate-300 {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.aura-form .text-slate-900,
+.aura-form .text-slate-950,
+.aura-form .text-slate-700 {
+  color: #ffffff;
+}
+
+.aura-form .text-slate-800,
+.aura-form .text-slate-600 {
+  color: #d4d4d8;
+}
+
+.aura-form .text-slate-500,
+.aura-form .text-slate-400 {
+  color: #a1a1aa;
+}
+
+.aura-form .text-amber-800 {
+  color: #e8d6b4;
+}
+
+.aura-form .bg-slate-900,
+.aura-form .bg-emerald-600 {
+  background-color: #d8b485;
+  color: #09090b;
+}
+
+.aura-form input {
+  background-color: #161619;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.aura-form input::placeholder {
+  color: #52525b;
+}
+
+.aura-form input:focus {
+  border-color: #d8b485;
+  box-shadow: none;
+}
+
+.aura-form :focus-visible {
   outline-color: #d8b485;
+}
+
+/* Square corners, like every other surface in the landing page. */
+.aura-form .rounded-xl,
+.aura-form .rounded-lg,
+.aura-form .rounded-2xl,
+.aura-form .rounded-3xl,
+.aura-form .rounded-full {
+  border-radius: 0;
 }
 
 @media print {

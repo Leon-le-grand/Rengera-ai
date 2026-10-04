@@ -61,14 +61,14 @@ export default function AnswerFeedback({
 
   if (sent) {
     return (
-      <p className={cn('text-[12px] text-[#5f6368]', className)}>{strings.thanks}</p>
+      <p className={cn('text-[12px] text-[var(--chat-muted)]', className)}>{strings.thanks}</p>
     );
   }
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       <div className="flex items-center gap-2">
-        <span className="text-[11px] text-[#80868b]">
+        <span className="text-[11px] text-[var(--chat-muted-2)]">
           {rating === null ? 'Was this answer useful?' : strings.thanks}
         </span>
 
@@ -85,7 +85,7 @@ export default function AnswerFeedback({
             'flex h-7 w-7 items-center justify-center rounded-full border transition-all duration-200 hover:scale-105 disabled:opacity-50',
             rating === 1
               ? 'border-emerald-500 bg-emerald-50 text-emerald-600'
-              : 'border-[#e8eaed] bg-white text-[#9aa0a6] hover:text-emerald-600',
+              : 'border-[var(--chat-border-soft)] bg-white text-[var(--chat-muted-2)] hover:text-emerald-600',
           )}
         >
           <ThumbsUp size={13} strokeWidth={2} />
@@ -101,7 +101,7 @@ export default function AnswerFeedback({
             'flex h-7 w-7 items-center justify-center rounded-full border transition-all duration-200 hover:scale-105 disabled:opacity-50',
             rating === -1
               ? 'border-red-300 bg-red-50 text-red-600'
-              : 'border-[#e8eaed] bg-white text-[#9aa0a6] hover:text-red-500',
+              : 'border-[var(--chat-border-soft)] bg-white text-[var(--chat-muted-2)] hover:text-red-500',
           )}
         >
           <ThumbsDown size={13} strokeWidth={2} />
@@ -137,7 +137,7 @@ export default function AnswerFeedback({
             onChange={(event) => setComment(event.target.value)}
             placeholder="Tell us what the correct answer should have been…"
             rows={2}
-            className="mt-1 w-full resize-none rounded-[10px] border border-[#f1c7c7] bg-white p-2 text-[12px] text-[#1f1f1f] outline-none placeholder:text-[#9aa0a6]"
+            className="mt-1 w-full resize-none rounded-[10px] border border-[#f1c7c7] bg-white p-2 text-[12px] text-[var(--chat-text)] outline-none placeholder:text-[var(--chat-muted-2)]"
           />
           <button
             type="button"

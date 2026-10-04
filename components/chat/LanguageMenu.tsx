@@ -68,16 +68,16 @@ export default function LanguageMenu({
         onClick={() => setOpen((current) => !current)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="inline-flex items-center gap-1.5 rounded-full border border-[#dadce0] px-3 py-[7px] text-[12px] font-medium text-[#1f1f1f] outline-none transition-colors hover:bg-[#f6f7f8]"
+        className="inline-flex items-center gap-1.5 rounded-full border border-[#dadce0] px-3 py-[7px] text-[12px] font-medium text-[var(--chat-text)] outline-none transition-colors hover:bg-[var(--chat-hover)]"
       >
-        <Globe size={13} strokeWidth={2} className="text-[#5f6368]" />
+        <Globe size={13} strokeWidth={2} className="text-[var(--chat-muted)]" />
         {LANGUAGE_DEFINITIONS[value].native}
       </button>
 
       {open && (
         <div
           role="listbox"
-          className="absolute right-0 top-[calc(100%+6px)] z-40 w-44 overflow-hidden rounded-[14px] border border-[#e8eaed] bg-white py-1 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.28)]"
+          className="absolute right-0 top-[calc(100%+6px)] z-40 w-44 overflow-hidden rounded-[14px] border border-[var(--chat-border-soft)] bg-white py-1 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.28)]"
         >
           {ANSWER_LANGUAGES.map((code) => (
             <button
@@ -89,11 +89,11 @@ export default function LanguageMenu({
                 onChange(code);
                 setOpen(false);
               }}
-              className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-[12px] text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
+              className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-[12px] text-[var(--chat-text-2)] outline-none transition-colors hover:bg-[var(--chat-chip)]"
             >
               <span className="flex flex-col">
                 <span className="font-medium">{LANGUAGE_DEFINITIONS[code].native}</span>
-                <span className="text-[10px] text-[#80868b]">{LANGUAGE_DEFINITIONS[code].label}</span>
+                <span className="text-[10px] text-[var(--chat-muted-2)]">{LANGUAGE_DEFINITIONS[code].label}</span>
               </span>
               {code === value && <Check size={13} strokeWidth={3} className="text-[#1a73e8]" />}
             </button>

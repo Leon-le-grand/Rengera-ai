@@ -31,7 +31,7 @@ export default function RengeraLogo({
   return (
     <span className={`inline-flex shrink-0 ${className}`}>
       <Image
-        src="/rengera-logo-favicon.png"
+        src="/rengera-logo.jpg"
         alt={label}
         width={size}
         height={size}

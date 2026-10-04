@@ -8,13 +8,13 @@
   "theme_color": "#0B1B35",
   "icons": [
     {
-      "src": "/rengera-logo-light.png",
+      "src": "/rengera-logo.jpg",
       "sizes": "614x578",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/rengera-logo-dark.png",
+      "src": "/rengera-logo.jpg",
       "sizes": "614x578",
       "type": "image/png",
       "purpose": "maskable"

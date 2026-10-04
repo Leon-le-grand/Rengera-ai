@@ -146,10 +146,10 @@ export default function DeadlinesPanel({
     <div className="absolute inset-0 z-30 flex justify-end bg-black/20" onClick={onClose}>
       <div
         onClick={(event) => event.stopPropagation()}
-        className="flex h-full w-full max-w-sm flex-col border-l border-[#e8eaed] bg-white"
+        className="flex h-full w-full max-w-sm flex-col border-l border-[var(--chat-border-soft)] bg-white"
       >
-        <div className="flex items-center justify-between border-b border-[#f1f3f4] px-4 py-3">
-          <p className="flex items-center gap-2 text-[13px] font-semibold text-[#1f1f1f]">
+        <div className="flex items-center justify-between border-b border-[var(--chat-chip)] px-4 py-3">
+          <p className="flex items-center gap-2 text-[13px] font-semibold text-[var(--chat-text)]">
             <AlarmClock size={15} strokeWidth={2} className="text-[#1a73e8]" />
             Your deadlines
           </p>
@@ -157,26 +157,26 @@ export default function DeadlinesPanel({
             type="button"
             onClick={onClose}
             aria-label="Close deadlines"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-[#5f6368] transition-colors hover:bg-[#f1f3f4]"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--chat-muted)] transition-colors hover:bg-[var(--chat-chip)]"
           >
             <X size={15} strokeWidth={2.5} />
           </button>
         </div>
 
-        <div className="border-b border-[#f1f3f4] p-4">
+        <div className="border-b border-[var(--chat-chip)] p-4">
           <div className="flex flex-col gap-2">
             <input
               value={label}
               onChange={(event) => setLabel(event.target.value)}
               placeholder="What must you do?"
-              className="w-full rounded-[10px] border border-[#e0e0e0] px-3 py-2 text-[12px] text-[#1f1f1f] outline-none placeholder:text-[#9aa0a6] focus:border-[#1a73e8]"
+              className="w-full rounded-[10px] border border-[var(--chat-border)] px-3 py-2 text-[12px] text-[var(--chat-text)] outline-none placeholder:text-[var(--chat-muted-2)] focus:border-[#1a73e8]"
             />
             <div className="flex gap-2">
               <input
                 type="date"
                 value={dueDate}
                 onChange={(event) => setDueDate(event.target.value)}
-                className="flex-1 rounded-[10px] border border-[#e0e0e0] px-3 py-2 text-[12px] text-[#1f1f1f] outline-none focus:border-[#1a73e8]"
+                className="flex-1 rounded-[10px] border border-[var(--chat-border)] px-3 py-2 text-[12px] text-[var(--chat-text)] outline-none focus:border-[#1a73e8]"
               />
               <button
                 type="button"
@@ -193,7 +193,7 @@ export default function DeadlinesPanel({
 
         <div className="scrollbar-hide flex-1 overflow-y-auto p-4">
           {deadlines.length === 0 ? (
-            <p className="mt-8 text-center text-[12px] leading-5 text-[#80868b]">
+            <p className="mt-8 text-center text-[12px] leading-5 text-[var(--chat-muted-2)]">
               No deadlines yet. When an answer mentions a time limit, use “Add reminder” under that
               answer and it will show up here.
             </p>
@@ -206,7 +206,7 @@ export default function DeadlinesPanel({
                 return (
                   <li
                     key={deadline.id}
-                    className="flex items-start gap-3 rounded-[14px] border border-[#f1f3f4] p-3"
+                    className="flex items-start gap-3 rounded-[14px] border border-[var(--chat-chip)] p-3"
                   >
                     <button
                       type="button"
@@ -225,8 +225,8 @@ export default function DeadlinesPanel({
                     <div className="min-w-0 flex-1">
                       <p
                         className={cn(
-                          'text-[13px] font-medium text-[#1f1f1f]',
-                          done && 'text-[#9aa0a6] line-through',
+                          'text-[13px] font-medium text-[var(--chat-text)]',
+                          done && 'text-[var(--chat-muted-2)] line-through',
                         )}
                       >
                         {deadline.label}
@@ -246,9 +246,9 @@ export default function DeadlinesPanel({
                                 ? 'Due today'
                                 : `${days} days left`}
                         </span>
-                        <span className="text-[11px] text-[#80868b]">{deadline.due_date}</span>
+                        <span className="text-[11px] text-[var(--chat-muted-2)]">{deadline.due_date}</span>
                         {deadline.source_law_title && (
-                          <span className="truncate text-[11px] text-[#80868b]">
+                          <span className="truncate text-[11px] text-[var(--chat-muted-2)]">
                             {deadline.source_law_title}
                           </span>
                         )}
@@ -259,7 +259,7 @@ export default function DeadlinesPanel({
                       type="button"
                       onClick={() => void remove(deadline)}
                       aria-label="Delete deadline"
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[#9aa0a6] transition-colors hover:bg-[#f1f3f4] hover:text-red-500"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--chat-muted-2)] transition-colors hover:bg-[var(--chat-chip)] hover:text-red-500"
                     >
                       <Trash2 size={13} strokeWidth={2} />
                     </button>

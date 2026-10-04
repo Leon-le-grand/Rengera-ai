@@ -435,7 +435,7 @@ export default function LawLibrary({
   );
 
   return (
-    <div className="app-dark flex h-full min-h-0 flex-col bg-slate-50">
+    <div className="app-surface flex h-full min-h-0 flex-col bg-slate-50">
       <AnimatePresence mode="wait">
         {isComparing && compareIds.length === 2 ? (
           <motion.div

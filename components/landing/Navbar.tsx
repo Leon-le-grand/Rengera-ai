@@ -32,7 +32,7 @@ export default function Navbar({ onEnterApp, onLogin }: NavbarProps) {
           {/* Light-theme mark. The dark-theme variant is kept at
               public/rengera-logo-dark.png for when a dark theme toggle lands. */}
           <Image
-            src="/rengera-logo-light.png"
+            src="/rengera-logo.jpg"
             alt="Rengera AI"
             width={34}
             height={34}

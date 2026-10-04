@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import LandingPage from '@/components/landing/LandingPage';
+import { ThemeProvider } from './ThemeProvider';
 import AppDashboard, { type DashboardProps } from './AppDashboard';
 import LoginScreen from './LoginScreen';
 import { logoutAdmin } from '@/app/auth-actions';
@@ -61,6 +62,7 @@ export default function AppShell({ initialAdmin, initialAccount }: AppShellProps
   const initialDashboardView: AppView = adminUser ? 'admin' : 'chat';
 
   return (
+    <ThemeProvider>
     <main className="min-h-dvh overflow-hidden">
       <AnimatePresence mode="wait">
         {currentView === 'landing' ? (
@@ -103,5 +105,6 @@ export default function AppShell({ initialAdmin, initialAccount }: AppShellProps
         )}
       </AnimatePresence>
     </main>
+    </ThemeProvider>
   );
 }

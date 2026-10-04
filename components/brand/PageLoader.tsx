@@ -43,7 +43,7 @@ export default function PageLoader() {
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
             <Image
-              src="/rengera-logo-light.png"
+              src="/rengera-logo.jpg"
               alt="RENGERA AI"
               width={80}
               height={80}

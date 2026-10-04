@@ -93,9 +93,9 @@ export default function Emergency() {
 
   return (
     <div className="flex flex-col h-full bg-slate-100">
-      <div className="bg-white border-b border-red-100 px-6 py-8">
+      <div className="app-surface border-b border-slate-200 px-6 py-8">
         <div className="max-w-5xl mx-auto">
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
+          <div className="mb-6 border-l-2 border-red-500/70 border-y border-r border-red-500/25 bg-transparent p-4">
             <h1 className="text-2xl font-bold text-red-800 mb-2 flex items-center gap-3">
               <ShieldAlert size={28} />
               Emergency & Official Services
@@ -111,7 +111,7 @@ export default function Emergency() {
               placeholder="Describe your issue (e.g., 'car accident', 'unpaid salary', 'cybercrime')..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-shadow text-slate-900 shadow-sm"
+              className="w-full border border-slate-200 bg-slate-50 py-4 pl-12 pr-4 text-slate-900 transition-shadow focus:border-red-400 focus:ring-2 focus:ring-red-500/40"
             />
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
           </div>
@@ -124,13 +124,13 @@ export default function Emergency() {
             <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">What to do now</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {URGENT_FLOWS.map(flow => (
-                <div key={flow.title} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div key={flow.title} className="border border-slate-200 bg-white p-5">
                   <div className="mb-4 flex items-start justify-between gap-4">
                     <div>
                       <h3 className="font-bold text-slate-950">{flow.title}</h3>
                       <p className="mt-1 text-sm font-semibold text-red-700">{flow.route}</p>
                     </div>
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-700">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-red-500/25 text-red-600">
                       <flow.icon size={20} />
                     </div>
                   </div>
@@ -151,7 +151,7 @@ export default function Emergency() {
             <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">Official contacts</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredContacts.map(contact => (
-            <div key={contact.id} className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm hover:border-red-300 transition-colors">
+            <div key={contact.id} className="border border-slate-200 bg-white p-5 transition-colors hover:border-red-500/40">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 block">
@@ -159,7 +159,7 @@ export default function Emergency() {
                   </span>
                   <h2 className="text-xl font-bold text-slate-900">{contact.name}</h2>
                 </div>
-                <div className="w-11 h-11 bg-red-100 text-red-600 rounded-lg flex items-center justify-center shrink-0">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center border border-red-500/25 text-red-600">
                   <Phone size={24} />
                 </div>
               </div>
@@ -168,7 +168,7 @@ export default function Emergency() {
                 {contact.description}
               </p>
               
-              <div className="bg-slate-50 rounded-lg p-4 flex flex-col gap-2">
+              <div className="flex flex-col gap-2 border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-slate-600">Primary Number:</span>
                   <span className="font-bold text-lg text-slate-900">{contact.phone}</span>
