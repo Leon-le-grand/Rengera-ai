@@ -168,7 +168,7 @@ function IconButton({
 export function ChatStream({ children }: { children: ReactNode }) {
   return (
     <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto flex w-full max-w-[560px] flex-col gap-5 px-5 pb-6 pt-2 sm:px-7">
+      <div className="mx-auto flex w-full max-w-[820px] flex-col gap-5 px-3 pb-5 pt-2 sm:px-5">
         {children}
       </div>
     </div>
@@ -417,7 +417,7 @@ export function ComposerFrame({
 }) {
   return (
     <div className={cn('shrink-0 px-4 pb-3 pt-1 sm:px-6', className)}>
-      <div className="mx-auto w-full max-w-[560px]">
+      <div className="mx-auto w-full max-w-[820px]">
         {emergency}
         <div className="rounded-[26px] border border-[var(--chat-border)] bg-[var(--chat-composer)] p-3 transition-colors focus-within:border-[var(--chat-border)] focus-within:bg-[var(--chat-panel)]">
           {children}
@@ -522,7 +522,7 @@ export function ComposerActions({
 
 export function ChatDisclaimer({ children }: { children: ReactNode }) {
   return (
-    <p className="mx-auto mt-2.5 max-w-[560px] px-4 text-center text-[10px] text-[var(--chat-muted-2)]">
+    <p className="mx-auto mt-2.5 max-w-[820px] px-4 text-center text-[10px] text-[var(--chat-muted-2)]">
       {children}
     </p>
   );

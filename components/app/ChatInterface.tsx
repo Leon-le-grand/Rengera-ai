@@ -321,7 +321,7 @@ export default function ChatInterface({
 
   return (
     <div className="relative flex h-full w-full justify-center bg-[var(--chat-surround)] p-0 sm:p-4">
-      <ChatFrame className="chat-print-area relative h-full max-w-[820px]">
+      <ChatFrame className="chat-print-area relative h-full max-w-[980px]">
         <LawChangeBanner />
 
         <div className="flex min-h-0 flex-1 flex-col">
@@ -352,7 +352,7 @@ export default function ChatInterface({
 
           <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col">
             <div ref={streamRef} className="scrollbar-hide min-h-0 flex-1 overflow-y-auto">
-              <div className="mx-auto flex w-full max-w-[560px] flex-col gap-5 px-5 pb-6 pt-2 sm:px-7">
+              <div className="mx-auto flex w-full max-w-[820px] flex-col gap-5 px-3 pb-5 pt-2 sm:px-5">
                 {messages.map((msg) => {
                   if (msg.role === 'user') {
                     return (
