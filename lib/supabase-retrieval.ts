@@ -39,6 +39,18 @@ function castRows(data: unknown): SearchContextRow[] {
   return data as SearchContextRow[];
 }
 
+/** Per-article excerpt cap. Long articles are trimmed; the citation is kept. */
+const MAX_EXCERPT_CHARS = 1400;
+/** Whole-context cap across all retrieved rows. */
+const MAX_CONTEXT_CHARS = 14_000;
+
+function trimExcerpt(value: string | null): string {
+  if (!value) return '';
+  return value.length > MAX_EXCERPT_CHARS
+    ? `${value.slice(0, MAX_EXCERPT_CHARS)} …[trimmed]`
+    : value;
+}
+
 function formatSearchRows(rows: SearchContextRow[]): string | null {
   if (rows.length === 0) {
     return null;
@@ -58,7 +70,7 @@ function formatSearchRows(rows: SearchContextRow[]): string | null {
         `Language: ${law.language || 'Not stated'}`,
         `Citation: ${law.citation}`,
         `Official source URL: ${law.source_url || 'Not provided'}`,
-        `Exact retrieved text: ${law.excerpt || 'No excerpt returned'}`,
+        `Exact retrieved text: ${trimExcerpt(law.excerpt) || 'No excerpt returned'}`,
       ].join('\n');
     })
     .join('\n\n---\n\n');

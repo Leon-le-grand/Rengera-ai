@@ -1,4 +1,20 @@
+// Chat completions that quote several articles can legitimately take a while.
+// Embeddings are cheap and keep the short timeout.
 const DEFAULT_TIMEOUT_MS = 45_000;
+const DEFAULT_CHAT_TIMEOUT_MS = 120_000;
+
+function resolveTimeoutMs(resource: 'chat/completions' | 'embeddings'): number {
+  const configured = Number(process.env.SPACE_BUNNY_TIMEOUT_MS);
+  if (Number.isFinite(configured) && configured > 0) return configured;
+
+  if (resource === 'chat/completions') {
+    const chatConfigured = Number(process.env.SPACE_BUNNY_CHAT_TIMEOUT_MS);
+    if (Number.isFinite(chatConfigured) && chatConfigured > 0) return chatConfigured;
+    return DEFAULT_CHAT_TIMEOUT_MS;
+  }
+
+  return DEFAULT_TIMEOUT_MS;
+}
 const DEFAULT_API_URL = 'https://api.aimlapi.com/v1';
 const DEFAULT_MODEL = 'stealth/space-bunny-alpha';
 
@@ -78,7 +94,7 @@ async function requestJson(
 ): Promise<Record<string, unknown>> {
   const config = getConfig(resource === 'embeddings');
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), resolveTimeoutMs(resource));
 
   try {
     const response = await fetch(buildEndpoint(config.baseUrl, resource), {
@@ -160,7 +176,7 @@ export function getSpaceBunnyRuntime(): {
 
 export async function createSpaceBunnyChatCompletion(
   messages: SpaceBunnyMessage[],
-  options: { temperature?: number; maxTokens?: number } = {},
+  options: { temperature?: number; maxTokens?: number; timeoutMs?: number } = {},
 ): Promise<string> {
   const config = getConfig();
   const payload = await requestJson('chat/completions', {

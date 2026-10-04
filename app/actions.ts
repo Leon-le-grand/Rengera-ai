@@ -14,7 +14,34 @@ import {
   type SpaceBunnyMessage,
 } from '@/lib/space-bunny';
 
-const SYSTEM_PROMPT = `You are Rengera, an expert legal AI assistant for Rwanda. 
+/**
+ * Focused prompt for "explain this article" questions.
+ *
+ * The full briefing asks for ten sections on every answer. That is right for a
+ * general legal question, but for someone who opened one article and asked what
+ * it means it is a huge output for a small question — and long generations were
+ * timing out. This variant asks for four short sections instead.
+ */
+const ARTICLE_SYSTEM_PROMPT = `You are Rengera, a legal AI assistant for Rwanda.
+Answer ONLY from the article text and retrieved law provided. Never invent an article, a number or a deadline.
+
+Write the answer in this exact structure, and keep it short:
+
+### What this article says
+(three or four sentences, plain language, quoting the article number)
+
+### What it means for you
+(what it means in the user's situation, based only on what the article says)
+
+### What to do next
+(three bullets, most urgent first)
+
+### Watch out for
+(one or two risks or limits — time limits, conditions, exceptions)
+
+Be calm and precise. If the text provided does not answer the question, say so plainly.`;
+
+const SYSTEM_PROMPT = `You are Rengera, an expert legal AI assistant for Rwanda.
 Your goal is to explain Rwandan laws simply to citizens and businesses.
 
 You are equipped with a RAG (Retrieval-Augmented Generation) system. You MUST ONLY use the retrieved official Rwandan legal documents provided in the context below to answer the user's query. Analyze every relevant law and article in the context, not only the first result. Explain what each law or article says, how they interact, and whether a later law amends or supersedes an earlier one. If the answer cannot be found in the provided context, you MUST clearly state that you do not have that specific information in your database. Do NOT invent or assume laws.
@@ -217,35 +244,64 @@ export async function generateLegalAdvice(
 RETRIEVED LEGAL CONTEXT:
 ${contextText}
 
-${options.articleContext ? `ARTICLE THE USER IS READING (answer about this specific article first):\n${options.articleContext.lawTitle || ''} ${options.articleContext.referenceNumber || ''} Article ${options.articleContext.articleNumber || ''}\n${(options.articleContext.text || '').slice(0, 4000)}\n` : ''}
+${options.articleContext ? `ARTICLE THE USER IS READING:\n${options.articleContext.lawTitle || ''} ${options.articleContext.referenceNumber || ''} Article ${options.articleContext.articleNumber || ''}\n${(options.articleContext.text || '').slice(0, 6000)}\n` : ''}
 USER QUERY:
 ${query}
 `;
 
     const language = resolveAnswerLanguage(options.language);
     const languageInstruction = LANGUAGE_DEFINITIONS[language].instruction;
-    const articleInstruction = options.articleContext
-      ? ' The user opened this article from the Law Library: explain that article first, then how it applies to their question.'
-      : '';
+    const isArticleQuestion = Boolean(options.articleContext);
 
-    const messages: SpaceBunnyMessage[] = [
-      {
-        role: 'system',
-        content: `${SYSTEM_PROMPT}\n\nLANGUAGE:\n${languageInstruction}${articleInstruction}`,
-      },
-      {
-        role: 'assistant',
-        content:
-          'Understood. I will strictly follow the instructions, structure all responses with the requested headings, and only use the provided retrieved context.',
-      },
-      ...chatHistory.map((message) => ({
-        role: message.role === 'model' ? ('assistant' as const) : ('user' as const),
-        content: message.content,
-      })),
+    // An article question gets the focused briefing and no history: the article
+    // text is already in the prompt, and carrying the whole conversation plus
+    // ten required sections is what was timing out.
+    const systemContent = isArticleQuestion
+      ? `${ARTICLE_SYSTEM_PROMPT}\n\nLANGUAGE:\n${languageInstruction}`
+      : `${SYSTEM_PROMPT}\n\nLANGUAGE:\n${languageInstruction}`;
+
+    const buildMessages = (history: SpaceBunnyMessage[]): SpaceBunnyMessage[] => [
+      { role: 'system', content: systemContent },
+      ...(isArticleQuestion
+        ? []
+        : [
+            {
+              role: 'assistant' as const,
+              content:
+                'Understood. I will strictly follow the instructions, structure all responses with the requested headings, and only use the provided retrieved context.',
+            },
+          ]),
+      ...history,
       { role: 'user', content: contextPrompt },
     ];
 
-    const reply = await createSpaceBunnyChatCompletion(messages, { temperature: 0.2 });
+    // Only the tail of the conversation is sent, and each turn is trimmed. Old
+    // turns add tokens without adding anything the retrieved law does not.
+    const trimmedHistory: SpaceBunnyMessage[] = chatHistory
+      .slice(-6)
+      .map((message) => ({
+        role: message.role === 'model' ? ('assistant' as const) : ('user' as const),
+        content: message.content.slice(0, 800),
+      }));
+
+    const completionOptions = { temperature: 0.2, maxTokens: isArticleQuestion ? 1200 : 2000 };
+
+    let reply: string;
+    try {
+      reply = await createSpaceBunnyChatCompletion(buildMessages(trimmedHistory), completionOptions);
+    } catch (firstError) {
+      const message = firstError instanceof Error ? firstError.message : String(firstError);
+      const timedOut = /timeout|abort/i.test(message);
+
+      // A timeout is almost always a payload that is too big to answer in one
+      // pass. Retry once with the conversation dropped before giving up.
+      if (timedOut) {
+        console.warn('Space Bunny timed out — retrying without chat history.');
+        reply = await createSpaceBunnyChatCompletion(buildMessages([]), completionOptions);
+      } else {
+        throw firstError;
+      }
+    }
 
     return { reply, sources: collectedSources };
   } catch (error) {
