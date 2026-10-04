@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Minus, Plus } from 'lucide-react';
-import AuraReveal, { SectionLabel } from './AuraReveal';
+import { ArrowRight, Minus, Plus } from 'lucide-react';
+import AuraReveal from './AuraReveal';
+import GhostWord, { GhostLabel } from './GhostWord';
 import { cn } from '@/lib/utils';
 
 const FAQS = [
@@ -38,17 +39,20 @@ const FAQS = [
   },
 ];
 
-export default function AuraFAQ() {
+export default function AuraFAQ({ onStartFree }: { onStartFree: () => void }) {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
     <section
       id="faq"
-      className="mx-auto w-full max-w-[1400px] scroll-mt-24 border-b border-white/5 px-6 py-20"
+      className="relative w-full scroll-mt-24 overflow-hidden border-b border-white/5 px-6 py-24"
     >
-      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-        <div>
-          <SectionLabel className="mb-8">FAQ</SectionLabel>
+      {/* The oversized word behind the section */}
+      <GhostWord word="FAQ" className="right-[-4%] top-10 md:left-[-2%] md:right-auto" />
+
+      <div className="relative mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+        <div className="relative">
+          <GhostLabel className="mb-8">FAQ</GhostLabel>
           <AuraReveal>
             <h2 className="mb-6 text-3xl font-medium leading-[1.1] tracking-tight text-white md:text-5xl">
               Questions people ask before they trust it.
@@ -62,7 +66,7 @@ export default function AuraFAQ() {
           </AuraReveal>
         </div>
 
-        <div className="border-t border-white/5">
+        <div className="relative border-t border-white/5">
           {FAQS.map((item, index) => {
             const isOpen = open === index;
 
@@ -80,10 +84,8 @@ export default function AuraFAQ() {
                     </span>
                     <span
                       className={cn(
-                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors',
-                        isOpen
-                          ? 'border-[#d8b485] text-[#d8b485]'
-                          : 'border-white/15 text-zinc-400',
+                        'flex h-8 w-8 shrink-0 items-center justify-center border transition-colors',
+                        isOpen ? 'border-[#d8b485] text-[#d8b485]' : 'border-white/15 text-zinc-400',
                       )}
                     >
                       {isOpen ? <Minus size={14} strokeWidth={2} /> : <Plus size={14} strokeWidth={2} />}
@@ -107,6 +109,43 @@ export default function AuraFAQ() {
             );
           })}
         </div>
+      </div>
+
+      {/* The call to action that closes the page */}
+      <div className="relative mx-auto mt-20 w-full max-w-[1400px]">
+        <AuraReveal>
+          <div className="relative overflow-hidden border border-white/5">
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-[0.18]"
+            />
+            <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-[#09090b] via-[#09090b]/85 to-transparent" />
+
+            <div className="relative flex flex-col items-start gap-8 p-10 md:flex-row md:items-center md:justify-between md:p-16">
+              <div className="max-w-xl">
+                <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[#d8b485]">
+                  Start in 30 seconds
+                </p>
+                <h3 className="text-3xl font-medium leading-[1.1] tracking-tight text-white md:text-4xl">
+                  You already know something is wrong. Ask the law.
+                </h3>
+                <p className="mt-4 text-sm font-light leading-relaxed text-zinc-400">
+                  No card, no lawyer needed to start. Ask in Kinyarwanda, English, French or Kiswahili,
+                  and read the article yourself.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={onStartFree}
+                className="aura-lift inline-flex w-full shrink-0 items-center justify-center gap-2 bg-[#d8b485] px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-zinc-950 hover:bg-[#c2a277] md:w-auto"
+              >
+                Ask your first question
+                <ArrowRight size={15} strokeWidth={2.5} />
+              </button>
+            </div>
+          </div>
+        </AuraReveal>
       </div>
     </section>
   );

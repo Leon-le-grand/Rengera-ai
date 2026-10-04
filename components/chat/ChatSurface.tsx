@@ -60,7 +60,7 @@ export function ChatFrame({
   return (
     <div
       className={cn(
-        'relative flex w-full flex-col overflow-hidden rounded-[28px] border border-[var(--chat-border)] bg-white',
+        'relative flex w-full flex-col overflow-hidden rounded-[28px] border border-[var(--chat-border)] bg-[var(--chat-panel)]',
         'shadow-[0_28px_80px_-20px_rgba(0,0,0,0.28)]',
         className,
       )}
@@ -395,7 +395,7 @@ export function ScrollDownButton({
         type="button"
         aria-label="Scroll to latest"
         onClick={onClick}
-        className="pointer-events-auto flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--chat-border)] bg-white text-[var(--chat-muted)] shadow-[0_2px_8px_rgba(0,0,0,0.12)] outline-none transition-colors hover:bg-[var(--chat-hover)] hover:text-[var(--chat-text)]"
+        className="pointer-events-auto flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--chat-border)] bg-[var(--chat-panel)] text-[var(--chat-muted)] shadow-[0_2px_8px_rgba(0,0,0,0.12)] outline-none transition-colors hover:bg-[var(--chat-hover)] hover:text-[var(--chat-text)]"
       >
         <ChevronDown size={16} strokeWidth={2.5} />
       </button>
@@ -420,7 +420,7 @@ export function ComposerFrame({
     <div className={cn('shrink-0 px-4 pb-3 pt-1 sm:px-6', className)}>
       <div className="mx-auto w-full max-w-[560px]">
         {emergency}
-        <div className="rounded-[26px] border border-[var(--chat-border)] bg-[var(--chat-composer)] p-3 transition-colors focus-within:border-[#d2d5d9] focus-within:bg-white">
+        <div className="rounded-[26px] border border-[var(--chat-border)] bg-[var(--chat-composer)] p-3 transition-colors focus-within:border-[var(--chat-border)] focus-within:bg-[var(--chat-panel)]">
           {children}
         </div>
       </div>
@@ -436,7 +436,7 @@ export function ComposerChip({
   onRemove?: () => void;
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--chat-border-soft)] bg-white py-1 pl-1 pr-2">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] py-1 pl-1 pr-2">
       <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-[var(--chat-text)]">
         <RengeraLogo size={18} label="" />
       </span>

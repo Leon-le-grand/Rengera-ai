@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, Moon, Sun, X } from 'lucide-react';
 import RengeraLogo from '@/components/brand/RengeraLogo';
+import { useTheme } from '@/components/app/ThemeProvider';
 import { cn } from '@/lib/utils';
 
 const LINKS = [
@@ -23,6 +24,7 @@ export default function AuraNav({
   onLogin: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const { theme, toggle } = useTheme();
 
   return (
     <header className="fixed top-0 z-50 w-full border-b border-white/5 bg-[#09090b]/80 backdrop-blur-md">
@@ -50,6 +52,15 @@ export default function AuraNav({
         </nav>
 
         <div className="flex items-center">
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            className="mr-3 hidden h-9 w-9 items-center justify-center border border-white/15 text-zinc-300 transition-colors hover:border-[#d8b485] hover:text-[#d8b485] md:inline-flex"
+          >
+            {theme === 'dark' ? <Sun size={15} strokeWidth={1.75} /> : <Moon size={15} strokeWidth={1.75} />}
+          </button>
           <button
             type="button"
             onClick={onLogin}

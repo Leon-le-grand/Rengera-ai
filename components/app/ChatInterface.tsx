@@ -396,7 +396,7 @@ export default function ChatInterface({
                               key={scenario.id}
                               type="button"
                               onClick={() => handleSubmit(undefined, scenario.prompt)}
-                              className="inline-flex items-center gap-2 rounded-full border border-[#e8eaed] bg-white px-3 py-[7px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
+                              className="inline-flex items-center gap-2 rounded-full border border-[#e8eaed] bg-[var(--chat-panel)] px-3 py-[7px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
                             >
                               <scenario.icon size={13} strokeWidth={2} className="text-[#5f6368]" />
                               {scenarios[scenario.label]}
@@ -406,7 +406,7 @@ export default function ChatInterface({
                       )}
 
                       {!isWelcome && deadlineHints.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-2 rounded-[14px] border border-[#e8eaed] bg-white p-3">
+                        <div className="flex flex-wrap items-center gap-2 rounded-[14px] border border-[#e8eaed] bg-[var(--chat-panel)] p-3">
                           <AlarmClock size={14} strokeWidth={2} className="text-[#1a73e8]" />
                           <span className="text-[12px] text-[#3c4043]">Time limit found — save it?</span>
                           {deadlineHints.map((hint) => (
@@ -492,7 +492,7 @@ export default function ChatInterface({
                                 setShowShareNotice(true);
                                 handleShare(msg);
                               }}
-                              className="inline-flex items-center gap-1.5 rounded-full border border-[#e8eaed] bg-white px-3 py-[6px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
+                              className="inline-flex items-center gap-1.5 rounded-full border border-[#e8eaed] bg-[var(--chat-panel)] px-3 py-[6px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
                             >
                               {sharingMessageId === msg.id ? (
                                 <Loader2 size={12} className="animate-spin" />
@@ -511,7 +511,7 @@ export default function ChatInterface({
                             <button
                               type="button"
                               onClick={handleSaveAsPdf}
-                              className="inline-flex items-center gap-1.5 rounded-full border border-[#e8eaed] bg-white px-3 py-[6px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
+                              className="inline-flex items-center gap-1.5 rounded-full border border-[#e8eaed] bg-[var(--chat-panel)] px-3 py-[6px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
                             >
                               <Download size={12} strokeWidth={2} />
                               {strings.savePdf}
@@ -571,18 +571,18 @@ export default function ChatInterface({
                   transition={{ duration: 0.22, ease: 'easeOut' }}
                   className="overflow-hidden"
                 >
-                  <div className="rounded-[16px] border border-[#f1c7c7] bg-[#fdf2f2] p-3">
+                  <div className="rounded-[16px] border border-[var(--chat-border)] bg-[var(--chat-user)] p-3">
                     <div className="flex items-start gap-3">
                       <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#c5221f] text-white">
                         <ShieldAlert size={15} strokeWidth={2.25} />
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-[13px] font-semibold text-[#a50e0e]">{emergencyRisk.title}</p>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-[2px] text-[11px] font-medium text-[#a50e0e] ring-1 ring-[#f1c7c7]">
+                          <p className="text-[13px] font-semibold text-[#f0b4b4]">{emergencyRisk.title}</p>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--chat-panel)] px-2 py-[2px] text-[11px] font-medium text-[#e5a3a3] ring-1 ring-[var(--chat-border)]">
                             <Phone size={10} strokeWidth={2.5} /> Police 112
                           </span>
-                          <span className="inline-flex items-center rounded-full bg-white px-2 py-[2px] text-[11px] font-medium text-[#a50e0e] ring-1 ring-[#f1c7c7]">
+                          <span className="inline-flex items-center rounded-full bg-[var(--chat-panel)] px-2 py-[2px] text-[11px] font-medium text-[#e5a3a3] ring-1 ring-[var(--chat-border)]">
                             RIB 166
                           </span>
                         </div>
@@ -600,7 +600,7 @@ export default function ChatInterface({
         >
           <form onSubmit={handleSubmit} className="flex flex-col">
             {showShareNotice && shareNotice && (
-              <div className="mb-2 flex items-center justify-between gap-3 rounded-[10px] bg-white px-3 py-2 text-[12px] text-[#3c4043] ring-1 ring-[#e8eaed]">
+              <div className="mb-2 flex items-center justify-between gap-3 rounded-[10px] bg-[var(--chat-panel)] px-3 py-2 text-[12px] text-[#3c4043] ring-1 ring-[#e8eaed]">
                 <span className="truncate">{shareNotice}</span>
                 <button
                   type="button"

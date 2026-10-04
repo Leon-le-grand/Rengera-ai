@@ -283,6 +283,80 @@
   outline-color: var(--app-accent);
 }
 
+/* --------------------------------------------------------------------------
+   Landing page — light theme
+   --------------------------------------------------------------------------
+   The marketing page is authored dark. In light mode the same utilities are
+   remapped to the warm off-white canvas, an ink text colour and a deeper gold,
+   so the gold-on-white contrast still passes and nothing turns muddy. */
+.landing-light {
+  background-color: #f4f2ef;
+  color: #3f3f46;
+}
+
+.landing-light .bg-zinc-950,
+.landing-light .bg-black {
+  background-color: #f4f2ef;
+}
+
+.landing-light .bg-\[\#09090b\],
+.landing-light .bg-\[\#0c0c0e\] {
+  background-color: #ffffff;
+}
+
+.landing-light header {
+  background-color: rgba(244, 242, 239, 0.86);
+}
+
+.landing-light .text-white {
+  color: #121214;
+}
+
+.landing-light .text-zinc-300,
+.landing-light .text-zinc-400 {
+  color: #52525b;
+}
+
+.landing-light .text-zinc-500,
+.landing-light .text-zinc-600 {
+  color: #71717a;
+}
+
+.landing-light .text-\[\#d8b485\] {
+  color: #8a6a30;
+}
+
+.landing-light .bg-\[\#d8b485\] {
+  background-color: #b8914d;
+  color: #121214;
+}
+
+.landing-light .text-zinc-950 {
+  color: #121214;
+}
+
+.landing-light .border-white\/5,
+.landing-light .border-white\/10,
+.landing-light .border-white\/15,
+.landing-light .border-white\/20 {
+  border-color: rgba(24, 24, 27, 0.1);
+}
+
+.landing-light .bg-white\/5,
+.landing-light .bg-white\/10 {
+  background-color: rgba(24, 24, 27, 0.04);
+}
+
+.landing-light input,
+.landing-light textarea {
+  color: #121214;
+}
+
+.landing-light input::placeholder,
+.landing-light textarea::placeholder {
+  color: #a1a1aa;
+}
+
 /* The sign-in / sign-up panel uses the landing page's grammar so the first
    screen a visitor sees after clicking "Start Free" is the same product: dark
    panel, hairline borders, square corners, gold actions. */

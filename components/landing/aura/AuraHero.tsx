@@ -25,27 +25,27 @@ export default function AuraHero({ onStartFree }: { onStartFree: () => void }) {
       className="relative mx-auto flex w-full max-w-[1400px] scroll-mt-24 flex-col items-start px-6 pb-24 pt-40 text-left"
     >
       {/* Animated grid behind the wordmark */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div aria-hidden="true" className="pointer-events-none absolute -inset-x-[10vw] -top-24 -bottom-16 overflow-hidden">
         <div
-          className="absolute inset-0 opacity-[0.16]"
+          className="absolute inset-0 opacity-[0.30]"
           style={{
             backgroundImage:
-              'linear-gradient(to right, rgba(216,180,133,0.55) 1px, transparent 1px), linear-gradient(to bottom, rgba(216,180,133,0.55) 1px, transparent 1px)',
-            backgroundSize: '72px 72px',
-            maskImage: 'radial-gradient(60% 55% at 22% 45%, #000 0%, transparent 78%)',
-            WebkitMaskImage: 'radial-gradient(60% 55% at 22% 45%, #000 0%, transparent 78%)',
+              'linear-gradient(to right, rgba(216,180,133,0.85) 1px, transparent 1px), linear-gradient(to bottom, rgba(216,180,133,0.85) 1px, transparent 1px)',
+            backgroundSize: '110px 110px',
+            maskImage: 'radial-gradient(75% 70% at 30% 48%, #000 0%, transparent 82%)',
+            WebkitMaskImage: 'radial-gradient(75% 70% at 30% 48%, #000 0%, transparent 82%)',
           }}
         />
         <motion.div
           className="absolute inset-0"
           style={{
             backgroundImage:
-              'linear-gradient(to right, rgba(216,180,133,0.5) 1px, transparent 1px), linear-gradient(to bottom, rgba(216,180,133,0.5) 1px, transparent 1px)',
-            backgroundSize: '72px 72px',
-            maskImage: 'radial-gradient(28% 26% at 22% 45%, #000 0%, transparent 75%)',
-            WebkitMaskImage: 'radial-gradient(28% 26% at 22% 45%, #000 0%, transparent 75%)',
+              'linear-gradient(to right, rgba(216,180,133,0.8) 1px, transparent 1px), linear-gradient(to bottom, rgba(216,180,133,0.8) 1px, transparent 1px)',
+            backgroundSize: '110px 110px',
+            maskImage: 'radial-gradient(42% 40% at 30% 48%, #000 0%, transparent 78%)',
+            WebkitMaskImage: 'radial-gradient(42% 40% at 30% 48%, #000 0%, transparent 78%)',
           }}
-          animate={{ backgroundPosition: ['0px 0px', '72px 72px'] }}
+          animate={{ backgroundPosition: ['0px 0px', '110px 110px'] }}
           transition={{ duration: 9, repeat: Infinity, ease: 'linear' }}
         />
       </div>

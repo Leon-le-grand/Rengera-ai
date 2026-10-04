@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Mail, MapPin } from 'lucide-react';
-import AuraReveal, { SectionLabel } from './AuraReveal';
+import AuraReveal from './AuraReveal';
+import GhostWord, { GhostLabel } from './GhostWord';
 
 export default function AuraContact({ onStartFree }: { onStartFree: () => void }) {
   const [sent, setSent] = useState(false);
@@ -10,13 +11,13 @@ export default function AuraContact({ onStartFree }: { onStartFree: () => void }
   return (
     <section
       id="contact"
-      className="mx-auto w-full max-w-[1400px] scroll-mt-24 px-6 py-20"
+      className="relative mx-auto w-full max-w-[1400px] scroll-mt-24 overflow-hidden px-6 py-20"
     >
-      <div className="flex flex-col gap-16 lg:flex-row">
-        <div className="flex-1">
-          <SectionLabel className="mb-8" size="sm">
-            Let's Connect
-          </SectionLabel>
+      <GhostWord word="CONNECT" className="right-[-6%] top-8" />
+
+      <div className="relative flex flex-col gap-16 lg:flex-row">
+        <div className="relative flex-1">
+          <GhostLabel className="mb-8">Let's Connect</GhostLabel>
 
           <AuraReveal>
             <h2 className="mb-6 max-w-md text-3xl font-medium leading-[1.1] tracking-tight text-white md:text-5xl">

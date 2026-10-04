@@ -1,5 +1,6 @@
 'use client';
 
+import { useTheme } from '@/components/app/ThemeProvider';
 import AuraNav from './aura/AuraNav';
 import AuraHero from './aura/AuraHero';
 import AuraPillars from './aura/AuraPillars';
@@ -8,6 +9,7 @@ import AuraApproach from './aura/AuraApproach';
 import AuraCoverage from './aura/AuraCoverage';
 import AuraContact from './aura/AuraContact';
 import AuraFAQ from './aura/AuraFAQ';
+import { cn } from '@/lib/utils';
 import AuraPricing from './aura/AuraPricing';
 import AuraFooter from './aura/AuraFooter';
 
@@ -27,8 +29,15 @@ interface LandingPageProps {
  * here — it lives in the product, not on the marketing page.
  */
 export default function LandingPage({ onEnterApp, onLogin, onStartFree }: LandingPageProps) {
+  const { theme } = useTheme();
+
   return (
-    <div className="relative flex min-h-screen w-full flex-col bg-zinc-950 text-zinc-300 antialiased selection:bg-zinc-800 selection:text-white">
+    <div
+      className={cn(
+        'relative flex min-h-screen w-full flex-col bg-zinc-950 text-zinc-300 antialiased selection:bg-zinc-800 selection:text-white',
+        theme === 'light' && 'landing-light',
+      )}
+    >
       {/* Layered canvas */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[-1] h-[100vh] min-h-[750px]">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-30" />
@@ -48,7 +57,7 @@ export default function LandingPage({ onEnterApp, onLogin, onStartFree }: Landin
         <AuraApproach onStartFree={onStartFree} />
         <AuraCoverage />
         <AuraPricing onStartFree={onStartFree} />
-        <AuraFAQ />
+        <AuraFAQ onStartFree={onStartFree} />
         <AuraContact onStartFree={onEnterApp} />
       </main>
 
