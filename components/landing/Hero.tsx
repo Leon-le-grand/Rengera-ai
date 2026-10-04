@@ -9,21 +9,22 @@ import LegalChatPreview from './LegalChatPreview';
 
 export default function Hero({ onStartFree }: { onStartFree: () => void }) {
   return (
-    <section className="relative overflow-hidden bg-slate-950 pb-20 pt-32 md:pb-28 md:pt-40">
-      {/* Ribbon glow. The dark ground lets the ribbon read at full strength
-          instead of washing out against a light page. */}
+    <section className="relative isolate overflow-hidden bg-slate-950 pb-20 pt-32 md:pb-28 md:pt-40">
+      {/* The ribbon and its scrim are z-0 and the copy is z-10. The previous
+          `-z-10` pushed the canvas behind the section's own slate background,
+          so it painted but was never visible. */}
       <RibbonGlow
-        className="absolute inset-0 -z-10"
+        className="absolute inset-0 z-0"
         background="#070A14"
         color1="#10b981"
         color2="#b69d74"
-        speed={38}
+        speed={34}
         size={118}
         angle={-140}
         hover={110}
         reach={280}
       />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-slate-950/40 via-slate-950/70 to-slate-950" />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-slate-950/30 via-slate-950/75 to-slate-950" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-6">
         <div className="flex flex-col items-center gap-16 lg:flex-row lg:gap-12">

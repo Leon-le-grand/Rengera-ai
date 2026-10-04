@@ -28,9 +28,12 @@ from PIL import ImageFilter
 LIGHT_SOURCE = Path.home() / "Downloads" / "Logo-light-theme.jpeg"
 DARK_SOURCE = Path.home() / "Downloads" / "Logo-dark-theme.jpeg"
 
+FAVICON_SOURCE = Path.home() / "Downloads" / "Logo-favicon.png"
+
 OUTPUTS = {
     "light": Path("public/rengera-logo-light.png"),
     "dark": Path("public/rengera-logo-dark.png"),
+    "favicon": Path("public/rengera-logo-favicon.png"),
 }
 
 def stable_bbox(image: Image.Image) -> tuple[int, int, int, int] | None:
@@ -94,6 +97,7 @@ def main() -> int:
     for name, (mark_is_dark, source, threshold) in {
         "light": (True, LIGHT_SOURCE, LIGHT_THRESHOLD),
         "dark": (False, DARK_SOURCE, DARK_THRESHOLD),
+        "favicon": (True, FAVICON_SOURCE, LIGHT_THRESHOLD),
     }.items():
         width, height, bbox = extract(source, mark_is_dark, OUTPUTS[name], threshold)
         trimmed = OUTPUTS[name]
@@ -101,6 +105,15 @@ def main() -> int:
             f"{name}: source {width}x{height}, mark bbox {bbox}, "
             f"wrote {trimmed} at {trimmed.stat().st_size // 1024} KB"
         )
+
+    # Next.js serves app/icon.png as the favicon.
+    favicon = OUTPUTS["favicon"]
+    mark = Image.open(favicon).convert("RGBA")
+    side = max(mark.size)
+    canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    canvas.paste(mark, ((side - mark.width) // 2, (side - mark.height) // 2), mark)
+    canvas.resize((512, 512), Image.LANCZOS).save("app/icon.png", "PNG", optimize=True)
+    print(f"favicon: wrote app/icon.png at 512x512")
 
     return 0
 

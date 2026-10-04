@@ -366,6 +366,19 @@ export default function RibbonGlow({
     const root = rootRef.current;
     if (!canvas || !root) return;
 
+    // Reduced motion still gets one painted frame, then stops.
+    const reducedMotion =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Phones and low-core machines get a smaller buffer, so the 84-layer
+    // fragment shader has far fewer pixels to cover per frame.
+    const lowPower =
+      typeof navigator !== 'undefined' && (navigator.hardwareConcurrency || 8) <= 4;
+    const dprCap = lowPower ? 1 : MAX_DPR;
+    // The field pass is already half resolution. Drop it further on weak GPUs.
+    const fieldScale = lowPower ? 3 : 2;
+
     const gl = canvas.getContext('webgl2', {
       antialias: false,
       alpha: false,
@@ -404,14 +417,17 @@ export default function RibbonGlow({
     let running = true;
 
     const render = (now: number) => {
-      frameId = requestAnimationFrame(render);
+      // Reduced motion paints exactly one frame; every other path keeps going.
+      if (!reducedMotion) {
+        frameId = requestAnimationFrame(render);
+      }
       const delta = last < 0 ? 0 : clampN((now - last) / 1000, 0, 0.05);
       last = now;
 
       const config = configRef.current;
       clock = (clock + delta * config.speed) % 3600;
 
-      const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+      const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
       const cssWidth = canvas.clientWidth || 1200;
       const cssHeight = canvas.clientHeight || 800;
       const bufferWidth = Math.max(1, Math.round(cssWidth * dpr));
@@ -421,7 +437,10 @@ export default function RibbonGlow({
         canvas.width = bufferWidth;
         canvas.height = bufferHeight;
       }
-      target.resize(Math.max(1, Math.round(bufferWidth / 2)), Math.max(1, Math.round(bufferHeight / 2)));
+      target.resize(
+        Math.max(1, Math.round(bufferWidth / fieldScale)),
+        Math.max(1, Math.round(bufferHeight / fieldScale)),
+      );
 
       const present = pointer.inside ? 1 : 0;
       if (present && on < 0.02) {
@@ -484,10 +503,19 @@ export default function RibbonGlow({
       gl.uniform3f(finishUniforms.uBg, bg[0], bg[1], bg[2]);
       gl.uniform1f(finishUniforms.uPaper, clampN((bgLuminance - 0.35) / 0.3, 0, 1));
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+      if (reducedMotion) {
+        frameId = 0;
+        drewOnce = true;
+      }
     };
 
+    let onScreen = true;
+    let drewOnce = false;
+
     const gate = () => {
-      if (running && !document.hidden) {
+      const shouldRun = running && !document.hidden && (onScreen || (!drewOnce && reducedMotion));
+      if (shouldRun) {
         if (!frameId) {
           last = -1;
           frameId = requestAnimationFrame(render);
@@ -500,10 +528,23 @@ export default function RibbonGlow({
 
     const onVisibility = () => gate();
     document.addEventListener('visibilitychange', onVisibility);
+
+    // Without this the hero keeps rendering after the user scrolls past it,
+    // which is the single biggest cost on a phone.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        onScreen = entries.some((entry) => entry.isIntersecting);
+        gate();
+      },
+      { rootMargin: '160px' },
+    );
+    observer.observe(root);
+
     gate();
 
     return () => {
       running = false;
+      observer.disconnect();
       if (frameId) cancelAnimationFrame(frameId);
       document.removeEventListener('visibilitychange', onVisibility);
       tracker.dispose();

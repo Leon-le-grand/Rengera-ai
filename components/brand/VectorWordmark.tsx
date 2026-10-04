@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const MAX_DPR = 2;
 const REF_WIDTH = 1200;
@@ -336,6 +336,9 @@ export default function VectorWordmark({
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const labelRefs = useRef<(HTMLDivElement | null)[]>([null, null, null]);
+  // If WebGL is unavailable the canvas would be blank and the wordmark would
+  // simply look missing. Falling back to plain text keeps the brand visible.
+  const [webglFailed, setWebglFailed] = useState(false);
 
   const rawSize = font?.fontSize;
   const fontSpec: FontSpec = {
@@ -391,12 +394,16 @@ export default function VectorWordmark({
 
     const gl = (canvas.getContext('webgl2', attributes) ||
       canvas.getContext('webgl', attributes)) as WebGLRenderingContext | null;
-    if (!gl) return;
+    if (!gl) {
+      setWebglFailed(true);
+      return;
+    }
 
     let program: WebGLProgram;
     try {
       program = compile(gl, VERT, FRAG);
     } catch {
+      setWebglFailed(true);
       return;
     }
 
@@ -455,7 +462,16 @@ export default function VectorWordmark({
     let atlasRatioH = 1;
     let atlasKey = '';
 
-    const drawFontPx = () => live.current.fontSpec.size * (boxWidth / REF_WIDTH);
+    // The glyph is rasterised at this size and drawn at the same scale. It has
+    // to be derived from the band height: the previous width-based formula
+    // produced a 240px glyph inside a 96px footer strip, so the whole wordmark
+    // was cropped away and appeared to be missing.
+    const drawFontPx = () => {
+      const reference = live.current.fontSpec.size;
+      const fitsHeight = boxHeight * 0.66;
+      const fitsWidth = (boxWidth / REF_WIDTH) * reference;
+      return Math.max(8, Math.min(fitsHeight, fitsWidth));
+    };
 
     const resize = () => {
       boxWidth = Math.max(1, host!.offsetWidth);
@@ -666,6 +682,12 @@ export default function VectorWordmark({
     let frame = 0;
     let last = 0;
     let running = true;
+    let onScreen = true;
+    let drewOnce = false;
+
+    const reducedMotion =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const loop = (now: number) => {
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
@@ -674,12 +696,19 @@ export default function VectorWordmark({
       step(dt);
       writeLabels();
       draw();
+      drewOnce = true;
+      if (reducedMotion) {
+        frame = 0;
+        return;
+      }
       frame = requestAnimationFrame(loop);
     };
 
-    // Stop burning GPU while the tab is in the background.
+    // Stop rendering while hidden or scrolled past, which was the main reason
+    // the page felt heavy on a phone.
     const gate = () => {
-      if (running && !document.hidden) {
+      const shouldRun = running && !document.hidden && (onScreen || !drewOnce);
+      if (shouldRun) {
         if (!frame) {
           last = 0;
           frame = requestAnimationFrame(loop);
@@ -690,10 +719,20 @@ export default function VectorWordmark({
       }
     };
 
-    const observer = new ResizeObserver(() => {
+    const resizeObserver = new ResizeObserver(() => {
       boxDirty = true;
     });
-    observer.observe(host);
+    resizeObserver.observe(host);
+
+    const visibilityObserver = new IntersectionObserver(
+      (entries) => {
+        onScreen = entries.some((entry) => entry.isIntersecting);
+        gate();
+      },
+      { rootMargin: '160px' },
+    );
+    visibilityObserver.observe(host);
+
     document.addEventListener('visibilitychange', gate);
 
     if (typeof document !== 'undefined' && document.fonts) {
@@ -711,11 +750,36 @@ export default function VectorWordmark({
       alive = false;
       running = false;
       if (frame) cancelAnimationFrame(frame);
-      observer.disconnect();
+      resizeObserver.disconnect();
+      visibilityObserver.disconnect();
       host.removeEventListener('pointermove', onMove);
       document.removeEventListener('visibilitychange', gate);
     };
   }, []);
+
+  if (webglFailed) {
+    return (
+      <div
+        className={className}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background,
+          color: textColor,
+          fontFamily: fontSpec.family,
+          fontWeight: Number(fontSpec.weight) || 800,
+          letterSpacing: fontSpec.letterSpacing,
+          fontSize: 'clamp(1.5rem, 6vw, 3rem)',
+          width: '100%',
+          height: '100%',
+          ...style,
+        }}
+      >
+        {text}
+      </div>
+    );
+  }
 
   return (
     <div
