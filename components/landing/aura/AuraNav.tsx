@@ -1,0 +1,120 @@
+'use client';
+
+import { useState } from 'react';
+import { Menu, X } from 'lucide-react';
+import RengeraLogo from '@/components/brand/RengeraLogo';
+import { cn } from '@/lib/utils';
+
+const LINKS = [
+  { label: 'Home', href: '#home' },
+  { label: 'About Us', href: '#about' },
+  { label: 'Services', href: '#services' },
+  { label: 'Interface', href: '#interface' },
+  { label: 'Approach', href: '#approach' },
+  { label: 'Coverage', href: '#coverage' },
+  { label: 'Contact', href: '#contact' },
+];
+
+export default function AuraNav({
+  onStartFree,
+  onLogin,
+}: {
+  onStartFree: () => void;
+  onLogin: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <header className="fixed top-0 z-50 w-full border-b border-white/5 bg-[#09090b]/80 backdrop-blur-md">
+      <div className="mx-auto flex h-20 max-w-[1400px] items-center justify-between px-6">
+        <a href="#home" className="flex items-center gap-3" aria-label="Rengera AI home">
+          <RengeraLogo size={40} label="" />
+          <span className="font-brand text-xl tracking-wide text-white">RENGERA</span>
+        </a>
+
+        <nav className="hidden items-center gap-10 text-[10px] font-bold uppercase tracking-widest text-white/70 lg:flex">
+          {LINKS.map((link, index) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className={cn(
+                'pb-1 transition-colors hover:text-[#d8b485]',
+                index === 0
+                  ? 'border-b border-[#d8b485] text-[#d8b485]'
+                  : 'border-b border-transparent',
+              )}
+            >
+              {link.label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={onLogin}
+            className="hidden items-center justify-center px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-zinc-950 transition-colors bg-[#d8b485] hover:bg-[#c2a277] md:inline-flex"
+          >
+            Log In →
+          </button>
+          <button
+            type="button"
+            onClick={onStartFree}
+            className="ml-3 hidden items-center justify-center px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-white transition-colors border border-white/20 hover:border-white/50 md:inline-flex"
+          >
+            Let's Connect →
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open}
+            className="ml-4 text-zinc-400 transition-colors hover:text-white lg:hidden"
+          >
+            {open ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+      </div>
+
+      {open && (
+        <div className="border-t border-white/5 bg-[#09090b] px-6 py-6 lg:hidden">
+          <nav className="flex flex-col gap-4 text-[11px] font-bold uppercase tracking-widest text-white/70">
+            {LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={() => setOpen(false)}
+                className="transition-colors hover:text-[#d8b485]"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
+          <div className="mt-6 flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onLogin();
+              }}
+              className="w-full px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-zinc-950 bg-[#d8b485]"
+            >
+              Log In →
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onStartFree();
+              }}
+              className="w-full border border-white/20 px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-white"
+            >
+              Let's Connect →
+            </button>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}

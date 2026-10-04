@@ -3,11 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Send,
-  User,
   Loader2,
-  Download,
-  ArrowRight,
   ShieldAlert,
   Phone,
   RotateCcw,
@@ -15,17 +11,33 @@ import {
   FileText,
   Home,
   Shield,
-  BookOpen,
   Check,
   Link2,
+  Download,
+  Sparkles,
 } from 'lucide-react';
 import type { ElementType } from 'react';
 import ReactMarkdown from 'react-markdown';
-import RengeraLogo from '@/components/brand/RengeraLogo';
 import { generateLegalAdvice, type LegalSource } from '@/app/actions';
 import { shareConsultation } from '@/app/share-actions';
-import { cn } from '@/lib/utils';
 import { detectEmergencyRisk } from '@/lib/safety';
+import {
+  AssistantBlock,
+  ChatDisclaimer,
+  ChatFrame,
+  ChatStream,
+  ChatTopBar,
+  ComposerActions,
+  ComposerChip,
+  ComposerFrame,
+  ComposerToolbar,
+  ContextChip,
+  GeneratingRow,
+  ScrollDownButton,
+  SourceList,
+  UserBubble,
+  ViewedRow,
+} from '@/components/chat/ChatSurface';
 
 interface Message {
   id: string;
@@ -44,7 +56,7 @@ const INITIAL_MESSAGE: Message = {
   role: 'assistant',
   content: `Muraho! I am Rengera, your legal assistant.
 
-How can I help you understand your rights today? You can type your situation below, or select a common scenario:`,
+Describe your situation in any language. I will read the official Rwandan laws, quote the exact article, and tell you what to do next.`,
 };
 
 const SESSION_STORAGE_KEY = 'rengera_ai_chat_session_v1';
@@ -99,6 +111,7 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
   const [sharingMessageId, setSharingMessageId] = useState<string | null>(null);
   const [sharedMessageId, setSharedMessageId] = useState<string | null>(null);
   const [shareNotice, setShareNotice] = useState('');
+  const [showShareNotice, setShowShareNotice] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const emergencyRisk = detectEmergencyRisk(input);
 
@@ -161,6 +174,7 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
   const handleNewChat = () => {
     setMessages([INITIAL_MESSAGE]);
     setInput('');
+    setShowShareNotice(false);
     scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -214,313 +228,289 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
     }, 50);
   };
 
+  const lastAssistant = [...messages].reverse().find((message) => message.role === 'assistant');
+  const hasConversation = messages.some((message) => message.role === 'user');
+
   const renderMarkdown = (content: string) => (
-    <div className="markdown-body">
-      <ReactMarkdown
-        components={{
-          h3: ({ node, ...props }) => (
-            <h3
-              className="mt-6 mb-2 border-b border-emerald-100 pb-1 text-sm font-bold uppercase tracking-wider text-emerald-700"
-              {...props}
-            />
-          ),
-          p: ({ node, ...props }) => (
-            <p className="mb-4 text-[15px] leading-relaxed text-slate-700" {...props} />
-          ),
-          ul: ({ node, ...props }) => <ul className="mb-4 space-y-2" {...props} />,
-          ol: ({ node, ...props }) => <ol className="mb-4 list-decimal space-y-2 pl-5" {...props} />,
-          li: ({ node, ...props }) => (
-            <li className="flex items-start gap-2 text-[15px] text-slate-700">
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-              <span>{props.children}</span>
-            </li>
-          ),
-          a: ({ node, ...props }) => (
-            <a
-              className="font-medium text-emerald-700 underline underline-offset-2 transition hover:text-emerald-900"
-              target="_blank"
-              rel="noreferrer noopener"
-              {...props}
-            />
-          ),
-          strong: ({ node, ...props }) => (
-            <strong className="font-semibold text-slate-900" {...props} />
-          ),
-          code: ({ node, ...props }) => (
-            <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[13px] text-slate-800" {...props} />
-          ),
-        }}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
+    <ReactMarkdown
+      components={{
+        h3: ({ node, ...props }) => (
+          <h3 className="mt-4 mb-1.5 text-[14px] font-semibold tracking-[-0.01em] text-[#1f1f1f] first:mt-0" {...props} />
+        ),
+        h4: ({ node, ...props }) => (
+          <h4 className="mt-3 mb-1 text-[13px] font-semibold text-[#1f1f1f]" {...props} />
+        ),
+        p: ({ node, ...props }) => <p className="mb-2.5 mt-0 text-[13px] leading-[1.65]" {...props} />,
+        ul: ({ node, ...props }) => <ul className="my-2 space-y-1.5 pl-0" {...props} />,
+        ol: ({ node, ...props }) => <ol className="my-2 list-decimal space-y-1.5 pl-5" {...props} />,
+        li: ({ node, ...props }) => (
+          <li className="flex gap-2 text-[13px] leading-[1.65]">
+            <span className="mt-[7px] h-[3px] w-[3px] shrink-0 rounded-full bg-[#5f6368]" />
+            <span className="min-w-0">{props.children}</span>
+          </li>
+        ),
+        a: ({ node, ...props }) => (
+          <a
+            className="text-[#1a73e8] underline underline-offset-2"
+            target="_blank"
+            rel="noreferrer noopener"
+            {...props}
+          />
+        ),
+        strong: ({ node, ...props }) => <strong className="font-semibold text-[#1f1f1f]" {...props} />,
+        blockquote: ({ node, ...props }) => (
+          <blockquote className="my-2 border-l-2 border-[#e8eaed] pl-3 text-[#5f6368]" {...props} />
+        ),
+        code: ({ node, ...props }) => (
+          <code className="rounded-[4px] bg-[#f1f3f4] px-1 py-[1px] font-mono text-[12px] text-[#3c4043]" {...props} />
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
   );
 
   return (
-    <div className="chat-print-area flex h-full flex-col bg-white">
-      <div className="no-print flex items-center justify-between gap-3 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-emerald-50/40 px-4 py-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/25">
-            <MessageSquareGlyph />
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-bold text-slate-900">AI Legal Assistant</p>
-            <p className="truncate text-xs text-slate-500">
-              Answers cite the exact article and official source.
-            </p>
-          </div>
-        </div>
+    <div className="flex h-full w-full justify-center bg-[#e6e6e6] p-0 sm:p-4">
+      <ChatFrame className="chat-print-area h-full max-w-[760px]">
+        <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col">
+          <ChatTopBar
+            title={hasConversation ? 'Rengera consultation' : 'New Rengera chat'}
+            onNewChat={handleNewChat}
+            onEdit={handleNewChat}
+            onShare={() => {
+              if (lastAssistant && lastAssistant.id !== 'msg-0') {
+                setShowShareNotice(true);
+                handleShare(lastAssistant);
+              } else {
+                setShareNotice('Ask a question first, then share the answer.');
+                setShowShareNotice(true);
+              }
+            }}
+          />
 
-        <button
-          type="button"
-          onClick={handleNewChat}
-          className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-emerald-300 hover:text-emerald-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 active:translate-y-0"
-        >
-          <RotateCcw size={14} strokeWidth={2.25} />
-          New chat
-        </button>
-      </div>
+          <ChatStream>
+            {messages.map((msg) => {
+              if (msg.role === 'user') {
+                return (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
+                    className="flex flex-col gap-2"
+                  >
+                    <ContextChip icon={<Sparkles size={11} strokeWidth={2.5} />}>
+                      Legal consultation
+                    </ContextChip>
+                    <UserBubble>{msg.content}</UserBubble>
+                  </motion.div>
+                );
+              }
 
-      <div ref={scrollRef} className="scrollbar-hide flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-3xl flex-col gap-6 pb-10">
-          <AnimatePresence initial={false}>
-            {messages.map((msg) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.28, ease: 'easeOut' }}
-                className={cn('flex gap-3', msg.role === 'user' ? 'flex-row-reverse' : 'flex-row')}
-              >
-                <div
-                  className={cn(
-                    'mt-1 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl',
-                    msg.role === 'user'
-                      ? 'bg-slate-100 text-slate-600'
-                      : 'bg-emerald-600 shadow-md shadow-emerald-600/25',
-                  )}
+              const sources = msg.sources || [];
+              const isWelcome = msg.id === 'msg-0';
+
+              return (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  className="flex flex-col gap-3"
                 >
-                  {msg.role === 'user' ? (
-                    <User size={18} strokeWidth={2.25} />
-                  ) : (
-                    <RengeraLogo size={34} label="" />
-                  )}
-                </div>
+                  <AssistantBlock>
+                    {isWelcome ? (
+                      <p className="text-[13px] leading-[1.65] text-[#1f1f1f]">{msg.content}</p>
+                    ) : (
+                      renderMarkdown(msg.content)
+                    )}
+                  </AssistantBlock>
 
-                <div
-                  className={cn(
-                    'max-w-[85%] rounded-2xl px-5 py-4',
-                    msg.role === 'user'
-                      ? 'rounded-tr-sm bg-slate-900 text-white'
-                      : 'rounded-tl-sm border border-slate-200 bg-white shadow-sm',
-                  )}
-                >
-                  {msg.role === 'user' ? (
-                    <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{msg.content}</p>
-                  ) : (
-                    <div>
-                      {renderMarkdown(msg.content)}
-
-                      {msg.id === 'msg-0' && messages.length === 1 && (
-                        <motion.div
-                          initial="hidden"
-                          animate="shown"
-                          variants={{
-                            hidden: {},
-                            shown: { transition: { staggerChildren: 0.06 } },
-                          }}
-                          className="mt-5 flex flex-col gap-2"
+                  {isWelcome && (
+                    <div className="flex flex-wrap gap-2">
+                      {SCENARIOS.map((scenario) => (
+                        <button
+                          key={scenario.id}
+                          type="button"
+                          onClick={() => handleSubmit(undefined, scenario.prompt)}
+                          className="inline-flex items-center gap-2 rounded-full border border-[#e8eaed] bg-white px-3 py-[7px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
                         >
-                          {SCENARIOS.map((scenario) => (
-                            <motion.button
-                              key={scenario.id}
-                              variants={{
-                                hidden: { opacity: 0, x: -8 },
-                                shown: { opacity: 1, x: 0 },
-                              }}
-                              onClick={() => handleSubmit(undefined, scenario.prompt)}
-                              className="group flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left transition-all duration-200 hover:-translate-y-px hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
-                            >
-                              <span className="flex min-w-0 items-center gap-3">
-                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-emerald-700 shadow-sm transition-colors duration-200 group-hover:bg-emerald-600 group-hover:text-white">
-                                  <scenario.icon size={16} strokeWidth={2.25} />
-                                </span>
-                                <span className="truncate text-[15px] font-medium text-slate-700 transition-colors group-hover:text-slate-900">
-                                  {scenario.label}
-                                </span>
-                              </span>
-                              <ArrowRight
-                                size={16}
-                                className="shrink-0 text-slate-300 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-emerald-600"
-                              />
-                            </motion.button>
-                          ))}
-                        </motion.div>
-                      )}
-
-                      {msg.id !== 'msg-0' && msg.sources && msg.sources.length > 0 && (
-                        <div className="no-print mt-5 border-t border-slate-100 pt-4">
-                          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
-                            Sources in the law library
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {msg.sources.map((source, index) => (
-                              <button
-                                key={`${source.lawId}-${source.articleNumber}-${index}`}
-                                type="button"
-                                disabled={!onOpenLaw}
-                                onClick={() => onOpenLaw?.(source.lawId, source.articleNumber)}
-                                title={source.citation}
-                                className="group inline-flex max-w-full items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-left text-xs font-semibold text-emerald-800 transition-all duration-200 hover:-translate-y-px hover:border-emerald-400 hover:bg-emerald-100 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-90 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-                              >
-                                <BookOpen size={13} strokeWidth={2.5} className="shrink-0" />
-                                <span className="truncate">
-                                  {source.referenceNumber || source.title}
-                                </span>
-                                {source.articleNumber && (
-                                  <span className="shrink-0 rounded bg-white px-1.5 py-0.5 text-[11px] text-emerald-700 ring-1 ring-emerald-200">
-                                    Art. {source.articleNumber}
-                                  </span>
-                                )}
-                                {onOpenLaw && (
-                                  <ArrowRight
-                                    size={13}
-                                    strokeWidth={2.5}
-                                    className="shrink-0 text-emerald-500 transition-transform duration-200 group-hover:translate-x-0.5"
-                                  />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                          <p className="mt-2 text-xs text-slate-400">
-                            Tap a source to read the full article in the Law Library.
-                          </p>
-                        </div>
-                      )}
-
-                      {msg.id !== 'msg-0' && (
-                        <div className="no-print mt-5 flex flex-wrap items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleShare(msg)}
-                            disabled={sharingMessageId === msg.id}
-                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-px hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:opacity-60"
-                          >
-                            {sharingMessageId === msg.id ? (
-                              <Loader2 size={16} className="animate-spin" />
-                            ) : sharedMessageId === msg.id ? (
-                              <Check size={16} className="text-emerald-600" />
-                            ) : (
-                              <Link2 size={16} />
-                            )}
-                            {sharingMessageId === msg.id
-                              ? 'Creating link\u2026'
-                              : sharedMessageId === msg.id
-                                ? 'Link copied'
-                                : 'Share answer'}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={handleSaveAsPdf}
-                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-px hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 active:translate-y-0"
-                          >
-                            <Download size={16} strokeWidth={2.25} />
-                            Save as PDF
-                          </button>
-                        </div>
-                      )}
+                          <scenario.icon size={13} strokeWidth={2} className="text-[#5f6368]" />
+                          {scenario.label}
+                        </button>
+                      ))}
                     </div>
                   )}
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
 
-          <AnimatePresence>
-            {isLoading && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="no-print flex gap-3"
-              >
-                <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-emerald-600 shadow-md shadow-emerald-600/25">
-                  <RengeraLogo size={34} loading label="" />
-                </div>
-                <div className="flex items-center gap-2.5 rounded-2xl rounded-tl-sm border border-slate-200 bg-white px-5 py-4 shadow-sm">
-                  <span className="flex gap-1">
-                    {[0, 1, 2].map((dot) => (
-                      <motion.span
-                        key={dot}
-                        className="h-1.5 w-1.5 rounded-full bg-emerald-500"
-                        animate={{ opacity: [0.25, 1, 0.25], y: [0, -3, 0] }}
-                        transition={{
-                          duration: 1.1,
-                          repeat: Infinity,
-                          delay: dot * 0.16,
-                          ease: 'easeInOut',
-                        }}
+                  {!isWelcome && sources.length > 0 && (
+                    <>
+                      <ViewedRow
+                        source={
+                          sources[0].articleNumber
+                            ? `Art. ${sources[0].articleNumber}`
+                            : sources[0].referenceNumber || sources[0].title
+                        }
                       />
-                    ))}
-                  </span>
-                  <span className="text-sm font-medium text-slate-500">
-                    Consulting the legal database…
-                  </span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
+                      <SourceList
+                        countLabel={`${sources.length} result${sources.length === 1 ? '' : 's'}`}
+                        items={sources.map((source, index) => ({
+                          key: `${source.lawId}-${source.articleNumber ?? index}-${index}`,
+                          title: `${source.referenceNumber || source.title}${
+                            source.articleNumber ? ` — Article ${source.articleNumber}` : ''
+                          }`,
+                          icon: <FileText size={12} strokeWidth={2} />,
+                          active: index === 0,
+                        }))}
+                      />
+                      {onOpenLaw && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenLaw(sources[0].lawId, sources[0].articleNumber)}
+                          className="self-start text-[12px] font-medium text-[#1a73e8] outline-none hover:underline"
+                        >
+                          Open the full article in the Law Library
+                        </button>
+                      )}
+                    </>
+                  )}
 
-      <div className="no-print shrink-0 border-t border-slate-200 bg-white p-4">
-        <div className="relative mx-auto max-w-3xl">
-          <AnimatePresence>
-            {emergencyRisk.level === 'urgent' && (
-              <motion.div
-                initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                animate={{ opacity: 1, height: 'auto', marginBottom: 12 }}
-                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
-                className="overflow-hidden"
-              >
-                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-950 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm">
-                      <ShieldAlert size={17} strokeWidth={2.25} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-bold">{emergencyRisk.title}</p>
-                        <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
-                          <Phone size={12} strokeWidth={2.5} /> Police 112
-                        </span>
-                        <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
-                          RIB 166
-                        </span>
+                  {!isWelcome && (
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowShareNotice(true);
+                          handleShare(msg);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[#e8eaed] bg-white px-3 py-[6px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
+                      >
+                        {sharingMessageId === msg.id ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : sharedMessageId === msg.id ? (
+                          <Check size={12} className="text-[#1a73e8]" />
+                        ) : (
+                          <Link2 size={12} strokeWidth={2} />
+                        )}
+                        {sharingMessageId === msg.id
+                          ? 'Creating link…'
+                          : sharedMessageId === msg.id
+                            ? 'Link copied'
+                            : 'Share answer'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleSaveAsPdf}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[#e8eaed] bg-white px-3 py-[6px] text-[12px] font-medium text-[#3c4043] outline-none transition-colors hover:bg-[#f1f3f4]"
+                      >
+                        <Download size={12} strokeWidth={2} />
+                        Save as PDF
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleNewChat}
+                        className="inline-flex items-center gap-1.5 rounded-full px-2 py-[6px] text-[12px] font-medium text-[#5f6368] outline-none transition-colors hover:bg-[#f1f3f4]"
+                      >
+                        <RotateCcw size={12} strokeWidth={2} />
+                        New chat
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
+
+            <AnimatePresence>
+              {isLoading && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="flex flex-col gap-3"
+                >
+                  <GeneratingRow label="Reading the law library…" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </ChatStream>
+        </div>
+
+        <ScrollDownButton onClick={() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })} />
+
+        <ComposerFrame
+          emergency={
+            <AnimatePresence>
+              {emergencyRisk.level === 'urgent' && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginBottom: 10 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  transition={{ duration: 0.22, ease: 'easeOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="rounded-[16px] border border-[#f1c7c7] bg-[#fdf2f2] p-3">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#c5221f] text-white">
+                        <ShieldAlert size={15} strokeWidth={2.25} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-[13px] font-semibold text-[#a50e0e]">{emergencyRisk.title}</p>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-[2px] text-[11px] font-medium text-[#a50e0e] ring-1 ring-[#f1c7c7]">
+                            <Phone size={10} strokeWidth={2.5} /> Police 112
+                          </span>
+                          <span className="inline-flex items-center rounded-full bg-white px-2 py-[2px] text-[11px] font-medium text-[#a50e0e] ring-1 ring-[#f1c7c7]">
+                            RIB 166
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-[12px] leading-[1.55] text-[#c5221f]">
+                          If someone is in immediate danger, contact official emergency services before
+                          continuing the chat.
+                        </p>
                       </div>
-                      <p className="mt-1 text-xs leading-5 text-red-800">
-                        If someone is in immediate danger, contact official emergency services before
-                        continuing the chat.
-                      </p>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
+                </motion.div>
+              )}
+            </AnimatePresence>
+          }
+        >
           <form
             onSubmit={handleSubmit}
-            className="relative flex items-end gap-2 rounded-3xl border border-slate-200 bg-slate-50 p-2 shadow-sm transition-all duration-200 focus-within:border-emerald-500 focus-within:bg-white focus-within:shadow-md"
+            className="flex flex-col"
           >
+            {showShareNotice && shareNotice && (
+              <div className="mb-2 flex items-center justify-between gap-3 rounded-[10px] bg-white px-3 py-2 text-[12px] text-[#3c4043] ring-1 ring-[#e8eaed]">
+                <span className="truncate">{shareNotice}</span>
+                <button
+                  type="button"
+                  onClick={() => setShowShareNotice(false)}
+                  className="text-[#5f6368] outline-none hover:text-[#1f1f1f]"
+                  aria-label="Dismiss"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
+            {emergencyRisk.level === 'urgent' && (
+              <div className="mb-2">
+                <ComposerChip label="Urgent case" />
+              </div>
+            )}
+
+            <label htmlFor="rengera-chat-input" className="sr-only">
+              Ask Rengera a legal question
+            </label>
             <textarea
+              id="rengera-chat-input"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Describe your legal situation…"
-              className="scrollbar-hide min-h-[56px] max-h-32 w-full resize-none border-none bg-transparent px-4 py-3 text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
+              placeholder="Ask anything about your rights…"
               rows={1}
+              className="scrollbar-hide max-h-32 min-h-[40px] w-full resize-none border-none bg-transparent px-1 py-1 text-[16px] leading-[1.5] text-[#1f1f1f] outline-none placeholder:text-[#9aa0a6]"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -528,47 +518,26 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
                 }
               }}
             />
-            <motion.button
-              type="submit"
-              whileTap={{ scale: 0.9 }}
-              disabled={!input.trim() || isLoading}
-              className="mb-1 mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white shadow-md shadow-emerald-600/25 transition-all duration-200 hover:bg-emerald-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-            >
-              {isLoading ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <Send size={18} strokeWidth={2.25} className="ml-0.5" />
-              )}
-            </motion.button>
+
+            <div className="mt-1 flex items-end justify-between gap-2">
+              <ComposerToolbar />
+              <ComposerActions
+                onSend={() => handleSubmit()}
+                sendDisabled={!input.trim() || isLoading}
+                sending={isLoading}
+              />
+            </div>
           </form>
+        </ComposerFrame>
 
-          <p className="mt-3 text-center text-xs font-medium text-slate-400">
-            Rengera AI can make mistakes. Verify important information with official sources.
-          </p>
-          <p className="sr-only" role="status" aria-live="polite">
-            {printStatus}
-          </p>
-        </div>
-      </div>
+        <ChatDisclaimer>
+          Rengera AI can make mistakes. Verify important information with official sources.
+        </ChatDisclaimer>
+
+        <p className="sr-only" role="status" aria-live="polite">
+          {printStatus}
+        </p>
+      </ChatFrame>
     </div>
-  );
-}
-
-/** Small inline mark so the header does not depend on a large glyph set. */
-function MessageSquareGlyph() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.25"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
-    </svg>
   );
 }

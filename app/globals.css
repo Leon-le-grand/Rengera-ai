@@ -116,6 +116,21 @@
     animation: rengera-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
+  /* Landing ("aura") motion vocabulary, ported from the reference page:
+     every interactive element eases on .16,1,.3,1 and lifts 2px on hover. */
+  .aura-lift {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .aura-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(216, 180, 133, 0.25);
+  }
+
+  .aura-lift:active {
+    transform: translateY(0);
+  }
+
   .scrollbar-hide {
     scrollbar-width: none;
   }
