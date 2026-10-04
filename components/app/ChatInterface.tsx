@@ -16,11 +16,14 @@ import {
   Home,
   Shield,
   BookOpen,
+  Check,
+  Link2,
 } from 'lucide-react';
 import type { ElementType } from 'react';
 import ReactMarkdown from 'react-markdown';
 import RengeraLogo from '@/components/brand/RengeraLogo';
 import { generateLegalAdvice, type LegalSource } from '@/app/actions';
+import { shareConsultation } from '@/app/share-actions';
 import { cn } from '@/lib/utils';
 import { detectEmergencyRisk } from '@/lib/safety';
 
@@ -93,6 +96,9 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [printStatus, setPrintStatus] = useState('');
+  const [sharingMessageId, setSharingMessageId] = useState<string | null>(null);
+  const [sharedMessageId, setSharedMessageId] = useState<string | null>(null);
+  const [shareNotice, setShareNotice] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const emergencyRisk = detectEmergencyRisk(input);
 
@@ -156,6 +162,48 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
     setMessages([INITIAL_MESSAGE]);
     setInput('');
     scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleShare = async (message: Message) => {
+    if (sharingMessageId) return;
+
+    const index = messages.findIndex((item) => item.id === message.id);
+    if (index <= 0) return;
+
+    setSharingMessageId(message.id);
+    setShareNotice('');
+
+    try {
+      const result = await shareConsultation(
+        messages[index - 1].content,
+        message.content,
+        (message.sources || []).map((source) => ({
+          lawId: source.lawId,
+          title: source.title,
+          referenceNumber: source.referenceNumber,
+          articleNumber: source.articleNumber,
+        })),
+      );
+
+      if (!result.success) {
+        setShareNotice(result.error || 'The link could not be created.');
+        return;
+      }
+
+      setSharedMessageId(message.id);
+      try {
+        await navigator.clipboard.writeText(result.shareUrl || '');
+        setShareNotice('Link copied to your clipboard.');
+      } catch {
+        setShareNotice(`Share link: ${result.shareUrl}`);
+      }
+    } catch (error) {
+      setShareNotice(
+        error instanceof Error ? error.message : 'The link could not be created.',
+      );
+    } finally {
+      setSharingMessageId(null);
+    }
   };
 
   const handleSaveAsPdf = () => {
@@ -351,7 +399,27 @@ export default function ChatInterface({ onOpenLaw }: ChatInterfaceProps = {}) {
                       )}
 
                       {msg.id !== 'msg-0' && (
-                        <div className="no-print mt-5 flex flex-wrap gap-2">
+                        <div className="no-print mt-5 flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleShare(msg)}
+                            disabled={sharingMessageId === msg.id}
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-px hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:opacity-60"
+                          >
+                            {sharingMessageId === msg.id ? (
+                              <Loader2 size={16} className="animate-spin" />
+                            ) : sharedMessageId === msg.id ? (
+                              <Check size={16} className="text-emerald-600" />
+                            ) : (
+                              <Link2 size={16} />
+                            )}
+                            {sharingMessageId === msg.id
+                              ? 'Creating link\u2026'
+                              : sharedMessageId === msg.id
+                                ? 'Link copied'
+                                : 'Share answer'}
+                          </button>
+
                           <button
                             type="button"
                             onClick={handleSaveAsPdf}

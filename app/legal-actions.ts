@@ -676,6 +676,74 @@ export async function getLawLibrary(): Promise<LawLibraryCategory[]> {
   }
 }
 
+/** One entry per amendment, oldest first, for the amendment timeline. */
+export interface LawTimelineEntry {
+  amendment_id: string;
+  title: string;
+  reference_number: string | null;
+  status: 'active' | 'amended' | 'repealed';
+  amends_law_reference: string | null;
+  gazette_reference: string | null;
+  publication_date: string | null;
+  effective_date: string | null;
+  affected_articles: string[];
+  repealed_articles: string[];
+  inserted_articles: string[];
+  retroactive_effective_date: Record<string, string>;
+  summary: string | null;
+  reviewed_at: string | null;
+}
+
+/**
+ * Every amendment that touches this law, in chronological order. This is what
+ * answers "how has this law changed over time" without the user having to know
+ * the reference number of each amending instrument.
+ */
+export async function getLawTimeline(lawId: string): Promise<LawTimelineEntry[]> {
+  const normalizedId = cleanQueryValue(lawId, 64);
+  if (!normalizedId) return [];
+
+  try {
+    const { data, error } = await getSupabasePublicClient().rpc('law_amendment_timeline', {
+      target_law_id: normalizedId,
+    });
+
+    if (error) {
+      throw new Error(explainSupabaseError(error.message));
+    }
+
+    if (!Array.isArray(data)) return [];
+
+    return (data as Record<string, unknown>[]).map((row) => ({
+      amendment_id: String(row.amendment_id || ''),
+      title: String(row.title || ''),
+      reference_number:
+        typeof row.reference_number === 'string' ? row.reference_number : null,
+      status:
+        row.status === 'amended' || row.status === 'repealed' ? row.status : 'active',
+      amends_law_reference:
+        typeof row.amends_law_reference === 'string' ? row.amends_law_reference : null,
+      gazette_reference:
+        typeof row.gazette_reference === 'string' ? row.gazette_reference : null,
+      publication_date:
+        typeof row.publication_date === 'string' ? row.publication_date : null,
+      effective_date: typeof row.effective_date === 'string' ? row.effective_date : null,
+      affected_articles: castStringArray(row.affected_articles),
+      repealed_articles: castStringArray(row.repealed_articles),
+      inserted_articles: castStringArray(row.inserted_articles),
+      retroactive_effective_date: castRetroactiveDates(row.retroactive_effective_date),
+      summary: typeof row.summary === 'string' ? row.summary : null,
+      reviewed_at: typeof row.reviewed_at === 'string' ? row.reviewed_at : null,
+    }));
+  } catch (error) {
+    if (error instanceof SupabaseConfigurationError) {
+      throw error;
+    }
+    console.error('Law timeline query error:', error);
+    return [];
+  }
+}
+
 /** One law plus its articles in statutory order, for the reader view. */
 export async function getLawDetail(lawId: string): Promise<LawDetail | null> {
   const normalizedId = cleanQueryValue(lawId, 64);
@@ -711,5 +779,123 @@ export async function getLawDetail(lawId: string): Promise<LawDetail | null> {
     }
     console.error('Law detail query error:', error);
     throw error;
+  }
+}
+
+
+/**
+ * Fetch two laws with their articles for the side-by-side comparison view.
+ */
+export async function getLawsForComparison(
+  lawId1: string,
+  lawId2: string,
+): Promise<{ law1: LawDetail | null; law2: LawDetail | null }> {
+  const [detail1, detail2] = await Promise.all([
+    getLawDetail(lawId1),
+    getLawDetail(lawId2),
+  ]);
+  return { law1: detail1, law2: detail2 };
+}
+
+/** Fields an administrator may correct after AI classification. */
+export interface ClassificationUpdate {
+  title?: string;
+  reference_number?: string | null;
+  gazette_reference?: string | null;
+  status?: 'active' | 'amended' | 'repealed';
+  type?: 'principal' | 'amendment';
+  amends_law_reference?: string | null;
+  superseded_by?: string | null;
+  category?: string;
+  subcategories?: string[];
+  publication_date?: string | null;
+  effective_date?: string | null;
+  language?: string | null;
+  languages_available?: string[];
+  source_url?: string | null;
+  summary?: string;
+  key_obligations?: string[];
+  applicable_entities?: string[];
+  penalties_non_compliance?: string[];
+  tags?: string[];
+}
+
+/**
+ * Correct a law's classification. Gated on the administrator session, and
+ * deliberately limited to metadata: raw_content, content_hash, the stored PDF,
+ * and the article rows are never touched, so the source of truth stays intact.
+ */
+export async function updateLawClassification(
+  lawId: string,
+  updates: ClassificationUpdate,
+): Promise<{ success: boolean; error?: string }> {
+  const adminSession = await getAdminSession();
+  if (!adminSession) {
+    return { success: false, error: 'Your administrator session has expired. Please sign in again.' };
+  }
+
+  const normalizedId = cleanQueryValue(lawId, 64);
+  if (!normalizedId) {
+    return { success: false, error: 'Invalid law ID.' };
+  }
+
+  try {
+    const supabase = getSupabaseAdminClient();
+    const dbUpdates: Record<string, unknown> = {};
+
+    if (updates.category !== undefined) {
+      const categoryName = cleanQueryValue(updates.category, 200);
+      if (!categoryName) {
+        return { success: false, error: 'Category cannot be empty.' };
+      }
+
+      const { data: category, error: categoryError } = await supabase
+        .from('legal_categories')
+        .upsert(
+          {
+            name: categoryName,
+            description: `${categoryName} laws classified by RENGERA AI.`,
+          },
+          { onConflict: 'name' },
+        )
+        .select('id')
+        .single();
+
+      if (categoryError || !category) {
+        return {
+          success: false,
+          error: `Could not resolve the category: ${explainSupabaseError(categoryError?.message || 'unknown error')}`,
+        };
+      }
+      dbUpdates.category_id = category.id;
+    }
+
+    // `category` is stored in a relation, so it must not also be written as a
+    // column on laws, which has no such column.
+    const { category: _category, ...scalar } = updates;
+    for (const [key, value] of Object.entries(scalar)) {
+      if (value !== undefined) {
+        dbUpdates[key] = value;
+      }
+    }
+
+    if (Object.keys(dbUpdates).length === 0) {
+      return { success: false, error: 'There were no changes to save.' };
+    }
+
+    dbUpdates.classification_reviewed_at = new Date().toISOString();
+    dbUpdates.classification_reviewed_by = adminSession.email;
+
+    const { error } = await supabase.from('laws').update(dbUpdates).eq('id', normalizedId);
+
+    if (error) {
+      return { success: false, error: explainSupabaseError(error.message) };
+    }
+
+    return { success: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Law classification update error:', message);
+    return { success: false, error: message };
   }
 }

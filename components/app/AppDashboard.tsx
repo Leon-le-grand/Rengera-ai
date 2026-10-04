@@ -111,6 +111,7 @@ export default function AppDashboard({
                   openArticleNumber={openLaw?.articleNumber ?? null}
                   onOpenLaw={openLawReader}
                   onCloseReader={closeLawReader}
+                  isAdmin={isAdmin}
                 />
               )}
               {currentView === 'complaints' && <Complaints />}

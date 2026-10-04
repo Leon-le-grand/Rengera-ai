@@ -18,9 +18,12 @@ import {
   ScrollText,
   ExternalLink,
   Layers,
+  ArrowLeftRight,
+  Check,
 } from 'lucide-react';
 import type { ElementType } from 'react';
 import { getLawLibrary, type LawLibraryCategory, type LawLibraryEntry } from '@/app/legal-actions';
+import LawComparison from './LawComparison';
 import { cn } from '@/lib/utils';
 
 interface LawLibraryProps {
@@ -29,6 +32,7 @@ interface LawLibraryProps {
   openArticleNumber?: string | null;
   onOpenLaw: (lawId: string, articleNumber?: string | null) => void;
   onCloseReader: () => void;
+  isAdmin?: boolean;
 }
 
 const CATEGORY_STYLES: { match: RegExp; icon: ElementType; tone: string }[] = [
@@ -94,8 +98,11 @@ export default function LawLibrary({
   openArticleNumber,
   onOpenLaw,
   onCloseReader,
+  isAdmin = false,
 }: LawLibraryProps) {
   const [categories, setCategories] = useState<LawLibraryCategory[]>([]);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [isComparing, setIsComparing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -181,6 +188,40 @@ export default function LawLibrary({
     </div>
   );
 
+  const toggleCompare = (lawId: string) => {
+    setCompareIds((current) => {
+      if (current.includes(lawId)) return current.filter((id) => id !== lawId);
+      // Two at a time: picking a third replaces the older selection.
+      return current.length === 2 ? [current[1], lawId] : [...current, lawId];
+    });
+  };
+
+  const compareBar = compareIds.length > 0 && (
+    <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+      <p className="text-sm font-semibold text-emerald-900">
+        {compareIds.length} of 2 selected to compare
+      </p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setCompareIds([])}
+          className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-white"
+        >
+          Clear
+        </button>
+        <button
+          type="button"
+          disabled={compareIds.length !== 2}
+          onClick={() => setIsComparing(true)}
+          className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <ArrowLeftRight size={14} />
+          Compare
+        </button>
+      </div>
+    </div>
+  );
+
   const body = isLoading ? (
     <div className="flex flex-col items-center justify-center gap-3 py-24 text-slate-400">
       <Loader2 size={28} className="animate-spin" />
@@ -232,7 +273,13 @@ export default function LawLibrary({
 
         <div className="space-y-3">
           {activeGroup.laws.map((law) => (
-            <LawCard key={law.id} law={law} onOpen={onOpenLaw} />
+            <LawCard
+              key={law.id}
+              law={law}
+              onOpen={onOpenLaw}
+              isCompared={compareIds.includes(law.id)}
+              onToggleCompare={toggleCompare}
+            />
           ))}
         </div>
       </div>
@@ -282,7 +329,25 @@ export default function LawLibrary({
   return (
     <div className="flex h-full min-h-0 flex-col bg-slate-50">
       <AnimatePresence mode="wait">
-        {openLawId ? (
+        {isComparing && compareIds.length === 2 ? (
+          <motion.div
+            key="compare"
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 24 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="flex h-full min-h-0 flex-col overflow-y-auto bg-slate-50 p-4 sm:p-6"
+          >
+            <div className="mx-auto w-full max-w-6xl">
+              <LawComparison
+                lawIdA={compareIds[0]}
+                lawIdB={compareIds[1]}
+                onClose={() => setIsComparing(false)}
+                onOpenLaw={onOpenLaw}
+              />
+            </div>
+          </motion.div>
+        ) : openLawId ? (
           <motion.div
             key="reader"
             initial={{ opacity: 0, x: 24 }}
@@ -308,7 +373,10 @@ export default function LawLibrary({
           >
             {header}
             <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
-              <div className="mx-auto max-w-6xl">{body}</div>
+              <div className="mx-auto max-w-6xl">
+                {compareBar}
+                {body}
+              </div>
             </div>
           </motion.div>
         )}
@@ -320,9 +388,13 @@ export default function LawLibrary({
 function LawCard({
   law,
   onOpen,
+  isCompared = false,
+  onToggleCompare,
 }: {
   law: LawLibraryEntry;
   onOpen: (lawId: string, articleNumber?: string | null) => void;
+  isCompared?: boolean;
+  onToggleCompare?: (lawId: string) => void;
 }) {
   const tone = toneFor(law.category || '');
   const published = formatDate(law.publication_date);
@@ -376,10 +448,31 @@ function LawCard({
         </div>
       </div>
 
-      <ChevronRight
-        size={20}
-        className="mt-1 shrink-0 text-slate-300 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-emerald-500"
-      />
+      <div className="flex shrink-0 flex-col items-center gap-3">
+        {onToggleCompare && (
+          <button
+            type="button"
+            aria-pressed={isCompared}
+            aria-label={`Compare ${law.reference_number || law.title}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleCompare(law.id);
+            }}
+            className={cn(
+              'flex h-7 w-7 items-center justify-center rounded-lg border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
+              isCompared
+                ? 'border-emerald-600 bg-emerald-600 text-white'
+                : 'border-slate-300 bg-white text-slate-400 hover:border-emerald-400 hover:text-emerald-600',
+            )}
+          >
+            <Check size={14} strokeWidth={3} />
+          </button>
+        )}
+        <ChevronRight
+          size={20}
+          className="text-slate-300 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-emerald-500"
+        />
+      </div>
     </motion.button>
   );
 }
