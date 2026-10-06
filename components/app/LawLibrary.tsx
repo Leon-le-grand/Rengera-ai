@@ -250,26 +250,17 @@ export default function LawLibrary({
     if (owner) setSelectedCategory(owner.category);
   }, [openLawId, categories]);
 
-  // Review gate (013): citizens browse reviewed laws only. Admins see all
-  // with an approval action. Old rows without reviewed_at stay visible until
-  // 013 is run, so the gate never blanks the library on upgrade.
-  const reviewGateActive = useMemo(
-    () => categories.some((g) => g.laws.some((l) => l.reviewed_at !== null || l.reviewed_by !== null)),
-    [categories],
-  );
-
+  // Soft gate (013): citizens see every law, but unreviewed ones carry a
+  // visible "Not yet reviewed" note in the reader instead of hiding. Nothing
+  // is ever blocked; readers just know what a human hasn't checked.
   const visibleCategories = useMemo(() => {
     return categories
       .map((group) => ({
         ...group,
-        laws: group.laws.filter((law) => {
-          if (!matchesSearch(law, searchQuery)) return false;
-          if (!isAdmin && reviewGateActive && !law.reviewed_at) return false;
-          return true;
-        }),
+        laws: group.laws.filter((law) => matchesSearch(law, searchQuery)),
       }))
       .filter((group) => group.laws.length > 0);
-  }, [categories, searchQuery, isAdmin, reviewGateActive]);
+  }, [categories, searchQuery]);
 
   const activeGroup = useMemo(
     () => visibleCategories.find((group) => group.category === selectedCategory) ?? null,
@@ -785,6 +776,18 @@ function LawReader({
                   </span>
                 )}
               </nav>
+
+              {detail.reviewed_at ? (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                  <Check size={13} strokeWidth={3} />
+                  Reviewed by an administrator
+                  {detail.reviewed_by ? ` (${detail.reviewed_by})` : ''}
+                </p>
+              ) : (
+                <p className="mt-1.5 rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
+                  Not yet reviewed — AI classification unchecked. Verify important points against the PDF below.
+                </p>
+              )}
 
               <h1 className="mt-1.5 text-lg font-bold leading-snug text-slate-900">
                 {detail.title}

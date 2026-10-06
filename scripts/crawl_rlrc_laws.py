@@ -70,7 +70,7 @@ class RlrcCrawler:
         self._last_request_at = 0.0
 
     def _load_robots(self, robots_url: str) -> RobotFileParser | None:
-        if not self.args.obey_robots:
+        if self.args.ignore_robots:
             return None
         try:
             response = self.session.get(robots_url, timeout=self.args.timeout)

@@ -5,6 +5,7 @@ import {
   Activity,
   BarChart3,
   BookOpen,
+  Check,
   Database,
   FileJson,
   Globe,
@@ -19,7 +20,7 @@ import {
 } from 'lucide-react';
 import SupabaseLawClassifier from './SupabaseLawClassifier';
 import AdminEditLaw from './AdminEditLaw';
-import { getLawLibrary, type LawLibraryEntry } from '@/app/legal-actions';
+import { bulkApproveLaws, getLawLibrary, type LawLibraryEntry } from '@/app/legal-actions';
 import { getAdminLibraryStats } from '@/app/share-actions';
 import {
   getFeedbackDigest,
@@ -50,6 +51,8 @@ export default function AdminDashboard() {
   const [feedback, setFeedback] = useState<FeedbackDigestEntry[]>([]);
   const [syncing, setSyncing] = useState(false);
   const [syncNote, setSyncNote] = useState('');
+  const [approvingAll, setApprovingAll] = useState(false);
+  const [bulkNote, setBulkNote] = useState('');
 
   const loadLaws = useCallback(async () => {
     try {
@@ -91,6 +94,24 @@ export default function AdminDashboard() {
       );
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const runBulkApprove = async () => {
+    setApprovingAll(true);
+    setBulkNote('');
+    try {
+      const result = await bulkApproveLaws();
+      if (result.success) {
+        setBulkNote(
+          `${result.approved ?? 0} approved, ${result.skipped ?? 0} still pending hand review (amendments, low coverage, or missing coverage data).`,
+        );
+        await loadLaws();
+      } else {
+        setBulkNote(result.error || 'Bulk approval could not run.');
+      }
+    } finally {
+      setApprovingAll(false);
     }
   };
 
@@ -403,6 +424,33 @@ export default function AdminDashboard() {
               references wrong. Open a law below to correct the metadata. The source text and the stored
               PDF are never changed.
             </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Bulk-approve the safe pile</h3>
+                <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500">
+                  Approves every pending <strong>principal</strong> law with ≥95% coverage and no OCR
+                  flag in one click. Amendments, low-coverage uploads and rows without coverage data
+                  stay pending for hand review.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={runBulkApprove}
+                disabled={approvingAll}
+                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {approvingAll ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} strokeWidth={3} />}
+                {approvingAll ? 'Approving…' : 'Approve safe laws'}
+              </button>
+            </div>
+            {bulkNote && (
+              <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs font-medium leading-5 text-slate-600">
+                {bulkNote}
+              </p>
+            )}
           </div>
 
           {editingLaw && <AdminEditLaw law={editingLaw} onSaved={loadLaws} />}

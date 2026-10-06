@@ -926,6 +926,77 @@ export async function approveLaw(
   }
 }
 
+/**
+ * Bulk-approve the safe pile (soft gate companion).
+ *
+ * Stamps every pending law that is complete and boring: principal type (not an
+ * amendment), OCR-clean, and >=95% of its text preserved in articles. Anything
+ * tricky — amendments, low coverage, scanned flags, rows without coverage data
+ * — stays pending for hand review and is reported as skipped.
+ */
+export async function bulkApproveLaws(): Promise<{
+  success: boolean;
+  approved?: number;
+  skipped?: number;
+  error?: string;
+}> {
+  const adminSession = await getAdminSession();
+  if (!adminSession) {
+    return { success: false, error: 'Your administrator session has expired. Please sign in again.' };
+  }
+
+  try {
+    const supabase = getSupabaseAdminClient();
+    const { data, error: lookupError } = await supabase
+      .from('laws')
+      .select('id, type, needs_ocr, extraction_coverage_percent')
+      .is('classification_reviewed_at', null)
+      .limit(5000);
+
+    if (lookupError) {
+      return { success: false, error: explainSupabaseError(lookupError.message) };
+    }
+
+    const rows = (data || []) as {
+      id: string;
+      type: string | null;
+      needs_ocr: boolean | null;
+      extraction_coverage_percent: number | null;
+    }[];
+
+    const safe = rows.filter(
+      (row) =>
+        row.type === 'principal' &&
+        row.needs_ocr !== true &&
+        typeof row.extraction_coverage_percent === 'number' &&
+        row.extraction_coverage_percent >= 95,
+    );
+
+    if (safe.length > 0) {
+      const { error: updateError } = await supabase
+        .from('laws')
+        .update({
+          classification_reviewed_at: new Date().toISOString(),
+          classification_reviewed_by: adminSession.email,
+        })
+        .in(
+          'id',
+          safe.map((row) => row.id),
+        );
+
+      if (updateError) {
+        return { success: false, error: explainSupabaseError(updateError.message) };
+      }
+    }
+
+    return { success: true, approved: safe.length, skipped: rows.length - safe.length };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Bulk approval error:', message);
+    return { success: false, error: message };
+  }
+}
+
 const SUMMARY_TRANSLATION_COLUMNS = {
   rw: 'summary_rw',
   fr: 'summary_fr',

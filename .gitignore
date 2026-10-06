@@ -9,3 +9,6 @@ __pycache__/
 !.env.example
 
 *.tsbuildinfo
+
+# Crawled RLRC PDFs and triage output (large binaries, re-downloadable)
+data/
