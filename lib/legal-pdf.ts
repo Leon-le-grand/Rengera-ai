@@ -20,7 +20,25 @@ export async function extractPdfText(file: File) {
   const pdfParse = (await import('pdf-parse')).default;
   const buffer = Buffer.from(await file.arrayBuffer());
   const result = await pdfParse(buffer);
-  return normalizePdfText(result.text);
+  const text = normalizePdfText(result.text);
+  // Scanned / image-only PDFs have no text layer: pdf-parse returns almost
+  // nothing. Fail loudly with OCR guidance instead of indexing an empty law.
+  if (text.replace(/\s+/g, '').length < 200) {
+    const pages = (result as { numpages?: number }).numpages || 0;
+    throw new ScannedPdfError(
+      pages > 0
+        ? `This PDF looks scanned (only ${text.length} characters from ${pages} pages). Run OCR first — e.g. ocrmypdf input.pdf output.pdf — then re-upload the searchable PDF.`
+        : 'Almost no text was found in that PDF. If it is a scanned document, run OCR first and re-upload the searchable PDF.',
+    );
+  }
+  return text;
+}
+
+export class ScannedPdfError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ScannedPdfError';
+  }
 }
 
 export function normalizePdfText(text: string) {

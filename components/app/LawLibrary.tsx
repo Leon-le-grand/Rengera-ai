@@ -23,7 +23,7 @@ import {
   Check,
 } from 'lucide-react';
 import type { ElementType } from 'react';
-import { getLawLibrary, type LawLibraryCategory, type LawLibraryEntry } from '@/app/legal-actions';
+import { approveLaw, getLawLibrary, type LawDetail, type LawLibraryCategory, type LawLibraryEntry } from '@/app/legal-actions';
 import LawComparison from './LawComparison';
 import { cn } from '@/lib/utils';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
@@ -198,6 +198,25 @@ export default function LawLibrary({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+
+  const reload = async () => {
+    try {
+      setCategories(await getLawLibrary());
+    } catch {
+      // Keep the current list; approval reports its own errors.
+    }
+  };
+
+  const handleApprove = async (lawId: string) => {
+    setApprovingId(lawId);
+    try {
+      const result = await approveLaw(lawId);
+      if (result.success) await reload();
+    } finally {
+      setApprovingId(null);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -231,14 +250,26 @@ export default function LawLibrary({
     if (owner) setSelectedCategory(owner.category);
   }, [openLawId, categories]);
 
+  // Review gate (013): citizens browse reviewed laws only. Admins see all
+  // with an approval action. Old rows without reviewed_at stay visible until
+  // 013 is run, so the gate never blanks the library on upgrade.
+  const reviewGateActive = useMemo(
+    () => categories.some((g) => g.laws.some((l) => l.reviewed_at !== null || l.reviewed_by !== null)),
+    [categories],
+  );
+
   const visibleCategories = useMemo(() => {
     return categories
       .map((group) => ({
         ...group,
-        laws: group.laws.filter((law) => matchesSearch(law, searchQuery)),
+        laws: group.laws.filter((law) => {
+          if (!matchesSearch(law, searchQuery)) return false;
+          if (!isAdmin && reviewGateActive && !law.reviewed_at) return false;
+          return true;
+        }),
       }))
       .filter((group) => group.laws.length > 0);
-  }, [categories, searchQuery]);
+  }, [categories, searchQuery, isAdmin, reviewGateActive]);
 
   const activeGroup = useMemo(
     () => visibleCategories.find((group) => group.category === selectedCategory) ?? null,
@@ -373,6 +404,8 @@ export default function LawLibrary({
             onOpen={onOpenLaw}
             isCompared={compareIds.includes(law.id)}
             onToggleCompare={toggleCompare}
+            isAdmin={isAdmin}
+            onApprove={approvingId === law.id ? undefined : handleApprove}
           />
         ))}
       </div>
@@ -502,14 +535,19 @@ function LawCard({
   onOpen,
   isCompared = false,
   onToggleCompare,
+  isAdmin = false,
+  onApprove,
 }: {
   law: LawLibraryEntry;
   onOpen: (lawId: string, articleNumber?: string | null) => void;
   isCompared?: boolean;
   onToggleCompare?: (lawId: string) => void;
+  isAdmin?: boolean;
+  onApprove?: (lawId: string) => void;
 }) {
   const tone = toneFor(law.category || '');
   const published = formatDate(law.publication_date);
+  const reviewed = Boolean(law.reviewed_at);
 
   return (
     <motion.div
@@ -580,6 +618,20 @@ function LawCard({
           <span className={cn('rounded-md px-2 py-1 text-xs font-bold', tone.badge)}>
             {law.article_count} {law.article_count === 1 ? 'article' : 'articles'}
           </span>
+          {reviewed ? (
+            <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">
+              Verified
+            </span>
+          ) : (
+            <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">
+              Awaiting review
+            </span>
+          )}
+          {law.needs_ocr && (
+            <span className="rounded-md bg-orange-50 px-2 py-1 text-xs font-bold text-orange-700">
+              Needs OCR
+            </span>
+          )}
           {law.type === 'amendment' && (
             <span className="rounded-md bg-violet-50 px-2 py-1 text-xs font-bold text-violet-700">
               Amendment
@@ -613,6 +665,19 @@ function LawCard({
             className="transition-transform duration-300 group-hover:translate-x-1"
           />
         </span>
+        {isAdmin && !reviewed && onApprove && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onApprove(law.id);
+            }}
+            className="mt-3 inline-flex w-fit items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700"
+          >
+            <Check size={13} strokeWidth={3} />
+            Approve as reviewed
+          </button>
+        )}
       </div>
     </motion.div>
   );
@@ -869,6 +934,7 @@ function LawReader({
 
               {tab === 'summary' && detail && (
                 <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
+                  <IntegrityPanel detail={detail} />
                   {detail.summary && (
                     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                       <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-emerald-700">
@@ -994,6 +1060,62 @@ function LawReader({
         </div>
       </div>
     </>
+  );
+}
+
+function IntegrityPanel({ detail }: { detail: LawDetail }) {
+  const short = (h: string | null) => (h ? `${h.slice(0, 12)}…` : '—');
+  const coverage = detail.extraction_coverage_percent;
+  const coverageTone =
+    coverage === null
+      ? 'bg-slate-100 text-slate-600'
+      : coverage >= 95
+        ? 'bg-emerald-50 text-emerald-700'
+        : coverage >= 80
+          ? 'bg-amber-50 text-amber-700'
+          : 'bg-red-50 text-red-700';
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">
+        Source integrity
+      </h3>
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className={`rounded-md px-2 py-1 text-xs font-bold ${coverageTone}`}
+          title={coverage === null ? 'Run migration 012 to compute coverage' : `${coverage}% of extracted text preserved in articles`}
+        >
+          {coverage === null ? 'Coverage —' : `Coverage ${coverage}%`}
+        </span>
+        <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+          {detail.article_count} articles
+        </span>
+        <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+          {detail.source_pdf_path ? 'Original PDF stored' : 'Text only — no PDF'}
+        </span>
+      </div>
+      <dl className="mt-3 space-y-1.5 font-mono text-xs leading-5 text-slate-500">
+        <div className="flex flex-wrap gap-x-2">
+          <dt className="font-sans font-semibold">Text SHA-256:</dt>
+          <dd title={detail.content_hash || undefined}>{short(detail.content_hash)}</dd>
+        </div>
+        <div className="flex flex-wrap gap-x-2">
+          <dt className="font-sans font-semibold">PDF SHA-256:</dt>
+          <dd title={detail.source_pdf_sha256 || undefined}>{short(detail.source_pdf_sha256)}</dd>
+        </div>
+        {detail.extraction_char_count !== null && (
+          <div className="flex flex-wrap gap-x-2">
+            <dt className="font-sans font-semibold">Extracted chars:</dt>
+            <dd>{detail.extraction_char_count.toLocaleString()}</dd>
+          </div>
+        )}
+      </dl>
+      {!detail.content_hash && (
+        <p className="mt-2 text-xs leading-5 text-amber-700">
+          Integrity columns are empty until migration 012 is run in Supabase.
+        </p>
+      )}
+    </section>
   );
 }
 

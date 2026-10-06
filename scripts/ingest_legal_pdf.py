@@ -180,9 +180,46 @@ def _extract_page(page: Any, repair: bool) -> str:
     return repair_text(best) if repair else best
 
 
+def _ocr_page(pdf_path: Path, page_number: int, language: str = "kin+eng+fra") -> str:
+    """OCR one page with Tesseract. Returns "" when OCR is unavailable.
+
+    Optional dependencies (install only when needed):
+        pip install pdf2image pytesseract pillow
+    plus system packages: tesseract-ocr, tesseract-ocr-kin, poppler-utils.
+    Never raises: OCR is a fallback, not a requirement.
+    """
+    try:
+        from pdf2image import convert_from_path
+        import pytesseract
+        from PIL import Image  # noqa: F401 - ensures pillow is present.
+    except ImportError:
+        LOGGER.warning(
+            "OCR requested but pdf2image/pytesseract are not installed. "
+            "Install with: pip install pdf2image pytesseract pillow"
+        )
+        return ""
+
+    try:
+        images = convert_from_path(str(pdf_path), first_page=page_number, last_page=page_number, dpi=300)
+    except Exception as exc:  # noqa: BLE001 - poppler may be missing.
+        LOGGER.warning("OCR rendering failed for page %s: %s", page_number, exc)
+        return ""
+
+    if not images:
+        return ""
+
+    try:
+        return pytesseract.image_to_string(images[0], lang=language) or ""
+    except Exception as exc:  # noqa: BLE001 - tesseract may lack the language pack.
+        LOGGER.warning("OCR failed for page %s: %s", page_number, exc)
+        return ""
+
+
 def extract_pdf_text(
     pdf_path: Path,
     repair: bool = True,
+    ocr: bool = False,
+    ocr_language: str = "kin+eng+fra",
 ) -> tuple[str, list[PageStat]]:
     """Extract page text and per-page statistics without aborting on a bad page."""
     try:
@@ -208,6 +245,13 @@ def extract_pdf_text(
             except Exception as exc:  # noqa: BLE001 - one bad page must not abort ingestion.
                 LOGGER.warning("Could not extract page %s: %s", page_number, exc)
                 text = ""
+
+            # Scanned page: no text layer. With --ocr, fall back to Tesseract.
+            if not text.strip() and ocr:
+                ocr_text = _ocr_page(pdf_path, page_number, ocr_language)
+                if ocr_text.strip():
+                    LOGGER.info("Page %s recovered via OCR (%s chars).", page_number, len(ocr_text))
+                    text = ocr_text
 
             characters = sum(1 for char in text if not char.isspace())
             page_stats.append(
@@ -452,6 +496,7 @@ def parse_legal_pdf(
     category: str,
     language: str,
     repair: bool = True,
+    ocr: bool = False,
 ) -> tuple[list[Chunk], dict[str, Any]]:
     """Parse a legal PDF and return article chunks plus a coverage report.
 
@@ -470,7 +515,7 @@ def parse_legal_pdf(
         raise ValueError("category must not be empty.")
 
     normalized_language = normalize_language(language)
-    extracted_text, page_stats = extract_pdf_text(path, repair=repair)
+    extracted_text, page_stats = extract_pdf_text(path, repair=repair, ocr=ocr)
 
     if not extracted_text.strip():
         report = build_coverage_report([], extracted_text, page_stats, len(page_stats))
@@ -572,6 +617,11 @@ def build_argument_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Keep ligatures, soft hyphens, and hyphenated line breaks exactly as extracted.",
     )
+    parser.add_argument(
+        "--ocr",
+        action="store_true",
+        help="OCR pages with no text layer via Tesseract (needs pdf2image, pytesseract, tesseract-ocr).",
+    )
     return parser
 
 
@@ -587,6 +637,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             category=args.category,
             language=args.language,
             repair=not args.no_repair,
+            ocr=args.ocr,
         )
     except (FileNotFoundError, RuntimeError, ValueError) as exc:
         LOGGER.error("Ingestion failed: %s", exc)

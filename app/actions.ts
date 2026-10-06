@@ -133,6 +133,8 @@ export interface LegalSource {
 export interface LegalAnswer {
   reply: string;
   sources: LegalSource[];
+  /** UI hint: only 'answer' gets Share / Save PDF / feedback buttons. */
+  kind: 'greeting' | 'help' | 'fallback' | 'emergency' | 'answer';
 }
 
 /** Context handed over when the user asks a follow-up from inside the library. */
@@ -188,6 +190,36 @@ const SMALL_TALK_PHRASES = new Set([
 const LEGAL_KEYWORDS =
   /article|ingingo|iteka|law|itegeko|amasezerano|code|constitution|decree|n°|no\.?\s*\d|labour|murder|theft|land|divorce|contract|salary|leave|pregnan|rape|police|rib|court|urukiko|ubutaka|akazi/i;
 
+/** "help me" is not a greeting — it needs its own how-to-use reply. */
+const HELP_PHRASES = new Set([
+  'help',
+  'help me',
+  'help please',
+  'help me please',
+  'i need help',
+  'need help',
+  'ufashe',
+  'mfashe',
+  'mufashe',
+  'aide',
+  "aidez moi",
+  'aide moi',
+  'msaada',
+  'naomba msaada',
+]);
+
+function isHelpRequest(query: string, hasArticleContext: boolean): boolean {
+  if (hasArticleContext) return false;
+  const normalized = query
+    .trim()
+    .toLowerCase()
+    .replace(/[!\-.,?;:'"()[\]…\s]+/g, ' ')
+    .trim();
+  if (!normalized || normalized.length > 32) return false;
+  if (LEGAL_KEYWORDS.test(normalized)) return false;
+  return HELP_PHRASES.has(normalized);
+}
+
 function isSmallTalk(query: string, hasArticleContext: boolean): boolean {
   if (hasArticleContext) return false;
   const normalized = query
@@ -197,6 +229,7 @@ function isSmallTalk(query: string, hasArticleContext: boolean): boolean {
     .trim();
   if (!normalized || normalized.length > 24) return false;
   if (LEGAL_KEYWORDS.test(normalized)) return false;
+  if (HELP_PHRASES.has(normalized)) return false;
   if (SMALL_TALK_PHRASES.has(normalized)) return true;
   // Two-word greetings ("muraho neza", "hi there") with no legal content.
   const words = normalized.split(' ');
@@ -213,6 +246,13 @@ const SMALL_TALK_REPLIES: Record<string, string> = {
   sw: 'Habari! Mimi ni Rengera, msaidizi wako wa sheria.\n\nUliza swali kamili la kisheria, kwa mfano: "Kifungu cha 43 cha Sheria n° 027/2023 kinasemaje kwa mwajiriwa?"',
 };
 
+const HELP_REPLIES: Record<string, string> = {
+  en: 'I can explain Rwandan laws in plain language.\n\nTell me what happened and what you need — for example: "My landlord locked me out, what are my rights?" or "What does Article 43 of Law n° 027/2023 say about working hours?"\n\nI will quote the exact article and tell you what to do next.',
+  rw: 'Nshobora gusobanura amategeko y’u Rwanda mu magambo yoroshye.\n\nMbwira ibyakubayeho n’icyo ukeneye — urugero: "Nyagasani w’inzu yampfungiye hanze, ni ayahe amahoro mfite?" cyangwa "Ingingo ya 43 y’Itegeko n° 027/2023 ivuga iki?"',
+  fr: 'Je peux expliquer les lois rwandaises en langage simple.\n\nDécrivez ce qui s’est passé — par exemple : « Mon bailleur m’a mis dehors, quels sont mes droits ? » ou « Que dit l’article 43 de la loi n° 027/2023 ? »',
+  sw: 'Ninaweza kueleza sheria za Rwanda kwa lugha rahisi.\n\nNiambie kilichotokea — kwa mfano: "Mwenye nyumba amenifungia nje, haki zangu ni zipi?" au "Kifungu cha 43 cha Sheria n° 027/2023 kinasemaje?"',
+};
+
 export async function generateLegalAdvice(
   query: string,
   chatHistory: { role: 'user' | 'model'; content: string }[] = [],
@@ -224,7 +264,7 @@ export async function generateLegalAdvice(
   try {
     const emergencyRisk = detectEmergencyRisk(query);
     if (emergencyRisk.level === 'urgent') {
-      return { reply: buildEmergencyMarkdown(emergencyRisk), sources: [] };
+      return { reply: buildEmergencyMarkdown(emergencyRisk), sources: [], kind: 'emergency' };
     }
 
     const language = resolveAnswerLanguage(options.language);
@@ -232,11 +272,21 @@ export async function generateLegalAdvice(
       options.articleContext?.text || options.articleContext?.articleNumber,
     );
 
+    // "help me" gets how-to-use instructions, not the greeting.
+    if (isHelpRequest(query, hasArticleContext)) {
+      return {
+        reply: HELP_REPLIES[language] || HELP_REPLIES.en,
+        sources: [],
+        kind: 'help',
+      };
+    }
+
     // Token guard: greetings never touch retrieval or the model.
     if (isSmallTalk(query, hasArticleContext)) {
       return {
         reply: SMALL_TALK_REPLIES[language] || SMALL_TALK_REPLIES.en,
         sources: [],
+        kind: 'greeting',
       };
     }
 
@@ -329,7 +379,7 @@ export async function generateLegalAdvice(
         fr: 'Je ne trouve pas cela dans les lois officielles de la bibliothèque.\n\nReformulez avec un numéro de loi ou d’article — par exemple : « Que dit l’article 43 de la loi n° 027/2023 sur le temps de travail ? »',
         sw: 'Sikuipata katika sheria rasmi zilizohifadhiwa maktabani.\n\nTafadhali uliza tena ukitaja nambari ya sheria au kifungu — kwa mfano: "Kifungu cha 43 cha Sheria n° 027/2023 kinasemaje kuhusu saa za kazi?"',
       };
-      return { reply: fallback[language] || fallback.en, sources: [] };
+      return { reply: fallback[language] || fallback.en, sources: [], kind: 'fallback' };
     }
 
     const contextPrompt = `
@@ -394,10 +444,10 @@ ${query}
       }
     }
 
-    return { reply, sources: collectedSources };
+    return { reply, sources: collectedSources, kind: 'answer' };
   } catch (error) {
     if (error instanceof SpaceBunnyConfigurationError) {
-      return { reply: error.message, sources: collectedSources };
+      return { reply: error.message, sources: collectedSources, kind: 'fallback' };
     }
 
     const message = error instanceof Error ? error.message : String(error);
@@ -410,6 +460,7 @@ ${query}
     return {
       reply: `Space Bunny could not complete the request: ${message}`,
       sources: collectedSources,
+      kind: 'fallback',
     };
   }
 }

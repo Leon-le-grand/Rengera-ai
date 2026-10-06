@@ -118,6 +118,11 @@ supabase/migrations/005_add_legal_status_audit.sql
 supabase/migrations/006_add_amendment_audit_trail.sql
 supabase/migrations/007_create_app_users.sql
 supabase/migrations/008_add_law_library_reading_order.sql
+supabase/migrations/009_add_law_pdf_storage.sql
+supabase/migrations/010_add_review_timeline_and_shares.sql
+supabase/migrations/011_product_features.sql
+supabase/migrations/012_add_integrity_fields.sql
+supabase/migrations/013_add_review_gate_and_ocr_flag.sql
 ```
 
 Migration 003 broadens natural-language search and removes duplicate uploads using a SHA-256 `content_hash`. Migration 004 stores exact article-level text, article numbers, citations, and article-first search results. Migration 005 adds statutory status and amendment/repeal audit fields. Migration 006 adds the document `type`, `amends_law_reference`, `repealed_articles`, `inserted_articles`, `retroactive_effective_date`, and `languages_available`. Migration 007 creates the citizen `app_users` table. Later uploads of the same source text update the existing law and refresh its articles instead of creating duplicates.

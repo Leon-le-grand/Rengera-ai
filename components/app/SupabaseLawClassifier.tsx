@@ -125,6 +125,28 @@ export default function SupabaseLawClassifier() {
                   Law classified and stored successfully. {result.articleCount ?? 0} exact article
                   {result.articleCount === 1 ? '' : 's'} indexed.
                 </p>
+                <dl className="mt-3 space-y-1 font-mono text-xs leading-5 text-emerald-900">
+                  {result.contentHash && (
+                    <div className="flex flex-wrap gap-x-2">
+                      <dt className="font-sans font-semibold">Text SHA-256:</dt>
+                      <dd className="break-all">{result.contentHash}</dd>
+                    </div>
+                  )}
+                  {result.pdfSha256 && (
+                    <div className="flex flex-wrap gap-x-2">
+                      <dt className="font-sans font-semibold">PDF SHA-256:</dt>
+                      <dd className="break-all">{result.pdfSha256}</dd>
+                    </div>
+                  )}
+                  {result.coveragePercent !== null && result.coveragePercent !== undefined && (
+                    <div className="flex flex-wrap gap-x-2">
+                      <dt className="font-sans font-semibold">Coverage:</dt>
+                      <dd>
+                        {result.coveragePercent}% of extracted text preserved in articles
+                      </dd>
+                    </div>
+                  )}
+                </dl>
                 <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded-lg bg-white/70 p-3 font-mono text-xs leading-5">
                   {JSON.stringify(result.classification, null, 2)}
                 </pre>

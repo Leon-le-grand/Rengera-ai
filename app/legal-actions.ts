@@ -2,7 +2,7 @@
 
 import { createHash } from 'node:crypto';
 import { getAdminSession } from '@/lib/auth';
-import { extractPdfText, normalizePdfText } from '@/lib/legal-pdf';
+import { extractPdfText, normalizePdfText, ScannedPdfError } from '@/lib/legal-pdf';
 import {
   CLASSIFICATION_PROMPT_VERSION,
   CLASSIFICATION_SYSTEM_PROMPT,
@@ -84,6 +84,15 @@ export interface LawLibraryEntry {
   source_pdf_name: string | null;
   source_pdf_size: number | null;
   pdf_url: string | null;
+  /** Integrity: SHA-256 of extracted text, SHA-256 of PDF, coverage %. */
+  content_hash: string | null;
+  source_pdf_sha256: string | null;
+  extraction_coverage_percent: number | null;
+  extraction_char_count: number | null;
+  /** Review gate (013): null = awaiting lawyer approval. */
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  needs_ocr: boolean;
   created_at: string;
 }
 
@@ -114,6 +123,10 @@ export interface ClassificationStoreResult {
   articleCount?: number;
   classification?: ClassifiedLaw;
   pdfStored?: boolean;
+  contentHash?: string | null;
+  pdfSha256?: string | null;
+  coveragePercent?: number | null;
+  charCount?: number | null;
   warning?: string;
   error?: string;
 }
@@ -165,7 +178,12 @@ async function readRawLegalText(formData: FormData): Promise<string> {
 
   const pdf = formData.get('pdf');
   if (pdf instanceof File && pdf.size > 0) {
-    return (await extractPdfText(pdf)).trim();
+    try {
+      return (await extractPdfText(pdf)).trim();
+    } catch (error) {
+      if (error instanceof ScannedPdfError) throw error;
+      throw error;
+    }
   }
 
   return '';
@@ -188,13 +206,22 @@ function safePdfFileName(name: string): string {
  * Keep the original PDF so the library reader can show the real document
  * beside the summary. Failures are non-fatal: the text is already extracted,
  * so a storage error must not discard the ingestion.
+ * Also returns the SHA-256 of the raw PDF bytes for integrity display.
  */
 async function uploadSourcePdf(
   pdf: File | null,
   contentHash: string,
-): Promise<{ path: string | null; name: string | null; size: number | null; warning?: string }> {
+): Promise<{ path: string | null; name: string | null; size: number | null; sha256: string | null; warning?: string }> {
   if (!pdf || pdf.size === 0) {
-    return { path: null, name: null, size: null };
+    return { path: null, name: null, size: null, sha256: null };
+  }
+
+  let pdfSha256: string | null = null;
+  try {
+    const bytes = Buffer.from(await pdf.arrayBuffer());
+    pdfSha256 = createHash('sha256').update(bytes).digest('hex');
+  } catch {
+    pdfSha256 = null;
   }
 
   if (pdf.size > MAX_PDF_BYTES) {
@@ -202,6 +229,7 @@ async function uploadSourcePdf(
       path: null,
       name: null,
       size: pdf.size,
+      sha256: pdfSha256,
       warning: `The PDF is ${Math.round(pdf.size / 1024 / 1024)} MB and was not stored. Article text is still indexed.`,
     };
   }
@@ -219,16 +247,18 @@ async function uploadSourcePdf(
         path: null,
         name: pdf.name,
         size: pdf.size,
+        sha256: pdfSha256,
         warning: `The PDF could not be stored (${error.message}). Article text is still indexed.`,
       };
     }
 
-    return { path: objectPath, name: pdf.name, size: pdf.size };
+    return { path: objectPath, name: pdf.name, size: pdf.size, sha256: pdfSha256 };
   } catch (error) {
     return {
       path: null,
       name: pdf.name,
       size: pdf.size,
+      sha256: pdfSha256,
       warning: `The PDF could not be stored (${
         error instanceof Error ? error.message : 'unknown error'
       }). Article text is still indexed.`,
@@ -348,6 +378,8 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
         source_pdf_path: uploadedPdf.path,
         source_pdf_name: uploadedPdf.name,
         source_pdf_size: uploadedPdf.size,
+        source_pdf_sha256: uploadedPdf.sha256,
+        extraction_char_count: rawContent.length,
         raw_content: rawContent,
         classification_model: getSpaceBunnyRuntime().model,
         classification_prompt_version: CLASSIFICATION_PROMPT_VERSION,
@@ -425,15 +457,41 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
       );
     }
 
+    // Coverage = share of extracted text preserved in article rows.
+    // 100% means the splitter lost nothing; <95% means headings were missed.
+    const articleChars = articles.reduce((total, a) => total + a.content.length, 0);
+    const coveragePercent =
+      rawContent.length > 0
+        ? Math.min(100, Math.round((articleChars / rawContent.length) * 100))
+        : null;
+    // Partially scanned or image-heavy PDFs extract some text but lose most
+    // of it: flag for OCR instead of silently serving a gappy law.
+    const needsOcr = coveragePercent !== null && coveragePercent < 50;
+    try {
+      await supabase
+        .from('laws')
+        .update({ extraction_coverage_percent: coveragePercent, needs_ocr: needsOcr })
+        .eq('id', lawId);
+    } catch {
+      // Non-fatal: coverage is display-only.
+    }
+
     return {
       success: true,
       lawId,
       articleCount: articles.length,
       classification,
       pdfStored: Boolean(uploadedPdf.path),
+      contentHash,
+      pdfSha256: uploadedPdf.sha256,
+      coveragePercent,
+      charCount: rawContent.length,
       warning: uploadedPdf.warning,
     };
   } catch (error) {
+    if (error instanceof ScannedPdfError) {
+      return { success: false, error: error.message };
+    }
     if (error instanceof SpaceBunnyConfigurationError || error instanceof SupabaseConfigurationError) {
       return { success: false, error: error.message };
     }
@@ -553,6 +611,18 @@ function castLibraryRows(data: unknown): LawLibraryEntry[] {
       pdf_url: getPublicPdfUrl(
         typeof item.source_pdf_path === 'string' ? item.source_pdf_path : null,
       ),
+      content_hash: typeof item.content_hash === 'string' ? item.content_hash : null,
+      source_pdf_sha256:
+        typeof item.source_pdf_sha256 === 'string' ? item.source_pdf_sha256 : null,
+      extraction_coverage_percent:
+        typeof item.extraction_coverage_percent === 'number'
+          ? item.extraction_coverage_percent
+          : null,
+      extraction_char_count:
+        typeof item.extraction_char_count === 'number' ? item.extraction_char_count : null,
+      reviewed_at: typeof item.reviewed_at === 'string' ? item.reviewed_at : null,
+      reviewed_by: typeof item.reviewed_by === 'string' ? item.reviewed_by : null,
+      needs_ocr: item.needs_ocr === true,
       created_at: String(item.created_at || ''),
     };
   });
@@ -813,6 +883,41 @@ export async function getLawsForComparison(
     getLawDetail(lawId2),
   ]);
   return { law1: detail1, law2: detail2 };
+}
+
+/**
+ * One-click lawyer approval for the review gate (013).
+ * Citizens only browse reviewed laws; this stamps a pending law as reviewed
+ * without touching text, PDF, hashes or articles.
+ */
+export async function approveLaw(
+  lawId: string,
+): Promise<{ success: boolean; error?: string }> {
+  const adminSession = await getAdminSession();
+  if (!adminSession) {
+    return { success: false, error: 'Your administrator session has expired. Please sign in again.' };
+  }
+
+  const normalizedId = cleanQueryValue(lawId, 64);
+  if (!normalizedId) return { success: false, error: 'Invalid law ID.' };
+
+  try {
+    const supabase = getSupabaseAdminClient();
+    const { error } = await supabase
+      .from('laws')
+      .update({
+        classification_reviewed_at: new Date().toISOString(),
+        classification_reviewed_by: adminSession.email,
+      })
+      .eq('id', normalizedId);
+
+    if (error) return { success: false, error: explainSupabaseError(error.message) };
+    return { success: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Law approval error:', message);
+    return { success: false, error: message };
+  }
 }
 
 /** Fields an administrator may correct after AI classification. */

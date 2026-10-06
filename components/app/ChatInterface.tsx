@@ -54,6 +54,8 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   sources?: LegalSource[];
+  /** Only 'answer' gets Share / Save PDF / feedback. Set by the server. */
+  kind?: 'greeting' | 'help' | 'fallback' | 'emergency' | 'answer';
 }
 
 /** A question handed over from the Law Library: "explain this article to me". */
@@ -68,10 +70,17 @@ interface ChatInterfaceProps {
   /** Set when the user asks a follow-up from inside a law. */
   pendingAsk?: PendingArticleAsk | null;
   onPendingAskHandled?: () => void;
+  /** Namespaces local chat storage per signed-in account. Defaults to public. */
+  accountKey?: string;
 }
 
-const SESSION_STORAGE_KEY = 'rengera_ai_chat_session_v1';
-const HISTORY_STORAGE_KEY = 'rengera_ai_chat_history_v1';
+const SESSION_STORAGE_BASE = 'rengera_ai_chat_session_v1';
+const HISTORY_STORAGE_BASE = 'rengera_ai_chat_history_v1';
+
+function storageKey(base: string, accountKey: string): string {
+  const safe = (accountKey || 'public').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60) || 'public';
+  return `${base}__${safe}`;
+}
 
 interface StoredChat {
   id: string;
@@ -86,10 +95,10 @@ function chatTitle(messages: Message[]): string {
   return raw.length > 42 ? `${raw.slice(0, 42)}…` : raw;
 }
 
-function loadStoredHistory(): StoredChat[] {
+function loadStoredHistory(accountKey: string): StoredChat[] {
   if (typeof window === 'undefined') return [];
   try {
-    const stored = window.localStorage.getItem(HISTORY_STORAGE_KEY);
+    const stored = window.localStorage.getItem(storageKey(HISTORY_STORAGE_BASE, accountKey));
     const parsed = JSON.parse(stored || '[]') as StoredChat[];
     return Array.isArray(parsed) ? parsed.slice(0, 20) : [];
   } catch {
@@ -112,11 +121,11 @@ function greetingFor(language: AnswerLanguage): Message {
   return { id: 'msg-0', role: 'assistant', content: UI_STRINGS[language].greeting };
 }
 
-function loadStoredMessages(): Message[] {
+function loadStoredMessages(accountKey: string): Message[] {
   if (typeof window === 'undefined') return [greetingFor('en')];
 
   try {
-    const stored = window.localStorage.getItem(SESSION_STORAGE_KEY);
+    const stored = window.localStorage.getItem(storageKey(SESSION_STORAGE_BASE, accountKey));
     if (!stored) return [greetingFor('en')];
     const parsed = JSON.parse(stored) as { messages?: Message[] };
     return Array.isArray(parsed.messages) && parsed.messages.length > 0
@@ -131,9 +140,10 @@ export default function ChatInterface({
   onOpenLaw,
   pendingAsk = null,
   onPendingAskHandled,
+  accountKey = 'public',
 }: ChatInterfaceProps = {}) {
   const [language, setLanguage] = useStoredLanguage();
-  const [messages, setMessages] = useState<Message[]>(loadStoredMessages);
+  const [messages, setMessages] = useState<Message[]>(() => loadStoredMessages(accountKey));
   const [input, setInput] = useState('');
   const [articleContext, setArticleContext] = useState<ArticleContext | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -144,7 +154,7 @@ export default function ChatInterface({
   const [showShareNotice, setShowShareNotice] = useState(false);
   const [showDeadlines, setShowDeadlines] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [history, setHistory] = useState<StoredChat[]>(loadStoredHistory);
+  const [history, setHistory] = useState<StoredChat[]>(() => loadStoredHistory(accountKey));
   const scrollRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<HTMLDivElement>(null);
   const sessionId = useRef<string>('');
@@ -159,18 +169,32 @@ export default function ChatInterface({
 
   useEffect(() => {
     window.localStorage.setItem(
-      SESSION_STORAGE_KEY,
+      storageKey(SESSION_STORAGE_BASE, accountKey),
       JSON.stringify({ messages, updatedAt: new Date().toISOString() }),
     );
-  }, [messages]);
+  }, [messages, accountKey]);
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history.slice(0, 20)));
+      window.localStorage.setItem(
+        storageKey(HISTORY_STORAGE_BASE, accountKey),
+        JSON.stringify(history.slice(0, 20)),
+      );
     } catch {
       // Non-fatal: history stays in memory.
     }
-  }, [history]);
+  }, [history, accountKey]);
+
+  // Switching accounts must never show the previous account's chats.
+  useEffect(() => {
+    setMessages(loadStoredMessages(accountKey));
+    setHistory(loadStoredHistory(accountKey));
+    setInput('');
+    setArticleContext(null);
+    setShowHistory(false);
+    setShowShareNotice(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountKey]);
 
   useEffect(() => {
     if (streamRef.current) {
@@ -230,6 +254,7 @@ export default function ChatInterface({
         role: 'assistant',
         content: answer.reply || "I couldn't generate a response. Please try again.",
         sources: answer.sources || [],
+        kind: answer.kind || 'answer',
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -293,6 +318,12 @@ export default function ChatInterface({
 
   const handleShare = async (message: Message) => {
     if (sharingMessageId) return;
+    // Greetings, help texts and fallbacks carry no citation — never shareable.
+    if (!message.sources || message.sources.length === 0) {
+      setShareNotice('Only answers with official citations can be shared.');
+      setShowShareNotice(true);
+      return;
+    }
 
     const index = messages.findIndex((item) => item.id === message.id);
     if (index <= 0) return;
@@ -487,8 +518,14 @@ export default function ChatInterface({
 
                   const sources = msg.sources || [];
                   const isWelcome = msg.id === 'msg-0';
+                  // Greetings, help, fallbacks and old threads without sources are
+                  // plain text: no Share / Save PDF / feedback buttons.
+                  const showAnswerTools =
+                    !isWelcome &&
+                    sources.length > 0 &&
+                    (msg.kind === undefined || msg.kind === 'answer');
                   const question = messages[Math.max(0, messages.indexOf(msg) - 1)]?.content || '';
-                  const deadlineHints = isWelcome ? [] : extractDeadlineSuggestions(msg.content);
+                  const deadlineHints = showAnswerTools ? extractDeadlineSuggestions(msg.content) : [];
 
                   return (
                     <motion.div
@@ -522,7 +559,7 @@ export default function ChatInterface({
                         </div>
                       )}
 
-                      {!isWelcome && deadlineHints.length > 0 && (
+                      {!isWelcome && showAnswerTools && deadlineHints.length > 0 && (
                         <div className="flex flex-wrap items-center gap-2 rounded-[14px] border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] p-3">
                           <AlarmClock size={14} strokeWidth={2} className="text-[#1a73e8]" />
                           <span className="text-[12px] text-[var(--chat-text-2)]">Time limit found — save it?</span>
@@ -547,7 +584,7 @@ export default function ChatInterface({
                         </div>
                       )}
 
-                      {!isWelcome && sources.length > 0 && (
+                      {!isWelcome && showAnswerTools && sources.length > 0 && (
                         <>
                           <ViewedRow
                             source={
@@ -600,7 +637,7 @@ export default function ChatInterface({
                         </>
                       )}
 
-                      {!isWelcome && (
+                      {!isWelcome && showAnswerTools && (
                         <>
                           <div className="flex flex-wrap items-center gap-2 pt-0.5">
                             <button

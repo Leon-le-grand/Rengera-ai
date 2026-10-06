@@ -1,7 +1,7 @@
 'use server';
 
 import { getAdminSession } from '@/lib/auth';
-import { extractPdfText, normalizePdfText } from '@/lib/legal-pdf';
+import { extractPdfText, normalizePdfText, ScannedPdfError } from '@/lib/legal-pdf';
 import { retrieveSupabaseLegalContext } from '@/lib/supabase-retrieval';
 import { getSupabaseAdminClient, isSupabaseConfigured } from '@/lib/supabase';
 import { createSpaceBunnyChatCompletion } from '@/lib/space-bunny';
@@ -514,6 +514,9 @@ export async function analyzeContract(formData: FormData): Promise<{ success: bo
         : await file.text();
   } catch (caught) {
     console.error('Contract text extraction failed:', caught);
+    if (caught instanceof ScannedPdfError) {
+      return { success: false, error: caught.message };
+    }
     return { success: false, error: 'The file could not be read. If it is a scanned PDF, run OCR on it first.' };
   }
 

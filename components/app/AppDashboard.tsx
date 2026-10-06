@@ -83,8 +83,12 @@ export default function AppDashboard({
     setCurrentView('chat');
   };
 
+  // Chat storage is namespaced per account so an admin on the same browser
+  // never sees a citizen's threads and vice versa.
+  const accountKey = accountUser?.id || accountUser?.email || adminUser?.email || 'public';
+
   return (
-    <div className="flex h-dvh bg-[#09090b]">
+    <div className="app-surface flex h-dvh">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
@@ -109,16 +113,16 @@ export default function AppDashboard({
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-dvh overflow-hidden relative bg-[#09090b]">
-        <header className="print:hidden h-16 border-b border-white/5 flex items-center justify-between px-4 bg-[#09090b] shrink-0 z-10">
+      <div className="app-surface flex-1 flex flex-col h-dvh overflow-hidden relative">
+        <header className="app-surface print:hidden h-16 border-b flex items-center justify-between px-4 shrink-0 z-10">
           <div className="flex items-center">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-2 -ml-2 text-zinc-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors lg:hidden"
+              className="p-2 -ml-2 rounded-lg transition-colors lg:hidden text-[var(--app-muted)] hover:text-[var(--app-text)] hover:bg-[var(--chat-chip)]"
             >
               <Menu size={24} />
             </button>
-            <span className="ml-2 font-bold text-white">Rengera {currentView !== 'chat' && `- ${currentView.charAt(0).toUpperCase() + currentView.slice(1)}`}</span>
+            <span className="ml-2 font-bold text-[var(--app-text)]">Rengera {currentView !== 'chat' && `- ${currentView.charAt(0).toUpperCase() + currentView.slice(1)}`}</span>
           </div>
           <div className="flex items-center gap-2">
             <NotificationsBell />
@@ -140,6 +144,7 @@ export default function AppDashboard({
                   onOpenLaw={openLawReader}
                   pendingAsk={pendingAsk}
                   onPendingAskHandled={() => setPendingAsk(null)}
+                  accountKey={accountKey}
                 />
               )}
               {currentView === 'library' && (

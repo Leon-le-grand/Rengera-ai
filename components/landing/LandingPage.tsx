@@ -38,12 +38,20 @@ export default function LandingPage({ onEnterApp, onLogin, onStartFree }: Landin
         theme === 'light' && 'landing-light',
       )}
     >
-      {/* Layered canvas */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-[-1] h-[100vh] min-h-[750px]">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#09090b] via-[#09090b]/95 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-transparent to-[#09090b]/50" />
-      </div>
+      {/* Layered canvas — dark photo + dark gradients in dark mode, soft light wash in light mode */}
+      {theme === 'light' ? (
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[-1] h-[100vh] min-h-[750px]">
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#efede9] via-[#efede9]/90 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#efede9] via-transparent to-[#efede9]/60" />
+        </div>
+      ) : (
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[-1] h-[100vh] min-h-[750px]">
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#09090b] via-[#09090b]/95 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-transparent to-[#09090b]/50" />
+        </div>
+      )}
 
       {/* Background glow */}
       <div className="pointer-events-none fixed bottom-[-20%] right-[-10%] z-0 h-[50%] w-[50%] rounded-full bg-zinc-800/10 blur-[120px]" />

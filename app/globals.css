@@ -165,24 +165,24 @@
 [data-theme='light'] {
   color-scheme: light;
 
-  --app-bg: #e9e7e2;
-  --app-panel: #f5f4f1;
-  --app-panel-2: #e2e0da;
+  --app-bg: #efede9;
+  --app-panel: #f7f6f3;
+  --app-panel-2: #e7e5e0;
   --app-border: rgba(24, 24, 27, 0.09);
   --app-text: #18181b;
   --app-text-2: #3f3f46;
-  --app-muted: #71717a;
-  --app-faint: #a1a1aa;
-  --app-accent: #a8813f;
+  --app-muted: #52525b;
+  --app-faint: #8a8a93;
+  --app-accent: #8a6a30;
 
-  --chat-surround: #ddd9d2;
-  --chat-panel: #f5f4f1;
+  --chat-surround: #e7e5e0;
+  --chat-panel: #f7f6f3;
   --chat-user: #eceae6;
-  --chat-chip: #e7e5e0;
-  --chat-composer: #f5f4f1;
+  --chat-chip: #e9e7e2;
+  --chat-composer: #f7f6f3;
   --chat-hover: #e2e0da;
-  --chat-border: #d4d0c8;
-  --chat-border-soft: #ddd9d2;
+  --chat-border: #d6d2c9;
+  --chat-border-soft: #dfdcd5;
   --chat-text: #1f1f1f;
   --chat-text-2: #3c4043;
   --chat-muted: #5f6368;
@@ -317,29 +317,29 @@
    Canvas is intentionally #e9e7e2 (gray mixed into white), panels #f5f4f1 —
    never pure #ffffff — to reduce brightness on long reads. */
 .landing-light {
-  background-color: #e9e7e2;
+  background-color: #efede9;
   color: #3f3f46;
 }
 
 .landing-light .bg-zinc-950,
 .landing-light .bg-black {
-  background-color: #e9e7e2;
+  background-color: #efede9;
 }
 
 .landing-light .bg-\[\#09090b\],
 .landing-light .bg-\[\#0c0c0e\] {
-  background-color: #f5f4f1;
+  background-color: #f7f6f3;
 }
 
 /* AuraNav fixed header + mobile menu keep dark glass by default — remap. */
 .landing-light header {
-  background-color: rgba(233, 231, 226, 0.9);
+  background-color: rgba(239, 237, 233, 0.9);
   border-color: rgba(24, 24, 27, 0.1);
 }
 
 .landing-light header.bg-\[\#09090b\],
 .landing-light header .bg-\[\#09090b\] {
-  background-color: #e9e7e2;
+  background-color: #efede9;
 }
 
 .landing-light .text-white {
@@ -425,11 +425,11 @@
 
 /* Footer + glow layers that assume a black canvas. */
 .landing-light footer.bg-black {
-  background-color: #e9e7e2;
+  background-color: #efede9;
 }
 
 .landing-light .from-black {
-  --tw-gradient-from: #e9e7e2;
+  --tw-gradient-from: #efede9;
 }
 
 .landing-light .bg-zinc-800\/10 {
