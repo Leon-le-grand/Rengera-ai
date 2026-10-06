@@ -37,38 +37,62 @@ interface SpaceBunnyConfig {
   baseUrl: string;
   model: string;
   embeddingModel: string;
+  label: string;
 }
 
 function getConfig(requireEmbeddingModel = false): SpaceBunnyConfig {
+  // The key is optional: some gateways serve free models without auth, and the
+  // server answers 401 when a key is actually required. Never block startup —
+  // surface provider errors at request time instead.
   const apiKey = process.env.SPACE_BUNNY_API_KEY?.trim() || '';
   const baseUrl = process.env.SPACE_BUNNY_API_URL?.trim() || DEFAULT_API_URL;
   const model = process.env.SPACE_BUNNY_MODEL?.trim() || DEFAULT_MODEL;
   const embeddingModel = process.env.SPACE_BUNNY_EMBEDDING_MODEL?.trim() || '';
 
-  const missing: string[] = [];
-  if (!apiKey) missing.push('SPACE_BUNNY_API_KEY');
-  if (requireEmbeddingModel && !embeddingModel) missing.push('SPACE_BUNNY_EMBEDDING_MODEL');
-
-  if (missing.length > 0) {
+  if (requireEmbeddingModel && !embeddingModel) {
     throw new SpaceBunnyConfigurationError(
-      `Space Bunny is not configured. Add ${missing.join(', ')} in Vercel and redeploy.`,
+      'Space Bunny is not configured. Add SPACE_BUNNY_EMBEDDING_MODEL in Vercel and redeploy.',
     );
   }
 
+  return { apiKey, baseUrl: normalizeBaseUrl(baseUrl), model, embeddingModel, label: 'primary' };
+}
+
+/**
+ * Optional second provider. Same OpenAI-compatible shape, different key/model —
+ * e.g. a Claude model on the same gateway for Kinyarwanda/French quality, or a
+ * completely different endpoint. Used only when the primary fails.
+ */
+function getFallbackConfig(): SpaceBunnyConfig | null {
+  const apiKey = process.env.AI_FALLBACK_API_KEY?.trim() || '';
+  if (!apiKey) return null;
+
+  const baseUrl = process.env.AI_FALLBACK_API_URL?.trim()
+    || process.env.SPACE_BUNNY_API_URL?.trim()
+    || DEFAULT_API_URL;
+  const model = process.env.AI_FALLBACK_MODEL?.trim()
+    || process.env.SPACE_BUNNY_MODEL?.trim()
+    || DEFAULT_MODEL;
+  const embeddingModel = process.env.SPACE_BUNNY_EMBEDDING_MODEL?.trim() || '';
+
+  return { apiKey, baseUrl: normalizeBaseUrl(baseUrl), model, embeddingModel, label: 'fallback' };
+}
+
+function normalizeBaseUrl(baseUrl: string): string {
   let parsedUrl: URL;
   try {
     parsedUrl = new URL(baseUrl);
   } catch {
     throw new SpaceBunnyConfigurationError(
-      'SPACE_BUNNY_API_URL must be a valid provider URL, usually ending in /v1.',
+      'Provider API URL must be valid, usually ending in /v1.',
     );
   }
 
   if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-    throw new SpaceBunnyConfigurationError('SPACE_BUNNY_API_URL must use http or https.');
+    throw new SpaceBunnyConfigurationError('Provider API URL must use http or https.');
   }
 
-  return { apiKey, baseUrl: parsedUrl.toString(), model, embeddingModel };
+  return parsedUrl.toString();
 }
 
 function buildEndpoint(baseUrl: string, resource: 'chat/completions' | 'embeddings'): string {
@@ -89,20 +113,19 @@ function redactSensitiveText(value: string, apiKey: string): string {
 }
 
 async function requestJson(
+  config: SpaceBunnyConfig,
   resource: 'chat/completions' | 'embeddings',
   body: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
-  const config = getConfig(resource === 'embeddings');
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), resolveTimeoutMs(resource));
 
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (config.apiKey) headers.Authorization = `Bearer ${config.apiKey}`;
     const response = await fetch(buildEndpoint(config.baseUrl, resource), {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(body),
       signal: controller.signal,
       cache: 'no-store',
@@ -178,8 +201,28 @@ export async function createSpaceBunnyChatCompletion(
   messages: SpaceBunnyMessage[],
   options: { temperature?: number; maxTokens?: number; timeoutMs?: number } = {},
 ): Promise<string> {
-  const config = getConfig();
-  const payload = await requestJson('chat/completions', {
+  const candidates: SpaceBunnyConfig[] = [getConfig()];
+  const fallback = getFallbackConfig();
+  if (fallback) candidates.push(fallback);
+
+  let lastError: unknown = null;
+  for (const config of candidates) {
+    try {
+      return await chatCompletionWith(config, messages, options);
+    } catch (error) {
+      lastError = error;
+      console.error(`AI ${config.label} provider (${config.model}) failed:`, error instanceof Error ? error.message : error);
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('AI request failed on every configured provider.');
+}
+
+async function chatCompletionWith(
+  config: SpaceBunnyConfig,
+  messages: SpaceBunnyMessage[],
+  options: { temperature?: number; maxTokens?: number; timeoutMs?: number },
+): Promise<string> {
+  const payload = await requestJson(config, 'chat/completions', {
     model: config.model,
     messages,
     temperature: options.temperature ?? 0.2,
@@ -218,7 +261,7 @@ export async function createSpaceBunnyEmbedding(input: string): Promise<number[]
   }
 
   const config = getConfig(true);
-  const payload = await requestJson('embeddings', {
+  const payload = await requestJson(config, 'embeddings', {
     model: config.embeddingModel,
     input,
   });

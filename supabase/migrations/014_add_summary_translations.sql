@@ -1,7 +1,7 @@
 -- 014: Cached summary translations for the Law Library reader.
 --
 -- Summaries are classified in one language. Citizens read in Kinyarwanda,
--- French or Kiswahili, so the reader offers EN/RW/FR/SW tabs. Translations
+-- French, so the reader offers EN/RW/FR tabs. Translations
 -- are produced on first request by getTranslatedSummary() and cached here, so
 -- each law is translated at most once per language. Run in the Supabase SQL
 -- Editor. Re-runnable.

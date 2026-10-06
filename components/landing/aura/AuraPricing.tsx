@@ -18,7 +18,7 @@ const PLANS = [
     note: 'For anyone who needs to know their rights today.',
     features: [
       'Unlimited legal questions',
-      'Answers in Kinyarwanda, English, French & Kiswahili',
+      'Answers in Kinyarwanda, English & French',
       'Exact article citation on every answer',
       'Deadline reminders',
       'Share an answer with a lawyer',

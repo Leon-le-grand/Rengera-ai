@@ -176,13 +176,10 @@ const SMALL_TALK_PHRASES = new Set([
   'bonjour',
   'salut',
   'bjr',
-  'habari',
-  'mambo',
   'thanks',
   'thank you',
   'murakoze',
   'merci',
-  'asante',
   'ok',
   'okay',
 ]);
@@ -204,8 +201,6 @@ const HELP_PHRASES = new Set([
   'aide',
   "aidez moi",
   'aide moi',
-  'msaada',
-  'naomba msaada',
 ]);
 
 function isHelpRequest(query: string, hasArticleContext: boolean): boolean {
@@ -243,14 +238,12 @@ const SMALL_TALK_REPLIES: Record<string, string> = {
   en: 'Hello! I am Rengera, your Rwandan legal assistant.\n\nAsk me a full legal question, for example: "What does Article 43 of Law n° 027/2023 mean for an employee?"',
   rw: 'Mwaramutse! Nitwa Rengera, umufasha wawe mu mategeko.\n\nBaza ikibazo cyuzuye cy’amategeko, urugero: "Ingingo ya 43 y’Itegeko n° 027/2023 ivuga iki ku mukozi?"',
   fr: 'Bonjour ! Je suis Rengera, votre assistant juridique.\n\nPosez une vraie question juridique, par exemple : « Que dit l’article 43 de la loi n° 027/2023 pour un employé ? »',
-  sw: 'Habari! Mimi ni Rengera, msaidizi wako wa sheria.\n\nUliza swali kamili la kisheria, kwa mfano: "Kifungu cha 43 cha Sheria n° 027/2023 kinasemaje kwa mwajiriwa?"',
 };
 
 const HELP_REPLIES: Record<string, string> = {
   en: 'I can explain Rwandan laws in plain language.\n\nTell me what happened and what you need — for example: "My landlord locked me out, what are my rights?" or "What does Article 43 of Law n° 027/2023 say about working hours?"\n\nI will quote the exact article and tell you what to do next.',
   rw: 'Nshobora gusobanura amategeko y’u Rwanda mu magambo yoroshye.\n\nMbwira ibyakubayeho n’icyo ukeneye — urugero: "Nyagasani w’inzu yampfungiye hanze, ni ayahe amahoro mfite?" cyangwa "Ingingo ya 43 y’Itegeko n° 027/2023 ivuga iki?"',
   fr: 'Je peux expliquer les lois rwandaises en langage simple.\n\nDécrivez ce qui s’est passé — par exemple : « Mon bailleur m’a mis dehors, quels sont mes droits ? » ou « Que dit l’article 43 de la loi n° 027/2023 ? »',
-  sw: 'Ninaweza kueleza sheria za Rwanda kwa lugha rahisi.\n\nNiambie kilichotokea — kwa mfano: "Mwenye nyumba amenifungia nje, haki zangu ni zipi?" au "Kifungu cha 43 cha Sheria n° 027/2023 kinasemaje?"',
 };
 
 export async function generateLegalAdvice(
@@ -377,7 +370,6 @@ export async function generateLegalAdvice(
         en: 'I could not find that in the official laws stored in the library yet.\n\nPlease rephrase with a law number or article — for example: "What does Article 43 of Law n° 027/2023 say about working hours?"',
         rw: 'Sinabibona mu mategeko yemewe abitswe mu isomero.\n\nOngera ubaze uvuga nimero y’itegeko cyangwa ingingo — urugero: "Ingingo ya 43 y’Itegeko n° 027/2023 ivuga iki ku masaha y’akazi?"',
         fr: 'Je ne trouve pas cela dans les lois officielles de la bibliothèque.\n\nReformulez avec un numéro de loi ou d’article — par exemple : « Que dit l’article 43 de la loi n° 027/2023 sur le temps de travail ? »',
-        sw: 'Sikuipata katika sheria rasmi zilizohifadhiwa maktabani.\n\nTafadhali uliza tena ukitaja nambari ya sheria au kifungu — kwa mfano: "Kifungu cha 43 cha Sheria n° 027/2023 kinasemaje kuhusu saa za kazi?"',
       };
       return { reply: fallback[language] || fallback.en, sources: [], kind: 'fallback' };
     }
@@ -454,7 +446,6 @@ ${query}
         en: 'Sorry, the legal assistant is temporarily unavailable. Please try again in a moment.',
         rw: 'Bihanganire, umufasha w’amategeko ntashobora kuboneka ubu. Ongera ugerageze nyuma gato.',
         fr: 'Désolé, l’assistant juridique est temporairement indisponible. Veuillez réessayer dans un moment.',
-        sw: 'Samahani, msaidizi wa sheria hayupo kwa muda. Tafadhali jaribu tena baadae.',
       };
       return {
         reply: notices[resolveAnswerLanguage(options.language)] || notices.en,
@@ -474,7 +465,6 @@ ${query}
       en: 'Sorry, I could not reach the law library just now. Please check your connection and try again.',
       rw: 'Bihanganire, sinshoboye kugera ku isomero ry’amategeko ubu. Reba interineti yawe ungerageze.',
       fr: 'Désolé, je n’ai pas pu joindre la bibliothèque juridique. Vérifiez votre connexion et réessayez.',
-      sw: 'Samahani, sikuweza kufikia maktaba ya sheria hivi sasa. Angalia muunganisho wako na ujaribu tena.',
     };
     return {
       reply: failures[resolveAnswerLanguage(options.language)] || failures.en,

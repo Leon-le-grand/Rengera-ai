@@ -1071,13 +1071,12 @@ function LawReader({
 }
 
 function TranslatedSummary({ detail }: { detail: LawDetail }) {
-  type SummaryLang = 'en' | 'rw' | 'fr' | 'sw';
+  type SummaryLang = 'en' | 'rw' | 'fr';
   const [lang, setLang] = useState<SummaryLang>('en');
   const [texts, setTexts] = useState<Record<SummaryLang, string | null>>({
     en: detail.summary,
     rw: detail.summary_rw,
     fr: detail.summary_fr,
-    sw: detail.summary_sw,
   });
   const [translating, setTranslating] = useState(false);
   const [translateError, setTranslateError] = useState('');
@@ -1085,9 +1084,9 @@ function TranslatedSummary({ detail }: { detail: LawDetail }) {
   // A newly opened law brings its own cached translations.
   useEffect(() => {
     setLang('en');
-    setTexts({ en: detail.summary, rw: detail.summary_rw, fr: detail.summary_fr, sw: detail.summary_sw });
+    setTexts({ en: detail.summary, rw: detail.summary_rw, fr: detail.summary_fr });
     setTranslateError('');
-  }, [detail.id, detail.summary, detail.summary_rw, detail.summary_fr, detail.summary_sw]);
+  }, [detail.id, detail.summary, detail.summary_rw, detail.summary_fr]);
 
   const switchLang = async (next: SummaryLang) => {
     setLang(next);
@@ -1113,7 +1112,6 @@ function TranslatedSummary({ detail }: { detail: LawDetail }) {
     { key: 'en', label: 'English' },
     { key: 'rw', label: 'Kinyarwanda' },
     { key: 'fr', label: 'Français' },
-    { key: 'sw', label: 'Kiswahili' },
   ];
 
   return (

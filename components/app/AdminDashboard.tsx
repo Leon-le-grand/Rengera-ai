@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import SupabaseLawClassifier from './SupabaseLawClassifier';
 import AdminEditLaw from './AdminEditLaw';
-import { bulkApproveLaws, getLawLibrary, type LawLibraryEntry } from '@/app/legal-actions';
+import { approveLaw, bulkApproveLaws, getLawLibrary, type LawLibraryEntry } from '@/app/legal-actions';
 import { getAdminLibraryStats } from '@/app/share-actions';
 import {
   getFeedbackDigest,
@@ -53,6 +53,10 @@ export default function AdminDashboard() {
   const [syncNote, setSyncNote] = useState('');
   const [approvingAll, setApprovingAll] = useState(false);
   const [bulkNote, setBulkNote] = useState('');
+  // Multi-select with shift-click range support for bulk actions.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [lastChecked, setLastChecked] = useState<string | null>(null);
+  const [approvingSelected, setApprovingSelected] = useState(false);
 
   const loadLaws = useCallback(async () => {
     try {
@@ -112,6 +116,49 @@ export default function AdminDashboard() {
       }
     } finally {
       setApprovingAll(false);
+    }
+  };
+
+  const toggleSelect = (lawId: string, index: number, shiftKey: boolean) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (shiftKey && lastChecked !== null) {
+        const ids = laws.map((law) => law.id);
+        const from = ids.indexOf(lastChecked);
+        const to = index;
+        if (from !== -1) {
+          const [start, end] = from < to ? [from, to] : [to, from];
+          const shouldSelect = !current.has(lawId);
+          for (let i = start; i <= end; i += 1) {
+            if (shouldSelect) next.add(ids[i]);
+            else next.delete(ids[i]);
+          }
+          return next;
+        }
+      }
+      if (next.has(lawId)) next.delete(lawId);
+      else next.add(lawId);
+      return next;
+    });
+    setLastChecked(lawId);
+  };
+
+  const runApproveSelected = async () => {
+    if (selectedIds.size === 0) return;
+    setApprovingSelected(true);
+    setBulkNote('');
+    try {
+      let approved = 0;
+      for (const lawId of selectedIds) {
+        const result = await approveLaw(lawId);
+        if (result.success) approved += 1;
+      }
+      setBulkNote(`${approved} of ${selectedIds.size} selected approved.`);
+      setSelectedIds(new Set());
+      setLastChecked(null);
+      await loadLaws();
+    } finally {
+      setApprovingSelected(false);
     }
   };
 
@@ -467,18 +514,30 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              {laws.map((law) => (
+              {laws.map((law, index) => (
                 <div
                   key={law.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+                  className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 shadow-sm transition-shadow hover:shadow-md ${
+                    selectedIds.has(law.id) ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-200 bg-white'
+                  }`}
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-slate-900">{law.title}</p>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      {law.reference_number || 'No reference'}
-                      {law.category ? ` · ${law.category}` : ''}
-                      {` · ${law.article_count} article${law.article_count === 1 ? '' : 's'}`}
-                    </p>
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(law.id)}
+                      onChange={(event) => toggleSelect(law.id, index, (event.nativeEvent as MouseEvent).shiftKey)}
+                      onClick={(event) => event.stopPropagation()}
+                      aria-label={`Select ${law.title}`}
+                      className="mt-1 h-4 w-4 shrink-0 accent-emerald-600"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-slate-900">{law.title}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {law.reference_number || 'No reference'}
+                        {law.category ? ` · ${law.category}` : ''}
+                        {` · ${law.article_count} article${law.article_count === 1 ? '' : 's'}`}
+                      </p>
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -490,6 +549,34 @@ export default function AdminDashboard() {
                   </button>
                 </div>
               ))}
+            </div>
+          )}
+          {selectedIds.size > 0 && (
+            <div className="sticky bottom-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-white p-4 shadow-lg">
+              <p className="text-sm font-bold text-slate-900">
+                {selectedIds.size} selected <span className="font-medium text-slate-500">(shift-click selects a range)</span>
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedIds(new Set());
+                    setLastChecked(null);
+                  }}
+                  className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void runApproveSelected()}
+                  disabled={approvingSelected}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+                >
+                  {approvingSelected ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} strokeWidth={3} />}
+                  {approvingSelected ? 'Approving…' : `Approve ${selectedIds.size} selected`}
+                </button>
+              </div>
             </div>
           )}
         </section>

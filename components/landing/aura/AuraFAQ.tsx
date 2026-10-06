@@ -20,7 +20,7 @@ const FAQS = [
   {
     question: 'Which languages can I use?',
     answer:
-      'English, Kinyarwanda, French and Kiswahili. Choose your language in the chat and the answer is written in that language while the law reference and article numbers stay exactly as published.',
+      'English, Kinyarwanda and French. Choose your language in the chat and the answer is written in that language while the law reference and article numbers stay exactly as published.',
   },
   {
     question: 'Can I trust a law that has an amendment?',
@@ -130,7 +130,7 @@ export default function AuraFAQ({ onStartFree }: { onStartFree: () => void }) {
                   You already know something is wrong. Ask the law.
                 </h3>
                 <p className="mt-4 text-sm font-medium leading-relaxed text-zinc-300">
-                  No card, no lawyer needed to start. Ask in Kinyarwanda, English, French or Kiswahili,
+                  No card, no lawyer needed to start. Ask in Kinyarwanda, English or French,
                   and read the article yourself.
                 </p>
               </div>

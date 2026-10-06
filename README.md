@@ -99,6 +99,23 @@ SPACE_BUNNY_EMBEDDING_MODEL=
 
 `SPACE_BUNNY_EMBEDDING_MODEL` is optional. Without it, chat works but semantic article retrieval is skipped.
 
+### Model choice
+
+The provider client (`lib/space-bunny.ts`) speaks plain OpenAI-compatible
+`chat/completions`, so `SPACE_BUNNY_MODEL` accepts any model ID the gateway
+serves — no code change needed. The key may be left empty for gateways that
+serve keyless models (the `Authorization` header is omitted then); a 401 still
+explains a missing key. Set `AI_FALLBACK_API_KEY` (+ optional
+`AI_FALLBACK_API_URL` / `AI_FALLBACK_MODEL`) and chat completions automatically
+retry once on the fallback provider when the primary fails. Classification,
+answers and summary translations all follow these variables.
+
+OpenCode inference (`https://opencode.ai/inference/openai/v1`) speaks the same
+protocol and hosts Muse Spark, Fledge Alpha and others — but its free tier was
+verified to answer only from inside OpenCode (`FreeTierError` over HTTPS), so
+the deployed app cannot use the free models. Paid models work through an
+OpenCode Console service-account key (`oc_sk_...`, Inference-only permission).
+
 ### Supabase
 
 ```text

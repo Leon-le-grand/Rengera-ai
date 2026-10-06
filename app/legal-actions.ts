@@ -1000,13 +1000,11 @@ export async function bulkApproveLaws(): Promise<{
 const SUMMARY_TRANSLATION_COLUMNS = {
   rw: 'summary_rw',
   fr: 'summary_fr',
-  sw: 'summary_sw',
 } as const;
 
 const SUMMARY_TRANSLATION_INSTRUCTIONS = {
   rw: 'Translate the following law summary into simple Kinyarwanda (Ikinyarwanda). Keep law reference numbers (e.g. "N° 027/2023") and article numbers exactly as written. Return only the translation, no intro.',
   fr: 'Traduis le résumé de loi suivant en français simple et clair. Conserve exactement les références de loi et les numéros d’article. Retourne uniquement la traduction, sans introduction.',
-  sw: 'Tafsiri muhtasari wa sheria ufuatao kwa Kiswahili rahisi. Weka nambari za sheria na vifungu kama zilivyo. Rudisha tafsiri pekee, bila utangulizi.',
 } as const;
 
 /**
@@ -1018,7 +1016,7 @@ const SUMMARY_TRANSLATION_INSTRUCTIONS = {
  */
 export async function getTranslatedSummary(
   lawId: string,
-  language: 'rw' | 'fr' | 'sw',
+  language: 'rw' | 'fr',
 ): Promise<{ success: boolean; text?: string; error?: string }> {
   const normalizedId = cleanQueryValue(lawId, 64);
   const column = SUMMARY_TRANSLATION_COLUMNS[language];

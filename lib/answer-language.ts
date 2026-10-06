@@ -6,7 +6,7 @@
  * which language is active.
  */
 
-export const ANSWER_LANGUAGES = ['en', 'rw', 'fr', 'sw'] as const;
+export const ANSWER_LANGUAGES = ['en', 'rw', 'fr'] as const;
 
 export type AnswerLanguage = (typeof ANSWER_LANGUAGES)[number];
 
@@ -39,13 +39,6 @@ export const LANGUAGE_DEFINITIONS: Record<AnswerLanguage, AnswerLanguageDefiniti
     native: 'Français',
     instruction:
       "Rédige l'intégralité de la réponse en français simple et clair. Conserve exactement la référence de la loi et le numéro d'article tels que publiés.",
-  },
-  sw: {
-    code: 'sw',
-    label: 'Kiswahili',
-    native: 'Kiswahili',
-    instruction:
-      'Write the ENTIRE answer in simple Kiswahili. Keep every law reference number and article number exactly as published. Translate the section headings into Kiswahili.',
   },
 };
 
@@ -130,26 +123,6 @@ export const UI_STRINGS: Record<AnswerLanguage, Strings> = {
       employment: 'Travail',
       privacy: 'Vie privée',
       traffic: 'Route',
-    },
-  },
-  sw: {
-    greeting:
-      'Habari! Mimi ni Rengera, msaidizi wako wa sheria.\n\nEleza hali yako kwa maneno rahisi. Nitasoma sheria za Rwanda, nataja nakala halisi, na nikakuambia unachofanya.',
-    placeholder: 'Uliza chochote kuhusu haki zako…',
-    disclaimer:
-      'Rengera AI inaweza kukoseka. Thibitisha taarifa muhimu kutoka vyanzo rasmi.',
-    generating: 'Inasoma maktaba ya sheria…',
-    share: 'Shiriki jibu',
-    savePdf: 'Hifadhi kama PDF',
-    newChat: 'Mazungumzo mapya',
-    helpful: 'Inasaidia',
-    notHelpful: 'Haaisidi',
-    thanks: 'Asante — hii goesha kwenye kioleco cha ukaguzi wetu.',
-    scenarios: {
-      tenant: 'Shida ya mwananchi',
-      employment: 'Kazi',
-      privacy: 'Faragha',
-      traffic: 'Barabara',
     },
   },
 };
