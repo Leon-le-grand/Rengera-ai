@@ -1,6 +1,7 @@
 'use server';
 
 import { randomBytes } from 'node:crypto';
+import { headers } from 'next/headers';
 import { getAdminSession, getCurrentSessions } from '@/lib/auth';
 import {
   getSupabaseAdminClient,
@@ -87,7 +88,21 @@ export async function shareConsultation(
     }
 
     const base = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || '';
-    return { success: true, shareUrl: `${base}/share/${shareToken}` };
+    let origin = base.replace(/\/$/, '');
+    if (!origin) {
+      // No configured URL (local dev, preview deploys): derive it from the
+      // incoming request so the copied link is absolute and shareable.
+      try {
+        const headerStore = await headers();
+        const host =
+          headerStore.get('x-forwarded-host') || headerStore.get('host') || '';
+        const proto = headerStore.get('x-forwarded-proto') || 'https';
+        if (host) origin = `${proto}://${host}`;
+      } catch {
+        origin = '';
+      }
+    }
+    return { success: true, shareUrl: `${origin}/share/${shareToken}` };
   } catch (error) {
     if (error instanceof SupabaseConfigurationError) {
       return { success: false, error: error.message };

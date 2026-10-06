@@ -68,7 +68,13 @@ export default function AuraApproach({ onStartFree }: { onStartFree: () => void 
           : 'bg-[radial-gradient(120%_120%_at_15%_0%,#101a2c_0%,#0a1120_45%,#05070d_100%)] text-white',
       )}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-[0.07]" />
+      <div
+        aria-hidden="true"
+        className={cn(
+          "absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&q=80')] bg-cover bg-center",
+          light ? 'opacity-[0.16]' : 'opacity-[0.07]',
+        )}
+      />
       <div
         className={cn(
           'pointer-events-none absolute inset-0 bg-gradient-to-b via-transparent',
@@ -99,8 +105,8 @@ export default function AuraApproach({ onStartFree }: { onStartFree: () => void 
               cy="200"
               r="150"
               fill="none"
-              stroke="rgba(216,180,133,0.35)"
-              strokeWidth="1"
+              stroke={light ? 'rgba(138,106,48,0.6)' : 'rgba(216,180,133,0.35)'}
+              strokeWidth={light ? 1.5 : 1}
               strokeDasharray="3 7"
               strokeLinecap="round"
             />

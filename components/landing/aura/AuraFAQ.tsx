@@ -114,7 +114,7 @@ export default function AuraFAQ({ onStartFree }: { onStartFree: () => void }) {
       {/* The call to action that closes the page */}
       <div className="relative mx-auto mt-20 w-full max-w-[1400px]">
         <AuraReveal>
-          <div className="relative overflow-hidden border border-white/5">
+          <div className="force-dark relative overflow-hidden border border-white/5">
             <div
               aria-hidden="true"
               className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-[0.18]"
@@ -123,13 +123,13 @@ export default function AuraFAQ({ onStartFree }: { onStartFree: () => void }) {
 
             <div className="relative flex flex-col items-start gap-8 p-10 md:flex-row md:items-center md:justify-between md:p-16">
               <div className="max-w-xl">
-                <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-[#d8b485]">
+                <p className="mb-4 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#d8b485]">
                   Start in 30 seconds
                 </p>
-                <h3 className="text-3xl font-medium leading-[1.1] tracking-tight text-white md:text-4xl">
+                <h3 className="text-3xl font-bold leading-[1.1] tracking-tight text-white md:text-4xl">
                   You already know something is wrong. Ask the law.
                 </h3>
-                <p className="mt-4 text-sm font-light leading-relaxed text-zinc-400">
+                <p className="mt-4 text-sm font-medium leading-relaxed text-zinc-300">
                   No card, no lawyer needed to start. Ask in Kinyarwanda, English, French or Kiswahili,
                   and read the article yourself.
                 </p>
@@ -138,7 +138,7 @@ export default function AuraFAQ({ onStartFree }: { onStartFree: () => void }) {
               <button
                 type="button"
                 onClick={onStartFree}
-                className="aura-lift inline-flex w-full shrink-0 items-center justify-center gap-2 bg-[#d8b485] px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-zinc-950 hover:bg-[#c2a277] md:w-auto"
+                className="aura-lift inline-flex w-full shrink-0 items-center justify-center gap-2 bg-[#d8b485] px-8 py-5 text-[11px] font-extrabold uppercase tracking-widest text-zinc-950 hover:bg-[#c2a277] md:w-auto"
               >
                 Ask your first question
                 <ArrowRight size={15} strokeWidth={2.5} />

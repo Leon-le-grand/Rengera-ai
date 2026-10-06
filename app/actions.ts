@@ -446,8 +446,21 @@ ${query}
 
     return { reply, sources: collectedSources, kind: 'answer' };
   } catch (error) {
+    // Users get a calm, professional message. The technical detail stays in
+    // the server log — never pasted into the chat.
     if (error instanceof SpaceBunnyConfigurationError) {
-      return { reply: error.message, sources: collectedSources, kind: 'fallback' };
+      console.error('Space Bunny configuration error:', error.message);
+      const notices: Record<string, string> = {
+        en: 'Sorry, the legal assistant is temporarily unavailable. Please try again in a moment.',
+        rw: 'Bihanganire, umufasha w’amategeko ntashobora kuboneka ubu. Ongera ugerageze nyuma gato.',
+        fr: 'Désolé, l’assistant juridique est temporairement indisponible. Veuillez réessayer dans un moment.',
+        sw: 'Samahani, msaidizi wa sheria hayupo kwa muda. Tafadhali jaribu tena baadae.',
+      };
+      return {
+        reply: notices[resolveAnswerLanguage(options.language)] || notices.en,
+        sources: collectedSources,
+        kind: 'fallback',
+      };
     }
 
     const message = error instanceof Error ? error.message : String(error);
@@ -457,8 +470,14 @@ ${query}
       message,
     });
 
+    const failures: Record<string, string> = {
+      en: 'Sorry, I could not reach the law library just now. Please check your connection and try again.',
+      rw: 'Bihanganire, sinshoboye kugera ku isomero ry’amategeko ubu. Reba interineti yawe ungerageze.',
+      fr: 'Désolé, je n’ai pas pu joindre la bibliothèque juridique. Vérifiez votre connexion et réessayez.',
+      sw: 'Samahani, sikuweza kufikia maktaba ya sheria hivi sasa. Angalia muunganisho wako na ujaribu tena.',
+    };
     return {
-      reply: `Space Bunny could not complete the request: ${message}`,
+      reply: failures[resolveAnswerLanguage(options.language)] || failures.en,
       sources: collectedSources,
       kind: 'fallback',
     };

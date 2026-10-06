@@ -114,15 +114,15 @@ export default function AppDashboard({
 
       {/* Main Content Area */}
       <div className="app-surface flex-1 flex flex-col h-dvh overflow-hidden relative">
-        <header className="app-surface print:hidden h-16 border-b flex items-center justify-between px-4 shrink-0 z-10">
+        <header className="print:hidden h-16 border-b border-white/5 flex items-center justify-between px-4 bg-[#0c0c0e] shadow-[0_8px_30px_-12px_rgba(0,0,0,0.55)] shrink-0 z-10">
           <div className="flex items-center">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-2 -ml-2 rounded-lg transition-colors lg:hidden text-[var(--app-muted)] hover:text-[var(--app-text)] hover:bg-[var(--chat-chip)]"
+              className="p-2 -ml-2 rounded-lg transition-colors lg:hidden text-zinc-400 hover:text-white hover:bg-white/5"
             >
               <Menu size={24} />
             </button>
-            <span className="ml-2 font-bold text-[var(--app-text)]">Rengera {currentView !== 'chat' && `- ${currentView.charAt(0).toUpperCase() + currentView.slice(1)}`}</span>
+            <span className="ml-2 text-[15px] font-bold text-white">Rengera {currentView !== 'chat' && `- ${currentView.charAt(0).toUpperCase() + currentView.slice(1)}`}</span>
           </div>
           <div className="flex items-center gap-2">
             <NotificationsBell />

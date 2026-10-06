@@ -126,7 +126,7 @@ export default function Sidebar({
   const initials = userName.trim() ? userName.trim().slice(0, 2).toUpperCase() : null;
 
   return (
-    <aside className="app-surface flex h-full w-72 flex-col border-r border-white/5 bg-[#0c0c0e] text-zinc-300 shadow-[8px_0_30px_-12px_rgba(0,0,0,0.55)]">
+    <aside className="flex h-full w-72 flex-col border-r border-white/5 bg-[#0c0c0e] text-zinc-300 shadow-[8px_0_30px_-12px_rgba(0,0,0,0.55)]">
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/5 px-5 shadow-[0_2px_12px_-6px_rgba(0,0,0,0.5)]">
         <div className="flex items-center gap-3 text-white">
           <RengeraLogo size={38} label="" />

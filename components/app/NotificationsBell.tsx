@@ -66,7 +66,7 @@ export default function NotificationsBell() {
           if (!open) markAllSeen();
         }}
         aria-label={unread.length > 0 ? `${unread.length} new law notifications` : 'Notifications'}
-        className="relative flex h-9 w-9 items-center justify-center rounded-full text-[var(--chat-muted)] transition-colors hover:bg-[var(--chat-chip)] hover:text-[var(--chat-text)]"
+        className="relative flex h-9 w-9 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
       >
         <Bell size={17} strokeWidth={2} />
         {unread.length > 0 && (

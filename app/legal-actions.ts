@@ -72,6 +72,9 @@ export interface LawLibraryEntry {
   languages_available: string[];
   source_url: string | null;
   summary: string | null;
+  summary_rw: string | null;
+  summary_fr: string | null;
+  summary_sw: string | null;
   subcategories: string[];
   key_obligations: string[];
   applicable_entities: string[];
@@ -596,6 +599,9 @@ function castLibraryRows(data: unknown): LawLibraryEntry[] {
       languages_available: castStringArray(item.languages_available),
       source_url: typeof item.source_url === 'string' ? item.source_url : null,
       summary: typeof item.summary === 'string' ? item.summary : null,
+      summary_rw: typeof item.summary_rw === 'string' ? item.summary_rw : null,
+      summary_fr: typeof item.summary_fr === 'string' ? item.summary_fr : null,
+      summary_sw: typeof item.summary_sw === 'string' ? item.summary_sw : null,
       subcategories: castStringArray(item.subcategories),
       key_obligations: castStringArray(item.key_obligations),
       applicable_entities: castStringArray(item.applicable_entities),
@@ -917,6 +923,84 @@ export async function approveLaw(
     const message = error instanceof Error ? error.message : String(error);
     console.error('Law approval error:', message);
     return { success: false, error: message };
+  }
+}
+
+const SUMMARY_TRANSLATION_COLUMNS = {
+  rw: 'summary_rw',
+  fr: 'summary_fr',
+  sw: 'summary_sw',
+} as const;
+
+const SUMMARY_TRANSLATION_INSTRUCTIONS = {
+  rw: 'Translate the following law summary into simple Kinyarwanda (Ikinyarwanda). Keep law reference numbers (e.g. "N° 027/2023") and article numbers exactly as written. Return only the translation, no intro.',
+  fr: 'Traduis le résumé de loi suivant en français simple et clair. Conserve exactement les références de loi et les numéros d’article. Retourne uniquement la traduction, sans introduction.',
+  sw: 'Tafsiri muhtasari wa sheria ufuatao kwa Kiswahili rahisi. Weka nambari za sheria na vifungu kama zilivyo. Rudisha tafsiri pekee, bila utangulizi.',
+} as const;
+
+/**
+ * Summary in the reader's language (014). Returns the cached translation when
+ * present; otherwise translates once via Space Bunny and caches it on the law
+ * row. The cache write is a narrow whitelisted column update through the
+ * service-role client — it never touches source text, hashes or articles, and
+ * a cache failure never blocks the translation itself.
+ */
+export async function getTranslatedSummary(
+  lawId: string,
+  language: 'rw' | 'fr' | 'sw',
+): Promise<{ success: boolean; text?: string; error?: string }> {
+  const normalizedId = cleanQueryValue(lawId, 64);
+  const column = SUMMARY_TRANSLATION_COLUMNS[language];
+  if (!normalizedId || !column) return { success: false, error: 'Invalid request.' };
+
+  try {
+    const publicClient = getSupabasePublicClient();
+    const { data, error } = await publicClient
+      .from('laws')
+      .select(`summary, ${column}`)
+      .eq('id', normalizedId)
+      .maybeSingle();
+
+    if (error || !data) {
+      return { success: false, error: 'That law is no longer in the library.' };
+    }
+
+    const cached = (data as Record<string, unknown>)[column];
+    if (typeof cached === 'string' && cached.trim()) {
+      return { success: true, text: cached };
+    }
+
+    const source = String((data as Record<string, unknown>).summary || '').trim();
+    if (!source) return { success: false, error: 'This law has no summary to translate yet.' };
+
+    const translated = (
+      await createSpaceBunnyChatCompletion(
+        [
+          { role: 'system', content: SUMMARY_TRANSLATION_INSTRUCTIONS[language] },
+          { role: 'user', content: source.slice(0, 2000) },
+        ],
+        { temperature: 0.1, maxTokens: 600 },
+      )
+    ).trim();
+    if (!translated) return { success: false, error: 'The translation could not be produced right now.' };
+
+    try {
+      await getSupabaseAdminClient()
+        .from('laws')
+        .update({ [column]: translated })
+        .eq('id', normalizedId);
+    } catch (cacheError) {
+      console.error('Summary translation cache failed:', cacheError);
+    }
+
+    return { success: true, text: translated };
+  } catch (caught) {
+    if (caught instanceof SpaceBunnyConfigurationError || caught instanceof SupabaseConfigurationError) {
+      return { success: false, error: caught.message };
+    }
+    const message = caught instanceof Error ? caught.message : String(caught);
+    console.error('Summary translation error:', message);
+    return { success: false, error: 'The translation could not be produced right now.' };
   }
 }
 

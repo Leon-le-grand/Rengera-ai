@@ -1,5 +1,6 @@
 'use client';
 
+import { useTheme } from '@/components/app/ThemeProvider';
 import RengeraLogo from '@/components/brand/RengeraLogo';
 import AuraReveal from './AuraReveal';
 import WeightWordmark from '@/components/brand/WeightWordmark';
@@ -33,6 +34,9 @@ const COLUMNS = [
 ];
 
 export default function AuraFooter() {
+  const { theme } = useTheme();
+  const light = theme === 'light';
+
   return (
     <footer className="relative z-10 mt-auto overflow-hidden border-t border-white/5 bg-black">
       {/* Oversized wordmark — the weight travels across it on hover */}
@@ -40,7 +44,11 @@ export default function AuraFooter() {
         <div className="h-[16vw] min-h-[120px] w-full">
           <WeightWordmark
             label="RENGERA"
-            className="[&_.letter]:text-[13vw] [&_.letter]:font-bold [&_.letter]:leading-[0.9] [&_.letter]:tracking-[-0.02em] [&_.letter]:text-transparent [&_.letter]:[-webkit-text-stroke:1px_rgba(216,180,133,0.22)]"
+            className={
+              light
+                ? '[&_.letter]:text-[13vw] [&_.letter]:font-extrabold [&_.letter]:leading-[0.9] [&_.letter]:tracking-[-0.02em] [&_.letter]:text-transparent [&_.letter]:[-webkit-text-stroke:2px_rgba(138,106,48,0.65)]'
+                : '[&_.letter]:text-[13vw] [&_.letter]:font-bold [&_.letter]:leading-[0.9] [&_.letter]:tracking-[-0.02em] [&_.letter]:text-transparent [&_.letter]:[-webkit-text-stroke:1px_rgba(216,180,133,0.22)]'
+            }
           />
         </div>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black to-transparent" />

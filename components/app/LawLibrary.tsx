@@ -569,15 +569,15 @@ function LawCard({
       )}
     >
       <div className="relative">
-        <CardArtwork art={tone.art} className="h-44 w-full sm:h-48" />
+        <CardArtwork art={tone.art} className="h-28 w-full sm:h-32" />
 
         <span
           className={cn(
-            'absolute left-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-xl shadow-sm backdrop-blur transition-all duration-500 group-hover:scale-110',
+            'absolute left-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-xl shadow-sm backdrop-blur transition-all duration-500 group-hover:scale-110',
             tone.icon,
           )}
         >
-          <tone.Icon size={19} strokeWidth={2} />
+          <tone.Icon size={17} strokeWidth={2} />
         </span>
 
         {onToggleCompare && (
@@ -601,66 +601,53 @@ function LawCard({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col p-5 sm:p-6">
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
         {law.reference_number && (
-          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+          <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
             {law.reference_number}
           </p>
         )}
 
-        <h3 className="text-lg font-bold leading-snug text-slate-900">{law.title}</h3>
+        <h3 className="text-base font-bold leading-snug text-slate-900">{law.title}</h3>
 
         {law.summary && (
-          <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-500">{law.summary}</p>
+          <p className="mt-1.5 line-clamp-2 text-[13px] leading-6 text-slate-500">{law.summary}</p>
         )}
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className={cn('rounded-md px-2 py-1 text-xs font-bold', tone.badge)}>
+        <p className="mt-3 text-xs leading-5 text-slate-500">
+          <span className="font-extrabold text-emerald-700">
             {law.article_count} {law.article_count === 1 ? 'article' : 'articles'}
           </span>
-          {reviewed ? (
-            <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">
-              Verified
-            </span>
-          ) : (
-            <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">
-              Awaiting review
-            </span>
-          )}
-          {law.needs_ocr && (
-            <span className="rounded-md bg-orange-50 px-2 py-1 text-xs font-bold text-orange-700">
-              Needs OCR
-            </span>
-          )}
           {law.type === 'amendment' && (
-            <span className="rounded-md bg-violet-50 px-2 py-1 text-xs font-bold text-violet-700">
-              Amendment
-            </span>
+            <>
+              <span className="mx-1.5 text-slate-300">/</span>
+              <span className="font-bold text-violet-700">Amendment</span>
+            </>
           )}
           {law.status !== 'active' && (
-            <span className="rounded-md bg-red-50 px-2 py-1 text-xs font-bold text-red-700">
-              {law.status}
-            </span>
+            <>
+              <span className="mx-1.5 text-slate-300">/</span>
+              <span className="font-bold capitalize text-red-700">{law.status}</span>
+            </>
           )}
           {published && (
-            <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
-              Published {published}
-            </span>
+            <>
+              <span className="mx-1.5 text-slate-300">/</span>
+              <span>Published {published}</span>
+            </>
           )}
           {law.subcategories.slice(0, 3).map((subcategory) => (
-            <span
-              key={subcategory}
-              className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600"
-            >
-              {subcategory}
+            <span key={subcategory}>
+              <span className="mx-1.5 text-slate-300">/</span>
+              <span className="font-semibold text-slate-600">{subcategory}</span>
             </span>
           ))}
-        </div>
+        </p>
 
-        <span className="mt-5 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-slate-400 transition-colors duration-300 group-hover:text-emerald-600">
+        <span className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-widest text-slate-400 transition-colors duration-300 group-hover:text-emerald-600">
           Read the law
           <ChevronRight
-            size={14}
+            size={13}
             strokeWidth={2.5}
             className="transition-transform duration-300 group-hover:translate-x-1"
           />
@@ -745,6 +732,7 @@ function LawReader({
   const hasPdf = Boolean(pdfUrl);
   const articleCount = detail?.article_count ?? 0;
   const [collapsed, setCollapsed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const TABS: { key: ReaderTab; label: string; icon: ElementType }[] = [
     { key: 'document', label: 'Document', icon: FileText },
@@ -752,55 +740,76 @@ function LawReader({
     { key: 'articles', label: `Articles (${articleCount})`, icon: ScrollText },
   ];
 
+  // Slim slash breadcrumb: Category / context / reference. Small on purpose so
+  // it never competes with the dashboard's own top bar.
+  const crumbs = detail
+    ? [
+        detail.category || 'Uncategorised',
+        detail.type === 'amendment' && detail.amends_law_reference
+          ? `Amendment of ${detail.amends_law_reference}`
+          : detail.type === 'amendment'
+            ? 'Amendment'
+            : null,
+        detail.reference_number,
+      ].filter(Boolean) as string[]
+    : [];
+
   return (
     <>
-      <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
+      <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <button
             type="button"
             onClick={onBack}
-            className="mb-3 inline-flex items-center gap-2 rounded-lg text-sm font-semibold text-slate-500 transition-colors duration-200 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+            className="mb-2 inline-flex items-center gap-2 rounded-lg text-[13px] font-semibold text-slate-500 transition-colors duration-200 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
           >
-            <X size={18} strokeWidth={2.25} />
+            <X size={16} strokeWidth={2.25} />
             Back to the library
           </button>
 
           {detail && (
             <>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={cn('rounded-md px-2 py-1 text-xs font-bold', tone.badge)}>
-                  {detail.category || 'Uncategorised'}
-                </span>
-                {detail.type === 'amendment' && (
-                  <span className="rounded-md bg-violet-50 px-2 py-1 text-xs font-bold text-violet-700">
-                    Amendment{detail.amends_law_reference ? ` of ${detail.amends_law_reference}` : ''}
+              <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-x-1.5 text-xs text-slate-400">
+                {crumbs.map((crumb, index) => (
+                  <span key={`${crumb}-${index}`} className="flex items-center gap-1.5">
+                    {index > 0 && <span className="text-slate-300">/</span>}
+                    <span className={index === crumbs.length - 1 ? 'font-bold text-slate-700' : 'font-medium'}>
+                      {crumb}
+                    </span>
                   </span>
-                )}
+                ))}
                 {detail.status !== 'active' && (
-                  <span className="rounded-md bg-red-50 px-2 py-1 text-xs font-bold text-red-700">
-                    {detail.status}
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-slate-300">/</span>
+                    <span className="font-bold capitalize text-red-700">{detail.status}</span>
                   </span>
                 )}
-                {detail.reference_number && (
-                  <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
-                    {detail.reference_number}
-                  </span>
-                )}
-              </div>
+              </nav>
 
-              <h1 className="mt-3 text-xl font-bold leading-snug text-slate-900 sm:text-2xl">
+              <h1 className="mt-1.5 text-lg font-bold leading-snug text-slate-900">
                 {detail.title}
               </h1>
 
-              {/* Collapses on scroll so the articles get the full viewport. */}
+              {/* Collapses on scroll; otherwise shows 2 lines with Show more. */}
               <div
                 className={`grid transition-all duration-300 ease-out ${
-                  collapsed ? 'mt-0 grid-rows-[0fr] opacity-0' : 'mt-2 grid-rows-[1fr] opacity-100'
+                  collapsed ? 'mt-0 grid-rows-[0fr] opacity-0' : 'mt-1.5 grid-rows-[1fr] opacity-100'
                 }`}
               >
                 <div className="overflow-hidden">
                   {detail.summary && (
-                    <p className="text-sm leading-6 text-slate-600">{detail.summary}</p>
+                    <>
+                      <p className={cn('text-[13px] leading-6 text-slate-600', !expanded && 'line-clamp-2')}>
+                        {detail.summary}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setExpanded((v) => !v)}
+                        className="mt-1 text-xs font-bold text-emerald-700 outline-none hover:underline"
+                      >
+                        {expanded ? 'Show less' : 'Show more'}
+                      </button>
+                    </>
                   )}
 
                   {detail.source_url && (
@@ -808,7 +817,7 @@ function LawReader({
                       href={detail.source_url}
                       target="_blank"
                       rel="noreferrer noopener"
-                      className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 underline underline-offset-2 transition hover:text-emerald-900"
+                      className="mt-2 inline-flex items-center gap-1.5 text-[13px] font-semibold text-emerald-700 underline underline-offset-2 transition hover:text-emerald-900"
                     >
                       Open the official source
                     </a>
@@ -936,12 +945,7 @@ function LawReader({
                 <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
                   <IntegrityPanel detail={detail} />
                   {detail.summary && (
-                    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                      <h3 className="mb-2 text-sm font-bold uppercase tracking-wider text-emerald-700">
-                        Summary
-                      </h3>
-                      <p className="text-[15px] leading-7 text-slate-700">{detail.summary}</p>
-                    </section>
+                    <TranslatedSummary detail={detail} />
                   )}
 
                   {detail.key_obligations.length > 0 && (
@@ -1060,6 +1064,89 @@ function LawReader({
         </div>
       </div>
     </>
+  );
+}
+
+function TranslatedSummary({ detail }: { detail: LawDetail }) {
+  type SummaryLang = 'en' | 'rw' | 'fr' | 'sw';
+  const [lang, setLang] = useState<SummaryLang>('en');
+  const [texts, setTexts] = useState<Record<SummaryLang, string | null>>({
+    en: detail.summary,
+    rw: detail.summary_rw,
+    fr: detail.summary_fr,
+    sw: detail.summary_sw,
+  });
+  const [translating, setTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState('');
+
+  // A newly opened law brings its own cached translations.
+  useEffect(() => {
+    setLang('en');
+    setTexts({ en: detail.summary, rw: detail.summary_rw, fr: detail.summary_fr, sw: detail.summary_sw });
+    setTranslateError('');
+  }, [detail.id, detail.summary, detail.summary_rw, detail.summary_fr, detail.summary_sw]);
+
+  const switchLang = async (next: SummaryLang) => {
+    setLang(next);
+    if (next === 'en' || texts[next]) return;
+    setTranslating(true);
+    setTranslateError('');
+    try {
+      const { getTranslatedSummary } = await import('@/app/legal-actions');
+      const result = await getTranslatedSummary(detail.id, next);
+      if (result.success && result.text) {
+        setTexts((current) => ({ ...current, [next]: result.text as string }));
+      } else {
+        setTranslateError(result.error || 'The translation could not be produced right now.');
+      }
+    } catch {
+      setTranslateError('The translation could not be produced right now.');
+    } finally {
+      setTranslating(false);
+    }
+  };
+
+  const LABELS: { key: SummaryLang; label: string }[] = [
+    { key: 'en', label: 'English' },
+    { key: 'rw', label: 'Kinyarwanda' },
+    { key: 'fr', label: 'Français' },
+    { key: 'sw', label: 'Kiswahili' },
+  ];
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-700">Summary</h3>
+        <div className="flex overflow-hidden rounded-lg border border-slate-200" role="tablist" aria-label="Summary language">
+          {LABELS.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              role="tab"
+              aria-selected={lang === item.key}
+              onClick={() => void switchLang(item.key)}
+              className={cn(
+                'px-2.5 py-1 text-[11px] font-bold transition-colors',
+                lang === item.key ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50',
+              )}
+            >
+              {item.key.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+      {translating ? (
+        <p className="flex items-center gap-2 py-2 text-sm text-slate-400">
+          <Loader2 size={15} className="animate-spin" /> Translating the summary…
+        </p>
+      ) : (
+        <p className="text-[15px] leading-7 text-slate-700">{texts[lang] || detail.summary}</p>
+      )}
+      {translateError && <p className="mt-2 text-xs font-medium text-amber-700">{translateError}</p>}
+      <p className="mt-2 text-[11px] text-slate-400">
+        {LABELS.find((l) => l.key === lang)?.label} · translated once, then stored for everyone.
+      </p>
+    </section>
   );
 }
 
