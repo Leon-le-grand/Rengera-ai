@@ -15,7 +15,6 @@ import {
   RotateCcw,
   Shield,
   ShieldAlert,
-  Sparkles,
 } from 'lucide-react';
 import type { ElementType } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -38,7 +37,6 @@ import {
   AssistantBlock,
   ChatDisclaimer,
   ChatFrame,
-  ChatStream,
   ChatTopBar,
   ComposerActions,
   ComposerChip,
@@ -73,6 +71,31 @@ interface ChatInterfaceProps {
 }
 
 const SESSION_STORAGE_KEY = 'rengera_ai_chat_session_v1';
+const HISTORY_STORAGE_KEY = 'rengera_ai_chat_history_v1';
+
+interface StoredChat {
+  id: string;
+  title: string;
+  messages: Message[];
+  updatedAt: string;
+}
+
+function chatTitle(messages: Message[]): string {
+  const firstUser = messages.find((m) => m.role === 'user');
+  const raw = (firstUser?.content || 'New consultation').replace(/\s+/g, ' ').trim();
+  return raw.length > 42 ? `${raw.slice(0, 42)}…` : raw;
+}
+
+function loadStoredHistory(): StoredChat[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = window.localStorage.getItem(HISTORY_STORAGE_KEY);
+    const parsed = JSON.parse(stored || '[]') as StoredChat[];
+    return Array.isArray(parsed) ? parsed.slice(0, 20) : [];
+  } catch {
+    return [];
+  }
+}
 
 const SCENARIOS: { id: string; label: keyof ReturnType<typeof labelsFor>; icon: ElementType; prompt: string }[] = [
   { id: 'tenant', label: 'tenant', icon: Home, prompt: 'My landlord locked me out. What are my rights?' },
@@ -120,6 +143,8 @@ export default function ChatInterface({
   const [shareNotice, setShareNotice] = useState('');
   const [showShareNotice, setShowShareNotice] = useState(false);
   const [showDeadlines, setShowDeadlines] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<StoredChat[]>(loadStoredHistory);
   const scrollRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<HTMLDivElement>(null);
   const sessionId = useRef<string>('');
@@ -138,6 +163,14 @@ export default function ChatInterface({
       JSON.stringify({ messages, updatedAt: new Date().toISOString() }),
     );
   }, [messages]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history.slice(0, 20)));
+    } catch {
+      // Non-fatal: history stays in memory.
+    }
+  }, [history]);
 
   useEffect(() => {
     if (streamRef.current) {
@@ -220,11 +253,42 @@ export default function ChatInterface({
   };
 
   const handleNewChat = () => {
+    // Archive the thread before clearing, so the dropdown can restore it.
+    if (messages.some((m) => m.role === 'user')) {
+      const entry: StoredChat = {
+        id: crypto.randomUUID(),
+        title: chatTitle(messages),
+        messages,
+        updatedAt: new Date().toISOString(),
+      };
+      setHistory((prev) => [entry, ...prev].slice(0, 20));
+    }
     setMessages([greetingFor(language)]);
     setInput('');
     setArticleContext(null);
     setShowShareNotice(false);
+    setShowHistory(false);
     streamRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const restoreChat = (chat: StoredChat) => {
+    if (messages.some((m) => m.role === 'user')) {
+      const entry: StoredChat = {
+        id: crypto.randomUUID(),
+        title: chatTitle(messages),
+        messages,
+        updatedAt: new Date().toISOString(),
+      };
+      setHistory((prev) => [entry, ...prev].slice(0, 20));
+    }
+    setMessages(chat.messages);
+    setShowHistory(false);
+    setInput('');
+    setArticleContext(null);
+  };
+
+  const deleteChat = (id: string) => {
+    setHistory((prev) => prev.filter((c) => c.id !== id));
   };
 
   const handleShare = async (message: Message) => {
@@ -325,30 +389,83 @@ export default function ChatInterface({
         <LawChangeBanner />
 
         <div className="flex min-h-0 flex-1 flex-col">
-          <ChatTopBar
-            title={hasConversation ? 'Rengera consultation' : 'New Rengera chat'}
-            onNewChat={handleNewChat}
-            onEdit={handleNewChat}
-            onShare={() => {
-              if (lastAssistant && lastAssistant.id !== 'msg-0') {
-                setShowShareNotice(true);
-                handleShare(lastAssistant);
-              } else {
-                setShareNotice('Ask a question first, then share the answer.');
-                setShowShareNotice(true);
-              }
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setShowDeadlines(true)}
-              aria-label="Open deadlines"
-              className="hidden h-8 w-8 items-center justify-center rounded-full text-[var(--chat-muted)] transition-colors hover:bg-[var(--chat-chip)] hover:text-[var(--chat-text)] sm:flex"
+          <div className="relative">
+            <ChatTopBar
+              title={hasConversation ? 'Rengera consultation' : 'New Rengera chat'}
+              onNewChat={() => setShowHistory((v) => !v)}
+              onEdit={handleNewChat}
+              onShare={() => {
+                if (lastAssistant && lastAssistant.id !== 'msg-0') {
+                  setShowShareNotice(true);
+                  handleShare(lastAssistant);
+                } else {
+                  setShareNotice('Ask a question first, then share the answer.');
+                  setShowShareNotice(true);
+                }
+              }}
             >
-              <AlarmClock size={15} strokeWidth={2} />
-            </button>
-            <LanguageMenu value={language} onChange={setLanguage} className="ml-auto sm:ml-0" />
-          </ChatTopBar>
+              <button
+                type="button"
+                onClick={() => setShowDeadlines(true)}
+                aria-label="Open deadlines"
+                className="hidden h-8 w-8 items-center justify-center rounded-full text-[var(--chat-muted)] transition-colors hover:bg-[var(--chat-chip)] hover:text-[var(--chat-text)] sm:flex"
+              >
+                <AlarmClock size={15} strokeWidth={2} />
+              </button>
+              <LanguageMenu value={language} onChange={setLanguage} className="ml-auto sm:ml-0" />
+            </ChatTopBar>
+
+            {showHistory && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)} />
+                <div className="absolute left-4 top-full z-50 mt-1 w-72 overflow-hidden rounded-xl border border-[var(--chat-border)] bg-[var(--chat-panel)] shadow-xl">
+                  <button
+                    type="button"
+                    onClick={handleNewChat}
+                    className="flex w-full items-center gap-2 border-b border-[var(--chat-border-soft)] px-4 py-3 text-left text-[13px] font-semibold text-[var(--chat-text)] transition-colors hover:bg-[var(--chat-chip)]"
+                  >
+                    + New chat
+                  </button>
+                  <div className="max-h-64 overflow-y-auto">
+                    {history.length === 0 ? (
+                      <p className="px-4 py-5 text-center text-xs text-[var(--chat-muted)]">
+                        No previous chats yet.
+                      </p>
+                    ) : (
+                      history.map((chat) => (
+                        <div
+                          key={chat.id}
+                          className="group flex items-center gap-2 border-b border-[var(--chat-border-soft)] px-4 py-2.5 last:border-0 hover:bg-[var(--chat-chip)]"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => restoreChat(chat)}
+                            className="min-w-0 flex-1 text-left"
+                          >
+                            <p className="truncate text-[13px] font-medium text-[var(--chat-text)]">
+                              {chat.title}
+                            </p>
+                            <p className="text-[11px] text-[var(--chat-muted-2)]">
+                              {new Date(chat.updatedAt).toLocaleDateString()} ·{' '}
+                              {chat.messages.filter((m) => m.role === 'user').length} questions
+                            </p>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteChat(chat.id)}
+                            aria-label={`Delete ${chat.title}`}
+                            className="shrink-0 rounded-full px-2 py-1 text-[11px] text-[var(--chat-muted-2)] opacity-0 transition-opacity hover:text-red-600 group-hover:opacity-100"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
 
           <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col">
             <div ref={streamRef} className="scrollbar-hide min-h-0 flex-1 overflow-y-auto">

@@ -407,6 +407,24 @@ export async function classifyAndStoreLaw(formData: FormData): Promise<Classific
       }
     }
 
+    // Notify every citizen: one alert row per newly stored law. Best-effort —
+    // a notification failure must never roll back the ingestion.
+    try {
+      await supabase.from('law_change_alerts').insert({
+        law_id: lawId,
+        law_title: classification.title,
+        law_reference: classification.reference_number,
+        alert_type: classification.type === 'amendment' ? 'amended' : 'new_law',
+        summary: (classification.summary || '').slice(0, 400) || null,
+        published_at: classification.publication_date,
+      });
+    } catch (alertError) {
+      console.error(
+        'Law alert insert failed:',
+        alertError instanceof Error ? alertError.message : alertError,
+      );
+    }
+
     return {
       success: true,
       lawId,

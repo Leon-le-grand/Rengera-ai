@@ -679,6 +679,7 @@ function LawReader({
   const pdfUrl = detail?.pdf_url ?? null;
   const hasPdf = Boolean(pdfUrl);
   const articleCount = detail?.article_count ?? 0;
+  const [collapsed, setCollapsed] = useState(false);
 
   const TABS: { key: ReaderTab; label: string; icon: ElementType }[] = [
     { key: 'document', label: 'Document', icon: FileText },
@@ -726,31 +727,39 @@ function LawReader({
                 {detail.title}
               </h1>
 
-              {detail.summary && (
-                <p className="mt-2 text-sm leading-6 text-slate-600">{detail.summary}</p>
-              )}
+              {/* Collapses on scroll so the articles get the full viewport. */}
+              <div
+                className={`grid transition-all duration-300 ease-out ${
+                  collapsed ? 'mt-0 grid-rows-[0fr] opacity-0' : 'mt-2 grid-rows-[1fr] opacity-100'
+                }`}
+              >
+                <div className="overflow-hidden">
+                  {detail.summary && (
+                    <p className="text-sm leading-6 text-slate-600">{detail.summary}</p>
+                  )}
 
-              {detail.source_url && (
-                <a
-                  href={detail.source_url}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 underline underline-offset-2 transition hover:text-emerald-900"
-                >
-                  Open the official source
-                </a>
-              )}
+                  {detail.source_url && (
+                    <a
+                      href={detail.source_url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 underline underline-offset-2 transition hover:text-emerald-900"
+                    >
+                      Open the official source
+                    </a>
+                  )}
+                </div>
+              </div>
             </>
           )}
         </div>
       </div>
 
-      {/* Mobile: tabs across the top, one panel at a time. Desktop: the PDF
-          sits beside the tab rail so the law and its explanation are read
-          against each other. */}
-      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <aside className="shrink-0 border-b border-slate-200 bg-white lg:w-64 lg:border-b-0 lg:border-r">
-          <div className="flex overflow-x-auto lg:flex-col">
+      {/* Tabs sit on top (sticky) on every screen size, so scrolling the law
+          hides the summary above and leaves maximum reading space below. */}
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="sticky top-0 z-10 shrink-0 border-b border-slate-200 bg-white">
+          <div className="mx-auto flex max-w-6xl items-center gap-1 overflow-x-auto px-2 sm:px-4">
             {TABS.map((item) => (
               <button
                 key={item.key}
@@ -759,7 +768,7 @@ function LawReader({
                 aria-selected={tab === item.key}
                 role="tab"
                 className={cn(
-                  'flex shrink-0 items-center gap-2.5 border-b-2 px-4 py-3 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500 lg:w-full lg:border-b-0 lg:border-r-2 lg:px-4 lg:text-left',
+                  'flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500',
                   tab === item.key
                     ? 'border-emerald-600 bg-emerald-50/60 text-emerald-800'
                     : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900',
@@ -769,29 +778,29 @@ function LawReader({
                 <span className="truncate">{item.label}</span>
               </button>
             ))}
-          </div>
-
-          {hasPdf && (
-            <div className="hidden border-t border-slate-200 p-4 lg:block">
+            {hasPdf && (
               <a
                 href={pdfUrl as string}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-px hover:border-emerald-400 hover:text-emerald-700 hover:shadow-md"
+                className="ml-auto hidden shrink-0 items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-px hover:border-emerald-400 hover:text-emerald-700 sm:inline-flex"
               >
                 <ExternalLink size={14} strokeWidth={2.25} />
                 Open full PDF
               </a>
-              {detail?.source_pdf_name && (
-                <p className="mt-2 truncate text-xs text-slate-400" title={detail.source_pdf_name}>
-                  {detail.source_pdf_name}
-                </p>
-              )}
-            </div>
+            )}
+          </div>
+          {hasPdf && detail?.source_pdf_name && (
+            <p className="mx-auto max-w-6xl truncate px-4 pb-2 text-xs text-slate-400 sm:px-6" title={detail.source_pdf_name}>
+              {detail.source_pdf_name}
+            </p>
           )}
-        </aside>
+        </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50">
+        <div
+          className="min-h-0 flex-1 overflow-y-auto bg-slate-50"
+          onScroll={(e) => setCollapsed(e.currentTarget.scrollTop > 120)}
+        >
           {isLoading ? (
             <div className="flex flex-col items-center gap-3 py-20 text-slate-400">
               <Loader2 size={28} className="animate-spin" />

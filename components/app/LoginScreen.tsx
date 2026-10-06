@@ -10,7 +10,6 @@ import {
   Loader2,
   Lock,
   Mail,
-  Scale,
   ShieldCheck,
   User,
   UserPlus,
@@ -205,19 +204,8 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 {isSignUp
                   ? 'Register once to keep your legal consultations and sources in one place.'
-                  : 'Use your account to continue, or sign in with the administrator credentials.'}
+                  : 'Use your account to continue.'}
               </p>
-
-              {!isSignUp && (
-                <p className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs leading-5 text-amber-800">
-                  <ShieldCheck size={14} strokeWidth={2.25} className="mt-0.5 shrink-0" />
-                  <span>
-                    Administrator signs in on this tab with{' '}
-                    <strong>admin</strong> / <strong>admin123</strong>. Replace these with deployment
-                    credentials before making the app public.
-                  </span>
-                </p>
-              )}
             </div>
 
             <div
@@ -313,9 +301,7 @@ export default function LoginScreen({ onLogin, onAccount, onExit }: LoginScreenP
                 </div>
                 {!isSignUp && (
                   <p className="mt-2 text-xs leading-5 text-slate-400">
-                    The administrator signs in here with the username from{' '}
-                    <code className="rounded bg-slate-100 px-1 py-0.5 font-mono">ADMIN_EMAIL</code>.
-                    Citizens use the same tab with their email.
+                    Citizens sign in here with their email. Administrators use the same tab.
                   </p>
                 )}
               </div>

@@ -148,6 +148,71 @@ export interface AdviceOptions {
   articleContext?: ArticleContext | null;
 }
 
+/**
+ * Guard 1 — small-talk short-circuit (token saver).
+ *
+ * "hy", "hi", "mwaramutse" carry no legal issue. Answering them with the full
+ * 10-section RAG briefing wastes a retrieval + ~2000 output tokens and, worse,
+ * lets the model hallucinate translations ("mwaramutse means thank you" is
+ * wrong — it is a morning greeting). Return a 2-line greeting with no
+ * retrieval and no LLM call.
+ */
+const SMALL_TALK_PHRASES = new Set([
+  'hi',
+  'hy',
+  'hey',
+  'hello',
+  'yo',
+  'hye',
+  'hee',
+  'muraho',
+  'mwaramutse',
+  'mwiriwe',
+  'mwiriweho',
+  'bite',
+  'bana',
+  'bonjour',
+  'salut',
+  'bjr',
+  'habari',
+  'mambo',
+  'thanks',
+  'thank you',
+  'murakoze',
+  'merci',
+  'asante',
+  'ok',
+  'okay',
+]);
+
+const LEGAL_KEYWORDS =
+  /article|ingingo|iteka|law|itegeko|amasezerano|code|constitution|decree|n°|no\.?\s*\d|labour|murder|theft|land|divorce|contract|salary|leave|pregnan|rape|police|rib|court|urukiko|ubutaka|akazi/i;
+
+function isSmallTalk(query: string, hasArticleContext: boolean): boolean {
+  if (hasArticleContext) return false;
+  const normalized = query
+    .trim()
+    .toLowerCase()
+    .replace(/[!\-.,?;:'"()[\]…\s]+/g, ' ')
+    .trim();
+  if (!normalized || normalized.length > 24) return false;
+  if (LEGAL_KEYWORDS.test(normalized)) return false;
+  if (SMALL_TALK_PHRASES.has(normalized)) return true;
+  // Two-word greetings ("muraho neza", "hi there") with no legal content.
+  const words = normalized.split(' ');
+  if (words.length <= 2 && normalized.length <= 14 && !/\d/.test(normalized)) {
+    return words.every((w) => /^[a-zàâäéèêëîïôöùûüçñ]{1,14}$/i.test(w));
+  }
+  return false;
+}
+
+const SMALL_TALK_REPLIES: Record<string, string> = {
+  en: 'Hello! I am Rengera, your Rwandan legal assistant.\n\nAsk me a full legal question, for example: "What does Article 43 of Law n° 027/2023 mean for an employee?"',
+  rw: 'Mwaramutse! Nitwa Rengera, umufasha wawe mu mategeko.\n\nBaza ikibazo cyuzuye cy’amategeko, urugero: "Ingingo ya 43 y’Itegeko n° 027/2023 ivuga iki ku mukozi?"',
+  fr: 'Bonjour ! Je suis Rengera, votre assistant juridique.\n\nPosez une vraie question juridique, par exemple : « Que dit l’article 43 de la loi n° 027/2023 pour un employé ? »',
+  sw: 'Habari! Mimi ni Rengera, msaidizi wako wa sheria.\n\nUliza swali kamili la kisheria, kwa mfano: "Kifungu cha 43 cha Sheria n° 027/2023 kinasemaje kwa mwajiriwa?"',
+};
+
 export async function generateLegalAdvice(
   query: string,
   chatHistory: { role: 'user' | 'model'; content: string }[] = [],
@@ -160,6 +225,19 @@ export async function generateLegalAdvice(
     const emergencyRisk = detectEmergencyRisk(query);
     if (emergencyRisk.level === 'urgent') {
       return { reply: buildEmergencyMarkdown(emergencyRisk), sources: [] };
+    }
+
+    const language = resolveAnswerLanguage(options.language);
+    const hasArticleContext = Boolean(
+      options.articleContext?.text || options.articleContext?.articleNumber,
+    );
+
+    // Token guard: greetings never touch retrieval or the model.
+    if (isSmallTalk(query, hasArticleContext)) {
+      return {
+        reply: SMALL_TALK_REPLIES[language] || SMALL_TALK_REPLIES.en,
+        sources: [],
+      };
     }
 
     let contextText = 'No relevant laws found in the database.';
@@ -240,6 +318,20 @@ export async function generateLegalAdvice(
       }
     }
 
+    // Guard 2 — never brief without a source (hallucination + token guard).
+    // The old path sent "No relevant laws found" into the 10-section prompt,
+    // so the model burned ~2000 tokens writing ten "I don't know" sections.
+    // Short-circuit instead: no retrieval hit and no open article = no LLM call.
+    if (collectedSources.length === 0 && !hasArticleContext) {
+      const fallback: Record<string, string> = {
+        en: 'I could not find that in the official laws stored in the library yet.\n\nPlease rephrase with a law number or article — for example: "What does Article 43 of Law n° 027/2023 say about working hours?"',
+        rw: 'Sinabibona mu mategeko yemewe abitswe mu isomero.\n\nOngera ubaze uvuga nimero y’itegeko cyangwa ingingo — urugero: "Ingingo ya 43 y’Itegeko n° 027/2023 ivuga iki ku masaha y’akazi?"',
+        fr: 'Je ne trouve pas cela dans les lois officielles de la bibliothèque.\n\nReformulez avec un numéro de loi ou d’article — par exemple : « Que dit l’article 43 de la loi n° 027/2023 sur le temps de travail ? »',
+        sw: 'Sikuipata katika sheria rasmi zilizohifadhiwa maktabani.\n\nTafadhali uliza tena ukitaja nambari ya sheria au kifungu — kwa mfano: "Kifungu cha 43 cha Sheria n° 027/2023 kinasemaje kuhusu saa za kazi?"',
+      };
+      return { reply: fallback[language] || fallback.en, sources: [] };
+    }
+
     const contextPrompt = `
 RETRIEVED LEGAL CONTEXT:
 ${contextText}
@@ -249,7 +341,6 @@ USER QUERY:
 ${query}
 `;
 
-    const language = resolveAnswerLanguage(options.language);
     const languageInstruction = LANGUAGE_DEFINITIONS[language].instruction;
     const isArticleQuestion = Boolean(options.articleContext);
 

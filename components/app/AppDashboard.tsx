@@ -7,6 +7,7 @@ import Complaints from './Complaints';
 import Emergency from './Emergency';
 import BusinessDashboard from './BusinessDashboard';
 import AdminDashboard from './AdminDashboard';
+import NotificationsBell from './NotificationsBell';
 import Settings from './Settings';
 import { Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -109,14 +110,19 @@ export default function AppDashboard({
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-dvh overflow-hidden relative bg-[#09090b]">
-        <header className="print:hidden h-16 border-b border-white/5 flex items-center px-4 lg:hidden bg-[#09090b] shrink-0 z-10">
-          <button 
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 -ml-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
-          >
-            <Menu size={24} />
-          </button>
-          <span className="ml-2 font-bold text-slate-900">Rengera {currentView !== 'chat' && `- ${currentView.charAt(0).toUpperCase() + currentView.slice(1)}`}</span>
+        <header className="print:hidden h-16 border-b border-white/5 flex items-center justify-between px-4 bg-[#09090b] shrink-0 z-10">
+          <div className="flex items-center">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 -ml-2 text-zinc-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors lg:hidden"
+            >
+              <Menu size={24} />
+            </button>
+            <span className="ml-2 font-bold text-white">Rengera {currentView !== 'chat' && `- ${currentView.charAt(0).toUpperCase() + currentView.slice(1)}`}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <NotificationsBell />
+          </div>
         </header>
 
         <main className="flex-1 relative overflow-y-auto">

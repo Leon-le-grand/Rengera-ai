@@ -165,9 +165,9 @@
 [data-theme='light'] {
   color-scheme: light;
 
-  --app-bg: #f4f2ef;
-  --app-panel: #ffffff;
-  --app-panel-2: #eceae6;
+  --app-bg: #e9e7e2;
+  --app-panel: #f5f4f1;
+  --app-panel-2: #e2e0da;
   --app-border: rgba(24, 24, 27, 0.09);
   --app-text: #18181b;
   --app-text-2: #3f3f46;
@@ -175,14 +175,14 @@
   --app-faint: #a1a1aa;
   --app-accent: #a8813f;
 
-  --chat-surround: #e7e5e1;
-  --chat-panel: #ffffff;
-  --chat-user: #f0efec;
-  --chat-chip: #f1efec;
-  --chat-composer: #faf9f7;
-  --chat-hover: #eceae6;
-  --chat-border: #e0ddd8;
-  --chat-border-soft: #ebe8e3;
+  --chat-surround: #ddd9d2;
+  --chat-panel: #f5f4f1;
+  --chat-user: #eceae6;
+  --chat-chip: #e7e5e0;
+  --chat-composer: #f5f4f1;
+  --chat-hover: #e2e0da;
+  --chat-border: #d4d0c8;
+  --chat-border-soft: #ddd9d2;
   --chat-text: #1f1f1f;
   --chat-text-2: #3c4043;
   --chat-muted: #5f6368;
@@ -312,29 +312,51 @@
    Landing page — light theme
    --------------------------------------------------------------------------
    The marketing page is authored dark. In light mode the same utilities are
-   remapped to the warm off-white canvas, an ink text colour and a deeper gold,
-   so the gold-on-white contrast still passes and nothing turns muddy. */
+   remapped to a softened gray-white canvas, an ink text colour and a deeper
+   gold, so the gold-on-white contrast still passes and nothing glares.
+   Canvas is intentionally #e9e7e2 (gray mixed into white), panels #f5f4f1 —
+   never pure #ffffff — to reduce brightness on long reads. */
 .landing-light {
-  background-color: #f4f2ef;
+  background-color: #e9e7e2;
   color: #3f3f46;
 }
 
 .landing-light .bg-zinc-950,
 .landing-light .bg-black {
-  background-color: #f4f2ef;
+  background-color: #e9e7e2;
 }
 
 .landing-light .bg-\[\#09090b\],
 .landing-light .bg-\[\#0c0c0e\] {
-  background-color: #ffffff;
+  background-color: #f5f4f1;
 }
 
+/* AuraNav fixed header + mobile menu keep dark glass by default — remap. */
 .landing-light header {
-  background-color: rgba(244, 242, 239, 0.86);
+  background-color: rgba(233, 231, 226, 0.9);
+  border-color: rgba(24, 24, 27, 0.1);
+}
+
+.landing-light header.bg-\[\#09090b\],
+.landing-light header .bg-\[\#09090b\] {
+  background-color: #e9e7e2;
 }
 
 .landing-light .text-white {
   color: #121214;
+}
+
+.landing-light .text-white\/70 {
+  color: #52525b;
+}
+
+.landing-light .text-white\/15 {
+  color: rgba(24, 24, 27, 0.15);
+}
+
+.landing-light .text-zinc-100,
+.landing-light .text-zinc-200 {
+  color: #27272a;
 }
 
 .landing-light .text-zinc-300,
@@ -345,6 +367,10 @@
 .landing-light .text-zinc-500,
 .landing-light .text-zinc-600 {
   color: #71717a;
+}
+
+.landing-light .text-zinc-700 {
+  color: #52525b;
 }
 
 .landing-light .text-\[\#d8b485\] {
@@ -363,13 +389,51 @@
 .landing-light .border-white\/5,
 .landing-light .border-white\/10,
 .landing-light .border-white\/15,
-.landing-light .border-white\/20 {
+.landing-light .border-white\/20,
+.landing-light .border-white\/30 {
   border-color: rgba(24, 24, 27, 0.1);
 }
 
+.landing-light .border-white\/5 {
+  border-color: rgba(24, 24, 27, 0.08);
+}
+
 .landing-light .bg-white\/5,
-.landing-light .bg-white\/10 {
+.landing-light .bg-white\/10,
+.landing-light .bg-white\/15 {
   background-color: rgba(24, 24, 27, 0.04);
+}
+
+/* AuraApproach radial dark canvas + hover states authored for dark. */
+.landing-light .bg-\[radial-gradient\(120\%_120\%_at_15\%_0\%\2c \#101a2c_0\%\2c \#0a1120_45\%\2c \#05070d_100\%\)\] {
+  background: radial-gradient(120% 120% at 15% 0%, #f5f4f1 0%, #e9e7e2 60%, #ddd9d2 100%);
+}
+
+.landing-light .hover\:bg-\[\#111114\]:hover {
+  background-color: #eceae6;
+}
+
+.landing-light .hover\:text-white:hover {
+  color: #121214;
+}
+
+.landing-light .hover\:border-white:hover,
+.landing-light .hover\:border-white\/30:hover,
+.landing-light .hover\:border-white\/50:hover {
+  border-color: rgba(24, 24, 27, 0.3);
+}
+
+/* Footer + glow layers that assume a black canvas. */
+.landing-light footer.bg-black {
+  background-color: #e9e7e2;
+}
+
+.landing-light .from-black {
+  --tw-gradient-from: #e9e7e2;
+}
+
+.landing-light .bg-zinc-800\/10 {
+  background-color: rgba(24, 24, 27, 0.05);
 }
 
 .landing-light input,

@@ -24,11 +24,11 @@ import {
   Lightbulb,
   Lock,
   Plus,
+  UserRound,
   X,
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import RengeraLogo from '@/components/brand/RengeraLogo';
 
 /* ------------------------------------------------------------------ */
 /* Design tokens                                                       */
@@ -213,8 +213,8 @@ export function UserBubble({
       <div className="max-w-[85%] rounded-[20px] bg-[var(--chat-user)] px-4 py-2.5 text-[13px] leading-[1.55] text-[var(--chat-text)]">
         {children}
       </div>
-      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--chat-text)]">
-        {avatar ?? <RengeraLogo size={22} label="" />}
+      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--chat-chip)] text-[var(--chat-muted)]">
+        {avatar ?? <UserRound size={13} strokeWidth={2.25} />}
       </div>
     </div>
   );
@@ -436,8 +436,8 @@ export function ComposerChip({
 }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] py-1 pl-1 pr-2">
-      <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-[var(--chat-text)]">
-        <RengeraLogo size={18} label="" />
+      <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-[var(--chat-chip)] text-[var(--chat-muted)]">
+        <UserRound size={12} strokeWidth={2.25} />
       </span>
       <span className="text-[12px] font-medium text-[var(--chat-text-2)]">{label}</span>
       <button
