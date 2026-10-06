@@ -1073,6 +1073,71 @@ export async function getTranslatedSummary(
   }
 }
 
+/**
+ * AI provider status for the admin console. Never exposes the key — only
+ * whether one is set, which model and endpoint host are configured.
+ */
+export async function getAiStatus(): Promise<{
+  keyPresent: boolean;
+  fallbackPresent: boolean;
+  model: string;
+  endpointHost: string;
+}> {
+  if (!(await getAdminSession())) {
+    throw new Error('Your administrator session has expired. Please sign in again.');
+  }
+
+  const runtime = getSpaceBunnyRuntime();
+  let endpointHost = '';
+  try {
+    endpointHost = new URL(process.env.SPACE_BUNNY_API_URL?.trim() || 'https://api.aimlapi.com/v1').host;
+  } catch {
+    endpointHost = 'invalid URL';
+  }
+
+  return {
+    keyPresent: Boolean(process.env.SPACE_BUNNY_API_KEY?.trim()),
+    fallbackPresent: Boolean(process.env.AI_FALLBACK_API_KEY?.trim()),
+    model: runtime.model,
+    endpointHost,
+  };
+}
+
+/**
+ * Sends one tiny completion ("Reply with OK") through the configured provider
+ * chain so the admin can prove the AI key/model works before bulk-uploading
+ * hundreds of laws. Reports latency and the exact provider error otherwise.
+ */
+export async function testAiConnection(): Promise<{
+  success: boolean;
+  latencyMs?: number;
+  model?: string;
+  error?: string;
+}> {
+  if (!(await getAdminSession())) {
+    return { success: false, error: 'Your administrator session has expired. Please sign in again.' };
+  }
+
+  const started = Date.now();
+  try {
+    await createSpaceBunnyChatCompletion(
+      [{ role: 'user', content: 'Reply with exactly: OK' }],
+      { temperature: 0, maxTokens: 10 },
+    );
+    return {
+      success: true,
+      latencyMs: Date.now() - started,
+      model: getSpaceBunnyRuntime().model,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      latencyMs: Date.now() - started,
+      error: error instanceof Error ? error.message : 'The AI request failed.',
+    };
+  }
+}
+
 /** Fields an administrator may correct after AI classification. */
 export interface ClassificationUpdate {
   title?: string;

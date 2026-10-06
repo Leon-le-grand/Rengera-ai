@@ -3,11 +3,13 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import {
   classifyAndStoreLaw,
+  getAiStatus,
   getRecentLaws,
+  testAiConnection,
   type ClassificationStoreResult,
   type LawListItem,
 } from '@/app/legal-actions';
-import { Check, Database, FileJson, Loader2, Send, Upload, X } from 'lucide-react';
+import { Check, Database, FileJson, Loader2, Plug, Send, Upload, X } from 'lucide-react';
 
 const MAX_BATCH = 10;
 
@@ -28,6 +30,9 @@ export default function SupabaseLawClassifier() {
   const [queryError, setQueryError] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [aiStatus, setAiStatus] = useState<Awaited<ReturnType<typeof getAiStatus>> | null>(null);
+  const [aiTest, setAiTest] = useState<{ ok: boolean; message: string } | null>(null);
+  const [testingAi, setTestingAi] = useState(false);
 
   const addFiles = useCallback((incoming: FileList | File[]) => {
     const pdfs = Array.from(incoming).filter(
@@ -59,7 +64,31 @@ export default function SupabaseLawClassifier() {
 
   useEffect(() => {
     void loadRecentLaws();
+    (async () => {
+      try {
+        setAiStatus(await getAiStatus());
+      } catch {
+        setAiStatus(null);
+      }
+    })();
   }, [loadRecentLaws]);
+
+  const runAiTest = async () => {
+    setTestingAi(true);
+    setAiTest(null);
+    try {
+      const result = await testAiConnection();
+      setAiTest(
+        result.success
+          ? { ok: true, message: `Connected (${result.model}, ${result.latencyMs}ms). Safe to bulk-upload.` }
+          : { ok: false, message: result.error || 'The AI request failed.' },
+      );
+    } catch (error) {
+      setAiTest({ ok: false, message: error instanceof Error ? error.message : 'The AI request failed.' });
+    } finally {
+      setTestingAi(false);
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -162,6 +191,43 @@ export default function SupabaseLawClassifier() {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-50 text-violet-700">
+              <Plug size={19} />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-950">AI provider</h3>
+              <p className="text-xs text-slate-500">
+                {aiStatus
+                  ? `${aiStatus.model} · ${aiStatus.endpointHost} · key ${aiStatus.keyPresent ? 'set' : 'missing'}${aiStatus.fallbackPresent ? ' · fallback set' : ''}`
+                  : 'Checking configuration…'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => void runAiTest()}
+            disabled={testingAi}
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-violet-400 hover:text-violet-700 disabled:opacity-60"
+          >
+            {testingAi ? <Loader2 size={14} className="animate-spin" /> : <Plug size={14} />}
+            {testingAi ? 'Testing…' : 'Test connection'}
+          </button>
+        </div>
+        {aiTest && (
+          <p
+            role="status"
+            className={`mt-3 rounded-xl px-3 py-2 text-xs font-semibold leading-5 ${
+              aiTest.ok ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'
+            }`}
+          >
+            {aiTest.message}
+          </p>
+        )}
+      </div>
+
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-start gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
@@ -194,45 +260,54 @@ export default function SupabaseLawClassifier() {
             addFiles(event.dataTransfer.files);
           }}
         >
-          <div>
-            <label htmlFor="supabase-raw-text" className="mb-2 block text-sm font-semibold text-slate-700">
+          <div
+            onClick={(event) => {
+              const target = event.target as HTMLElement;
+              if (target.closest('textarea,input,button')) return;
+              fileInputRef.current?.click();
+            }}
+            className={`cursor-pointer rounded-xl border border-dashed p-4 transition ${
+              dragActive
+                ? 'border-blue-600 bg-blue-100/70'
+                : 'border-blue-300 bg-blue-50/40 hover:border-blue-500 hover:bg-blue-50/70'
+            }`}
+          >
+            <div className="mb-3 flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
+                <Upload size={18} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-slate-900">
+                  {dragActive
+                    ? 'Drop the PDFs to add them'
+                    : 'Paste legal text, or drop PDFs here'}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {pdfFiles.length > 0
+                    ? `${pdfFiles.length} PDF${pdfFiles.length === 1 ? '' : 's'} selected (max ${MAX_BATCH} per batch)`
+                    : `Complete statute text — or up to ${MAX_BATCH} official PDFs at once`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="shrink-0 rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-bold text-blue-800 transition hover:border-blue-500 hover:bg-blue-50"
+              >
+                Browse files
+              </button>
+            </div>
+            <label htmlFor="supabase-raw-text" className="sr-only">
               Raw legal text
             </label>
             <textarea
               id="supabase-raw-text"
               value={rawText}
               onChange={(event) => setRawText(event.target.value)}
-              rows={10}
+              rows={8}
               placeholder="Paste the complete statute, decree, organic law, or regulation text…"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-sm leading-6 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+              onClick={(event) => event.stopPropagation()}
+              className="w-full rounded-lg border border-slate-200 bg-white p-4 font-mono text-sm leading-6 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
             />
-          </div>
-
-          <div
-            role="button"
-            tabIndex={0}
-            aria-label={`Drop PDFs anywhere in this form or click to browse (up to ${MAX_BATCH} at once)`}
-            onClick={() => fileInputRef.current?.click()}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                fileInputRef.current?.click();
-              }
-            }}
-            className={`flex cursor-pointer items-center justify-center gap-3 rounded-xl border border-dashed px-4 py-6 text-sm font-semibold transition ${
-              dragActive
-                ? 'border-blue-600 bg-blue-100/70 text-blue-900'
-                : 'border-blue-300 bg-blue-50/60 text-blue-800 hover:border-blue-500 hover:bg-blue-50'
-            }`}
-          >
-            <Upload size={18} />
-            <span>
-              {dragActive
-                ? 'Drop the PDFs to add them'
-                : pdfFiles.length > 0
-                  ? `${pdfFiles.length} PDF${pdfFiles.length === 1 ? '' : 's'} selected (max ${MAX_BATCH} per batch) — drag more anywhere below or click to browse`
-                  : `Drag official legal PDFs anywhere in this form, or click to browse (up to ${MAX_BATCH} at once)`}
-            </span>
             <input
               ref={fileInputRef}
               type="file"
