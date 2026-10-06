@@ -102,14 +102,14 @@ export function ChatTopBar({
         <button
           type="button"
           onClick={onNewChat}
-          className="group flex shrink-0 items-center gap-1 text-[13px] font-semibold tracking-[-0.01em] text-[var(--chat-text)] outline-none transition-opacity hover:opacity-70"
+          className="group flex shrink-0 items-center gap-1 text-[15px] font-bold tracking-[-0.01em] text-[var(--chat-text)] outline-none transition-opacity hover:opacity-70"
         >
           <span className="truncate">{title}</span>
-          <ChevronDown size={14} strokeWidth={2.5} className="text-[var(--chat-muted)]" />
+          <ChevronDown size={15} strokeWidth={2.5} className="text-[var(--chat-muted)]" />
         </button>
 
-        <span className="hidden items-center gap-1 rounded-full bg-[var(--chat-chip)] px-2 py-[3px] text-[11px] font-medium text-[var(--chat-muted)] sm:inline-flex">
-          <Lock size={10} strokeWidth={2.5} />
+        <span className="hidden items-center gap-1 rounded-full bg-[var(--chat-chip)] px-2.5 py-[3px] text-xs font-semibold text-[var(--chat-muted)] sm:inline-flex">
+          <Lock size={11} strokeWidth={2.5} />
           {privateLabel}
         </span>
       </div>
@@ -210,11 +210,11 @@ export function UserBubble({
 }) {
   return (
     <div className={cn('flex items-start justify-end gap-2.5', className)}>
-      <div className="max-w-[85%] rounded-[20px] bg-[var(--chat-user)] px-4 py-2.5 text-[13px] leading-[1.55] text-[var(--chat-text)]">
+      <div className="max-w-[85%] rounded-[20px] bg-[var(--chat-user)] px-4 py-2.5 text-sm font-medium leading-[1.55] text-[var(--chat-text)]">
         {children}
       </div>
-      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--chat-chip)] text-[var(--chat-muted)]">
-        {avatar ?? <UserRound size={13} strokeWidth={2.25} />}
+      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--chat-chip)] text-[var(--chat-muted)]">
+        {avatar ?? <UserRound size={14} strokeWidth={2.25} />}
       </div>
     </div>
   );
@@ -231,7 +231,7 @@ export function AssistantBlock({
   return (
     <div
       className={cn(
-        'text-[13px] leading-[1.65] text-[var(--chat-text)] [&_a]:text-[#1a73e8] [&_a]:underline [&_a]:underline-offset-2',
+        'text-sm font-medium leading-[1.65] text-[var(--chat-text)] [&_a]:text-[#1a73e8] [&_a]:underline [&_a]:underline-offset-2',
         className,
       )}
     >
@@ -522,7 +522,7 @@ export function ComposerActions({
 
 export function ChatDisclaimer({ children }: { children: ReactNode }) {
   return (
-    <p className="mx-auto mt-2.5 max-w-[820px] px-4 text-center text-[10px] text-[var(--chat-muted-2)]">
+    <p className="mx-auto mt-2.5 max-w-[820px] px-4 text-center text-[11px] font-medium text-[var(--chat-muted-2)]">
       {children}
     </p>
   );

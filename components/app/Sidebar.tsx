@@ -69,24 +69,24 @@ function NavButton({
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'group relative flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#d8b485]',
+        'group relative flex w-full items-center gap-3 px-3 py-2.5 text-[15px] font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#d8b485]',
         active
-          ? 'bg-[#d8b485] font-semibold text-zinc-950'
-          : 'text-zinc-400 hover:bg-white/5 hover:text-white',
+          ? 'bg-[#d8b485] font-bold text-zinc-950'
+          : 'text-zinc-300 hover:bg-white/5 hover:text-white',
       )}
     >
       <span
         className={cn(
-          'flex h-8 w-8 shrink-0 items-center justify-center border transition-colors duration-200',
+          'flex h-9 w-9 shrink-0 items-center justify-center border transition-colors duration-200',
           active
             ? 'border-zinc-950/20 bg-zinc-950/5 text-zinc-950'
-            : 'border-white/10 text-zinc-500 group-hover:border-[#d8b485]/40 group-hover:text-[#d8b485]',
+            : 'border-white/10 text-zinc-400 group-hover:border-[#d8b485]/40 group-hover:text-[#d8b485]',
         )}
       >
-        <item.icon size={16} strokeWidth={1.75} />
+        <item.icon size={17} strokeWidth={2} />
       </span>
 
-      <span className="truncate">{item.label}</span>
+      <span className="truncate font-semibold">{item.label}</span>
 
       <span
         className={cn(
@@ -101,7 +101,7 @@ function NavButton({
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#d8b485]/60">
+    <p className="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#d8b485]">
       {children}
     </p>
   );
@@ -126,13 +126,13 @@ export default function Sidebar({
   const initials = userName.trim() ? userName.trim().slice(0, 2).toUpperCase() : null;
 
   return (
-    <aside className="app-surface flex h-full w-72 flex-col border-r border-white/5 bg-[#0c0c0e] text-zinc-400">
-      <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/5 px-5">
+    <aside className="app-surface flex h-full w-72 flex-col border-r border-white/5 bg-[#0c0c0e] text-zinc-300 shadow-[8px_0_30px_-12px_rgba(0,0,0,0.55)]">
+      <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/5 px-5 shadow-[0_2px_12px_-6px_rgba(0,0,0,0.5)]">
         <div className="flex items-center gap-3 text-white">
-          <RengeraLogo size={36} label="" />
+          <RengeraLogo size={38} label="" />
           <div className="leading-tight">
-            <span className="font-brand block text-lg tracking-wide text-white">RENGERA AI</span>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#d8b485]">
+            <span className="font-brand block text-xl font-bold tracking-wide text-white">RENGERA AI</span>
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#d8b485]">
               Rwanda legal AI
             </span>
           </div>
@@ -185,16 +185,16 @@ export default function Sidebar({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-white/5 p-3">
-        <div className="mb-2 flex items-center gap-3 border border-white/10 bg-white/[0.02] px-3 py-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-[#d8b485]/40 text-[11px] font-bold text-[#d8b485]">
-            {isAdmin || isSignedIn ? (initials || <UserRound size={15} />) : <UserRound size={15} />}
+      <div className="shrink-0 border-t border-white/5 p-3 shadow-[0_-2px_12px_-6px_rgba(0,0,0,0.5)]">
+        <div className="mb-2 flex items-center gap-3 border border-white/10 bg-white/[0.02] px-3 py-3 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.5)]">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-[#d8b485]/40 text-xs font-extrabold text-[#d8b485]">
+            {isAdmin || isSignedIn ? (initials || <UserRound size={16} />) : <UserRound size={16} />}
           </span>
           <div className="flex min-w-0 flex-col">
-            <span className="truncate text-sm font-semibold text-white">
+            <span className="truncate text-[15px] font-bold text-white">
               {isAdmin || isSignedIn ? userName || 'Member' : 'Public access'}
             </span>
-            <span className="truncate text-[10px] uppercase tracking-widest text-zinc-500">
+            <span className="truncate text-[11px] font-bold uppercase tracking-widest text-zinc-400">
               {isAdmin ? 'Administrator' : isSignedIn ? roleLabel || 'Citizen account' : 'No account required'}
             </span>
           </div>
@@ -204,10 +204,10 @@ export default function Sidebar({
           <button
             type="button"
             onClick={onLogout}
-            className="mt-1 flex w-full items-center gap-3 border border-white/10 px-3 py-2.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400 transition-colors duration-200 hover:border-white/25 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#d8b485]"
+            className="mt-1 flex w-full items-center gap-3 border border-white/10 px-3 py-2.5 text-[11px] font-extrabold uppercase tracking-widest text-zinc-300 transition-colors duration-200 hover:border-white/25 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#d8b485]"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-white/10 text-zinc-400 transition-colors group-hover:border-[#d8b485]/40 group-hover:text-[#d8b485]">
-              <Power size={15} strokeWidth={1.75} />
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-white/10 text-zinc-300 transition-colors group-hover:border-[#d8b485]/40 group-hover:text-[#d8b485]">
+              <Power size={16} strokeWidth={2} />
             </span>
             Sign out
           </button>
@@ -215,10 +215,10 @@ export default function Sidebar({
           <button
             type="button"
             onClick={onLogin}
-            className="mt-1 flex w-full items-center gap-3 border border-[#d8b485]/40 px-3 py-2.5 text-[10px] font-bold uppercase tracking-widest text-[#d8b485] transition-colors duration-200 hover:bg-[#d8b485] hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#d8b485]"
+            className="mt-1 flex w-full items-center gap-3 border border-[#d8b485]/40 px-3 py-2.5 text-[11px] font-extrabold uppercase tracking-widest text-[#d8b485] transition-colors duration-200 hover:bg-[#d8b485] hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#d8b485]"
           >
             <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-[#d8b485]/30">
-              <UserRound size={15} strokeWidth={1.75} />
+              <UserRound size={16} strokeWidth={2} />
             </span>
             Sign in or create account
           </button>

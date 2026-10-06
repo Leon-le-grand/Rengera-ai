@@ -384,16 +384,16 @@ export default function ChatInterface({
     <ReactMarkdown
       components={{
         h3: ({ node, ...props }) => (
-          <h3 className="mt-4 mb-1.5 text-[14px] font-semibold tracking-[-0.01em] text-[var(--chat-text)] first:mt-0" {...props} />
+          <h3 className="mt-4 mb-1.5 text-[15px] font-bold tracking-[-0.01em] text-[var(--chat-text)] first:mt-0" {...props} />
         ),
         h4: ({ node, ...props }) => (
-          <h4 className="mt-3 mb-1 text-[13px] font-semibold text-[var(--chat-text)]" {...props} />
+          <h4 className="mt-3 mb-1 text-sm font-bold text-[var(--chat-text)]" {...props} />
         ),
-        p: ({ node, ...props }) => <p className="mb-2.5 mt-0 text-[13px] leading-[1.65]" {...props} />,
+        p: ({ node, ...props }) => <p className="mb-2.5 mt-0 text-sm font-medium leading-[1.65]" {...props} />,
         ul: ({ node, ...props }) => <ul className="my-2 space-y-1.5 pl-0" {...props} />,
         ol: ({ node, ...props }) => <ol className="my-2 list-decimal space-y-1.5 pl-5" {...props} />,
         li: ({ node, ...props }) => (
-          <li className="flex gap-2 text-[13px] leading-[1.65]">
+          <li className="flex gap-2 text-sm font-medium leading-[1.65]">
             <span className="mt-[7px] h-[3px] w-[3px] shrink-0 rounded-full bg-[var(--chat-muted)]" />
             <span className="min-w-0">{props.children}</span>
           </li>
@@ -537,7 +537,7 @@ export default function ChatInterface({
                     >
                       <AssistantBlock>
                         {isWelcome ? (
-                          <p className="text-[13px] leading-[1.65] text-[var(--chat-text)]">{msg.content}</p>
+                          <p className="text-[15px] font-medium leading-[1.65] text-[var(--chat-text)]">{msg.content}</p>
                         ) : (
                           renderMarkdown(msg.content)
                         )}
@@ -550,9 +550,9 @@ export default function ChatInterface({
                               key={scenario.id}
                               type="button"
                               onClick={() => handleSubmit(undefined, scenario.prompt)}
-                              className="inline-flex items-center gap-2 rounded-full border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] px-3 py-[7px] text-[12px] font-medium text-[var(--chat-text-2)] outline-none transition-colors hover:bg-[var(--chat-chip)]"
+                              className="inline-flex items-center gap-2 rounded-full border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] px-3.5 py-2 text-[13px] font-semibold text-[var(--chat-text-2)] outline-none transition-colors hover:bg-[var(--chat-chip)]"
                             >
-                              <scenario.icon size={13} strokeWidth={2} className="text-[var(--chat-muted)]" />
+                              <scenario.icon size={14} strokeWidth={2} className="text-[var(--chat-muted)]" />
                               {scenarios[scenario.label]}
                             </button>
                           ))}
