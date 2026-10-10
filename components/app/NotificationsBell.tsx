@@ -1,8 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Bell } from 'lucide-react';
-import { getLawChangeAlerts, type LawChangeAlert } from '@/app/product-actions';
+import { Bell, Sparkles } from 'lucide-react';
+import { useStoredLanguage } from '@/components/chat/LanguageMenu';
+import {
+  getDailyDigest,
+  getLawChangeAlerts,
+  type DigestItem,
+  type LawChangeAlert,
+} from '@/app/product-actions';
 
 const SEEN_KEY = 'rengera_law_alerts_seen_v1';
 
@@ -15,15 +21,19 @@ function loadSeen(): string[] {
 }
 
 /**
- * Bell in the dashboard top bar. Polls law_change_alerts (written automatically
- * by classifyAndStoreLaw), so every citizen sees a new law the moment an admin
- * uploads it. Read state is local per device.
+ * Bell in the dashboard top bar. Two sections: "For you today" (laws matched
+ * to this account's taste profile) and law-change alerts written automatically
+ * by classifyAndStoreLaw. Read state is local per device.
  */
-export default function NotificationsBell() {
+export default function NotificationsBell({ userId = 'public' }: { userId?: string }) {
+  const [language] = useStoredLanguage();
   const [alerts, setAlerts] = useState<LawChangeAlert[]>([]);
+  const [digest, setDigest] = useState<DigestItem[]>([]);
   const [seen, setSeen] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
 
+  // Alerts poll quietly (cheap RPC, no model). The TasteRank digest — which may
+  // invoke the model layer — fetches only when the bell opens.
   useEffect(() => {
     setSeen(loadSeen());
     let cancelled = false;
@@ -44,6 +54,22 @@ export default function NotificationsBell() {
       window.clearInterval(timer);
     };
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await getDailyDigest(userId, 3, language);
+        if (!cancelled && result.success) setDigest(result.digest);
+      } catch {
+        // Digest stays from the last successful load.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, userId, language]);
 
   const unread = alerts.filter((a) => !seen.includes(a.id));
 
@@ -87,7 +113,23 @@ export default function NotificationsBell() {
               </p>
             </div>
             <div className="max-h-80 overflow-y-auto">
-              {alerts.length === 0 ? (
+              {digest.length > 0 && (
+                <div className="border-b border-[var(--chat-border-soft)]">
+                  <p className="flex items-center gap-1.5 px-4 pb-1 pt-3 text-[11px] font-extrabold uppercase tracking-widest text-[var(--chat-muted)]">
+                    <Sparkles size={11} strokeWidth={2.5} />
+                    For you today
+                  </p>
+                  {digest.map((item) => (
+                    <div key={item.lawId} className="px-4 py-2.5">
+                      <p className="text-[13px] font-bold leading-snug text-[var(--chat-text)]">
+                        {item.hook}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-[var(--chat-muted-2)]">{item.reason}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {alerts.length === 0 && digest.length === 0 ? (
                 <p className="px-4 py-6 text-center text-sm text-[var(--chat-muted)]">
                   No notifications yet. New uploads will appear here.
                 </p>

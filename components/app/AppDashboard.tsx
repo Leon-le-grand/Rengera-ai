@@ -125,7 +125,7 @@ export default function AppDashboard({
             <span className="ml-2 text-[15px] font-bold text-white">Rengera {currentView !== 'chat' && `- ${currentView.charAt(0).toUpperCase() + currentView.slice(1)}`}</span>
           </div>
           <div className="flex items-center gap-2">
-            <NotificationsBell />
+            <NotificationsBell userId={accountKey} />
           </div>
         </header>
 

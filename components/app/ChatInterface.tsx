@@ -237,6 +237,7 @@ export default function ChatInterface({
       surface: 'chat',
       query,
       sessionId: sessionId.current,
+      userId: accountKey,
     });
 
     try {
@@ -265,6 +266,7 @@ export default function ChatInterface({
         surface: 'chat',
         query,
         sessionId: sessionId.current,
+        userId: accountKey,
         lawReferences: (answer.sources || []).map(
           (source) => `${source.referenceNumber || source.title}${source.articleNumber ? ` Art. ${source.articleNumber}` : ''}`,
         ),
@@ -349,7 +351,7 @@ export default function ChatInterface({
       }
 
       setSharedMessageId(message.id);
-      void logUsageEvent({ eventType: 'share_created', language, surface: 'chat', sessionId: sessionId.current });
+      void logUsageEvent({ eventType: 'share_created', language, surface: 'chat', sessionId: sessionId.current, userId: accountKey });
 
       try {
         await navigator.clipboard.writeText(result.shareUrl || '');
@@ -377,7 +379,7 @@ export default function ChatInterface({
 
   const openLaw = (lawId: string, articleNumber?: string | null) => {
     onOpenLaw?.(lawId, articleNumber);
-    void logUsageEvent({ eventType: 'law_opened', language, surface: 'chat', sessionId: sessionId.current });
+    void logUsageEvent({ eventType: 'law_opened', language, surface: 'chat', sessionId: sessionId.current, userId: accountKey });
   };
 
   const renderMarkdown = (content: string) => (

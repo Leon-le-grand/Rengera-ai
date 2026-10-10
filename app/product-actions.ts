@@ -441,6 +441,360 @@ export async function getLawChangeAlerts(limit = 5): Promise<{ success: boolean;
 }
 
 /* ------------------------------------------------------------------ */
+/* Taste profile + daily digest ("for you")                             */
+/* ------------------------------------------------------------------ */
+
+export interface InterestProfile {
+  topCategories: { category: string; count: number }[];
+  topLaws: { reference: string; count: number }[];
+  language: string | null;
+  questions: number;
+}
+
+/**
+ * What this account cares about, learned from what it asked and opened —
+ * never from who it is. A kid asking school questions gets school law, never
+ * business law. Runs on aggregates only: no LLM, no cost, milliseconds.
+ */
+export async function getInterestProfile(userId: string): Promise<{ success: boolean; profile: InterestProfile }> {
+  const empty: InterestProfile = { topCategories: [], topLaws: [], language: null, questions: 0 };
+  const client = db();
+  if (!client || !userId) return { success: false, profile: empty };
+
+  try {
+    const since = new Date(Date.now() - 30 * 86400000).toISOString();
+    const { data, error } = await client
+      .from('usage_events')
+      .select('event_type, category, language, law_references')
+      .eq('user_id', userId)
+      .gte('created_at', since)
+      .limit(2000);
+
+    if (error) throw error;
+
+    const byCategory = new Map<string, number>();
+    const byLaw = new Map<string, number>();
+    const byLanguage = new Map<string, number>();
+    let questions = 0;
+
+    for (const row of (data || []) as {
+      event_type: string;
+      category: string | null;
+      language: string | null;
+      law_references: string[] | null;
+    }[]) {
+      if (row.event_type === 'question_asked') questions += 1;
+      if (row.category) byCategory.set(row.category, (byCategory.get(row.category) || 0) + 1);
+      if (row.language) byLanguage.set(row.language, (byLanguage.get(row.language) || 0) + 1);
+      for (const ref of row.law_references || []) {
+        byLaw.set(ref, (byLaw.get(ref) || 0) + 1);
+      }
+    }
+
+    const sortTop = <T,>(entries: Map<string, number>, map: (k: string, v: number) => T) =>
+      [...entries.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => map(k, v));
+
+    return {
+      success: true,
+      profile: {
+        topCategories: sortTop(byCategory, (category, count) => ({ category, count })),
+        topLaws: sortTop(byLaw, (reference, count) => ({ reference, count })),
+        language: [...byLanguage.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || null,
+        questions,
+      },
+    };
+  } catch (caught) {
+    console.error('getInterestProfile failed:', caught);
+    return { success: false, profile: empty };
+  }
+}
+
+export interface DigestItem {
+  lawId: string;
+  title: string;
+  reference: string | null;
+  category: string | null;
+  hook: string;
+  reason: string;
+  /** True when the model layer reranked and rewrote this pick. */
+  personalized: boolean;
+}
+
+const HOOK_TEMPLATES: Record<string, { match: RegExp; hooks: string[] }[]> = {
+  rw: [
+    {
+      match: /labou?r|employ|umumurimo|akazi/i,
+      hooks: [
+        'Ukora akazi? {ref} ishobora kukurinda — fungura uyisome',
+        'Umunsi wawe wakazi: {ref} ivuga iki ku mushahara wawe?',
+      ],
+    },
+    {
+      match: /family|marriag|divorce|inherit|umuryango/i,
+      hooks: ['Umuryango wawe: {ref} ihinduye iki? Soma mbere yo kwemeza'],
+    },
+    {
+      match: /land|housing|tenan|ubutaka|inzu/i,
+      hooks: ['Utuye he? {ref} ikurinda nkumupangayi — fungura ngaha'],
+    },
+    {
+      match: /traffic|road|umuhanda|imodoka/i,
+      hooks: ['Utwaye uyu munsi? {ref} menya uburenganzira bwawe'],
+    },
+    {
+      match: /business|commercial|tax|ubucuruzi|imisoro/i,
+      hooks: ['Ubucuruzi bwawe: {ref} waba wujuje ibisabwa?'],
+    },
+    {
+      match: /crime|penal|cyber|gbv|privacy|ibanga/i,
+      hooks: ['Amakuru yawe: {ref} irakurinda — soma hano'],
+    },
+  ],
+  en: [
+    {
+      match: /labou?r|employ/i,
+      hooks: [
+        'On the job? {ref} may protect you — open and read',
+        'Your workday: what does {ref} say about your pay?',
+      ],
+    },
+    {
+      match: /family|marriag|divorce|inherit/i,
+      hooks: ['Your family: what did {ref} change? Read before you sign'],
+    },
+    {
+      match: /land|housing|tenan/i,
+      hooks: ['Where you live? {ref} protects you as a tenant — open here'],
+    },
+    {
+      match: /traffic|road/i,
+      hooks: ['Driving today? {ref} — know your rights'],
+    },
+    {
+      match: /business|commercial|tax/i,
+      hooks: ['Your business: does {ref} find you compliant?'],
+    },
+    {
+      match: /crime|penal|cyber|gbv|privacy/i,
+      hooks: ['Your data: {ref} protects it — read here'],
+    },
+  ],
+  fr: [
+    {
+      match: /labou?r|employ|travail/i,
+      hooks: [
+        'Au travail ? {ref} peut vous protéger — ouvrez et lisez',
+        'Votre journée de travail : que dit {ref} sur votre salaire ?',
+      ],
+    },
+    {
+      match: /family|marriag|divorce|inherit|famille/i,
+      hooks: ['Votre famille : que dit {ref} ? Lisez avant de signer'],
+    },
+    {
+      match: /land|housing|tenan|foncier|logement/i,
+      hooks: ['Où vivez-vous ? {ref} vous protège comme locataire — ouvrez ici'],
+    },
+    {
+      match: /traffic|road|route|circulation/i,
+      hooks: ['Sur la route aujourd’hui ? {ref} — connaissez vos droits'],
+    },
+    {
+      match: /business|commercial|tax|entreprise|fiscal/i,
+      hooks: ['Votre entreprise : êtes-vous en règle avec {ref} ?'],
+    },
+    {
+      match: /crime|penal|cyber|gbv|privacy|vie privée/i,
+      hooks: ['Vos données : {ref} les protège — lisez ici'],
+    },
+  ],
+};
+
+const GENERIC_HOOK: Record<string, string> = {
+  rw: '{ref} — itegeko rishya rikureba. Fungura urisome',
+  en: '{ref} — a new law that concerns you. Open and read',
+  fr: '{ref} — une nouvelle loi qui vous concerne. Ouvrez et lisez',
+};
+
+const REASON_FOLLOWING: Record<string, string> = {
+  rw: 'Kubera ukunda',
+  en: 'Because you follow',
+  fr: 'Parce que vous suivez',
+};
+
+const REASON_NEW: Record<string, string> = {
+  rw: 'Rishya mu isomero',
+  en: 'New in the library',
+  fr: 'Nouveau dans la bibliothèque',
+};
+
+function hookBank(language: string) {
+  return HOOK_TEMPLATES[language] || HOOK_TEMPLATES.rw;
+}
+
+function hookFor(category: string | null, reference: string | null, language: string): string {
+  const ref = reference || 'Itegeko rishya';
+  const name = category || '';
+  for (const template of hookBank(language)) {
+    if (template.match.test(name)) {
+      const pick = template.hooks[ref.length % template.hooks.length];
+      return pick.replace('{ref}', ref);
+    }
+  }
+  return (GENERIC_HOOK[language] || GENERIC_HOOK.rw).replace('{ref}', ref);
+}
+
+/**
+ * TasteRank layer 2 — model refinement (best-effort).
+ *
+ * The deterministic layer already guarantees a relevance floor. The model
+ * re-orders the shortlist by semantic fit (e.g. "asked about maternity leave"
+ * boosts the 027/2023 amendment over generic labour law) and rewrites each
+ * hook in the reader's language. Strict-validated: any failure, bad JSON, or
+ * unknown id falls back to the deterministic order and template hooks, so a
+ * dead model can never empty or corrupt the digest.
+ */
+async function rerankDigestWithModel(
+  items: { lawId: string; title: string; reference: string | null; category: string | null }[],
+  profile: InterestProfile,
+  language: string,
+): Promise<{ order: string[]; hooks: Record<string, string> } | null> {
+  if (items.length === 0) return null;
+
+  const langName = language === 'rw' ? 'Kinyarwanda' : language === 'fr' ? 'French' : 'English';
+  const reply = await createSpaceBunnyChatCompletion(
+    [
+      {
+        role: 'system',
+        content: `You rerank law recommendations for one citizen. Return ONLY strict JSON: {"order": ["<lawId>", ...], "hooks": {"<lawId>": "<hook under 140 chars>"}}. Order best-first for this reader. Hooks in ${langName}, catchy, mention the law reference, never invent articles or facts. Every input id must appear exactly once in order.`,
+      },
+      {
+        role: 'user',
+        content: `READER: top categories ${JSON.stringify(profile.topCategories)}, top laws ${JSON.stringify(profile.topLaws)}\nCANDIDATES: ${JSON.stringify(items.map((item) => ({ id: item.lawId, ref: item.reference, cat: item.category, title: item.title.slice(0, 120) })))}`,
+      },
+    ],
+    { temperature: 0.2, maxTokens: 600 },
+  );
+
+  const parsed = JSON.parse(reply) as { order?: unknown; hooks?: unknown };
+  if (!Array.isArray(parsed.order) || typeof parsed.hooks !== 'object' || parsed.hooks === null) {
+    throw new Error('Model returned an invalid digest shape.');
+  }
+
+  const ids = new Set(items.map((item) => item.lawId));
+  const order = parsed.order.filter((id): id is string => typeof id === 'string' && ids.has(id));
+  if (order.length !== ids.size) {
+    throw new Error('Model dropped or invented digest ids.');
+  }
+
+  const hooks: Record<string, string> = {};
+  for (const [id, hook] of Object.entries(parsed.hooks as Record<string, unknown>)) {
+    if (ids.has(id) && typeof hook === 'string' && hook.trim()) {
+      hooks[id] = hook.trim().slice(0, 140);
+    }
+  }
+  if (Object.keys(hooks).length !== ids.size) {
+    throw new Error('Model returned incomplete hooks.');
+  }
+
+  return { order, hooks };
+}
+
+/**
+ * TasteRank — taste-based daily digest ("for you").
+ *
+ * Layer 1 counts taste (category overlap × recency): a kid asking school
+ * questions scores school law, business law scores zero. Layer 2 lets the
+ * configured model refine order and language when available. Deterministic —
+ * no model needed, so it works every day free.
+ */
+export async function getDailyDigest(
+  userId: string,
+  limit = 5,
+  language = 'rw',
+): Promise<{ success: boolean; digest: DigestItem[] }> {
+  const client = db();
+  if (!client) return { success: false, digest: [] };
+
+  try {
+    const { profile } = await getInterestProfile(userId);
+    const weights = new Map(profile.topCategories.map((entry, index) => [entry.category.toLowerCase(), 5 - index]));
+
+    const { data, error } = await client
+      .from('laws')
+      .select('id, title, reference_number, created_at, type, legal_categories(name)')
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    if (error) throw error;
+
+    const weekAgo = Date.now() - 7 * 86400000;
+    const scored = ((data || []) as {
+      id: string;
+      title: string;
+      reference_number: string | null;
+      created_at: string;
+      type: string | null;
+      legal_categories: { name?: string } | null;
+    }[])
+      .map((law) => {
+        const category = law.legal_categories?.name || null;
+        const weight = category ? weights.get(category.toLowerCase()) || 0 : 0;
+        const fresh = new Date(law.created_at).getTime() > weekAgo ? 1 : 0;
+        return { law, category, score: weight * 2 + fresh };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, Math.min(Math.max(limit, 1), 8));
+
+    const lang = language === 'en' || language === 'fr' ? language : 'rw';
+    const following = REASON_FOLLOWING[lang];
+    const fresh = REASON_NEW[lang];
+
+    let digest: DigestItem[] = scored.map(({ law, category }) => ({
+      lawId: String(law.id),
+      title: law.title,
+      reference: law.reference_number,
+      category,
+      hook: hookFor(category, law.reference_number, lang),
+      reason:
+        category && weights.get(category.toLowerCase())
+          ? `${following} ${category}`
+          : fresh,
+      personalized: false,
+    }));
+
+    // Layer 2: model refinement, best-effort. Any failure keeps layer 1.
+    try {
+      const refined = await rerankDigestWithModel(
+        digest.map((item) => ({
+          lawId: item.lawId,
+          title: item.title,
+          reference: item.reference,
+          category: item.category,
+        })),
+        profile,
+        lang,
+      );
+      if (refined) {
+        const byId = new Map(digest.map((item) => [item.lawId, item]));
+        digest = refined.order.map((id) => {
+          const item = byId.get(id);
+          if (!item) throw new Error('Rerank mismatch.');
+          return { ...item, hook: refined.hooks[id], personalized: true };
+        });
+      }
+    } catch (caught) {
+      console.error('TasteRank model layer skipped:', caught instanceof Error ? caught.message : caught);
+    }
+
+    return { success: true, digest };
+  } catch (caught) {
+    console.error('getDailyDigest failed:', caught);
+    return { success: false, digest: [] };
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Business contract review                                             */
 /* ------------------------------------------------------------------ */
 
