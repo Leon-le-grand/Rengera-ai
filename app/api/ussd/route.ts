@@ -20,6 +20,7 @@ export const dynamic = 'force-dynamic';
 
 const MAX_KEYWORD = 60;
 const MAX_RESULTS = 3;
+const FETCH_RESULTS = 8;
 const EXCERPT_CHARS = 90;
 
 function cleanKeyword(raw: string): string {
@@ -27,7 +28,13 @@ function cleanKeyword(raw: string): string {
 }
 
 function trimExcerpt(value: string | null): string {
-  const clean = (value || '').replace(/\s+/g, ' ').trim();
+  let clean = (value || '').replace(/\s+/g, ' ').trim();
+  // Article rows start with gazette boilerplate ("Official Gazette n° …:").
+  // Strip that header so the 90 chars carry meaning, not masthead.
+  clean = clean.replace(
+    /^(official gazette|journal officiel|igazeti)[^:;.!?]{0,80}[:;.!?]\s*/i,
+    '',
+  );
   return clean.length > EXCERPT_CHARS ? `${clean.slice(0, EXCERPT_CHARS)}…` : clean;
 }
 
@@ -43,10 +50,14 @@ async function searchLaws(keyword: string): Promise<SearchRow[]> {
   const supabase = getSupabasePublicClient();
   const { data, error } = await supabase.rpc('search_legal_context', {
     query_text: keyword,
-    result_limit: MAX_RESULTS,
+    result_limit: FETCH_RESULTS,
   });
   if (error || !Array.isArray(data)) return [];
-  return (data as SearchRow[]).slice(0, MAX_RESULTS);
+  // Front-matter rows ("preamble") carry gazette headers, not answers — drop
+  // them so every line on the tiny screen is a real article or full law.
+  return (data as SearchRow[])
+    .filter((row) => row.article_number !== 'preamble')
+    .slice(0, MAX_RESULTS);
 }
 
 async function listCategories(): Promise<string[]> {
@@ -117,7 +128,7 @@ export async function POST(req: Request) {
   // Root menu.
   if (text === '') {
     return textResponse(
-      'CON Murakaza neza kuri RENGERA AI\n1. Shakisha ijambo\n2. Amashami yamategeko\n3. Ubufasha bwihuse',
+      'CON Murakaza neza kuri RENGERA AI\n1. Shakisha ijambo\n2. Amashami y amategeko\n3. Ubutabazi bwihuse',
     );
   }
 
@@ -139,11 +150,11 @@ export async function POST(req: Request) {
     }
 
     const lines = rows.map((row, index) => {
-      const ref = row.reference_number || row.document_title.slice(0, 30);
-      const article = row.article_number ? ` Ing.${row.article_number}` : '';
-      return `${index + 1}. ${ref}${article}: ${trimExcerpt(row.excerpt)}`;
+      const ref = (row.reference_number || row.document_title).slice(0, 34);
+      const article = row.article_number ? `, Art ${row.article_number}` : '';
+      return `${index + 1}. ${ref}${article}:\n${trimExcerpt(row.excerpt)}`;
     });
-    return textResponse(`END Ibyabonetse kuri "${keyword}":\n${lines.join('\n')}`);
+    return textResponse(`END "${keyword}" — ${rows.length} zabonetse:\n${lines.join('\n')}`);
   }
 
   // 2 → category menu.
@@ -173,10 +184,10 @@ export async function POST(req: Request) {
     return textResponse(`END ${selected.slice(0, 30)}:\n${lines.join('\n')}`);
   }
 
-  // 3 → instant help: rights pointers + official emergency contacts.
+  // 3 → instant help: official emergency contacts first, then 2 rights lines.
   if (text === '3') {
     return textResponse(
-      'END Ubufasha bwihuse:\nUmukozi: saba amasezerano yanditse.\nUmupangayi: ntiwimurwe utabanje kumenyeshwa.\nIhohoterwa: Isange 3029\nPolisi: 112, RIB: 166',
+      'END Ubutabazi:\nPolisi 112\nRIB 166\nIsange (ihohoterwa) 3029\n---\nUmukozi: saba amasezerano yanditse.\nUmupangayi: ntiwimurwe utabanje kumenyeshwa.',
     );
   }
 
