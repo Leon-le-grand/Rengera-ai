@@ -105,6 +105,15 @@ export async function POST(req: Request) {
   const parts = text.split('*');
   const choice = parts[0] || '';
 
+  // Trace every gateway hit (fire-and-forget): proves in the admin analytics
+  // whether Africa's Talking ever called us, and which input it sent.
+  void logUsageEvent({
+    eventType: 'question_asked',
+    surface: 'ussd-hit',
+    language: 'rw',
+    query: text === '' ? '(root dial)' : text.slice(0, 60),
+  }).catch(() => {});
+
   // Root menu.
   if (text === '') {
     return textResponse(
@@ -123,13 +132,6 @@ export async function POST(req: Request) {
     if (keyword.length < 2) {
       return textResponse('END Andika ijambo rirenze inyuguti imwe.');
     }
-
-    void logUsageEvent({
-      eventType: 'question_asked',
-      surface: 'ussd',
-      language: 'rw',
-      query: keyword,
-    }).catch(() => {});
 
     const rows = await searchLaws(keyword);
     if (rows.length === 0) {
