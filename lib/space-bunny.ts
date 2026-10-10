@@ -137,9 +137,19 @@ async function requestJson(
       if (response.status === 401 || response.status === 403) {
         throw new Error('Space Bunny rejected the API key. Check SPACE_BUNNY_API_KEY.');
       }
+      if (response.status === 402) {
+        throw new Error(
+          'The AI provider refused for billing reasons (402). The workspace has no budget/credits for this model — check billing or pick a free model.',
+        );
+      }
       if (response.status === 404) {
         throw new Error(
           `Space Bunny endpoint not found (${response.status}). Check SPACE_BUNNY_API_URL and the model name.`,
+        );
+      }
+      if (response.status === 410) {
+        throw new Error(
+          'That model is retired or unavailable on the provider (410). Pick another SPACE_BUNNY_MODEL from the live list.',
         );
       }
       throw new Error(`Space Bunny request failed (${response.status}): ${detail || response.statusText}`);
