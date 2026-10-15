@@ -66,8 +66,56 @@ class RlrcCrawler:
         self.nodes: dict[str, CrawlNode] = {}
         self.discovered_pdf_urls: set[str] = set()
         self.content_hashes: dict[str, str] = {}
+        self.quarantined_names = {
+            path.name.lower()
+            for path in (self.output / "quarantine").glob("*.pdf")
+        } if (self.output / "quarantine").is_dir() else set()
+        if self.quarantined_names:
+            LOGGER.info("Skipping %s quarantined filenames.", len(self.quarantined_names))
+        self._load_existing_manifest()
         self.robots = self._load_robots(urlparse(args.start_url[0]).scheme + "://" + urlparse(args.start_url[0]).netloc + "/robots.txt")
         self._last_request_at = 0.0
+
+    def _load_existing_manifest(self) -> None:
+        """Resume support: rebuild the graph from a previous manifest so a
+        re-run skips finished pages/PDFs and fetches only what failed before
+        (e.g. pages lost to 503s). Entries whose files vanished are redone."""
+        path = self.output / "manifest.json"
+        if not path.is_file():
+            return
+        try:
+            raw = __import__("json").loads(path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            LOGGER.warning("Could not read existing manifest: %s", exc)
+            return
+        kept = 0
+        for item in raw:
+            children = item.get("children") or []
+            node = CrawlNode(
+                url=item.get("url", ""),
+                title=item.get("title", "") or item.get("url", ""),
+                depth=int(item.get("depth", 0) or 0),
+                parent=item.get("parent"),
+                category_path=item.get("category_path") or [],
+                content_type=item.get("content_type"),
+                is_pdf=bool(item.get("is_pdf")),
+                local_path=item.get("local_path"),
+                sha256=item.get("sha256"),
+            )
+            node.children = set(children)
+            if not node.url:
+                continue
+            if node.local_path:
+                full = self.output / node.local_path
+                if not full.is_file():
+                    continue  # file gone: refetch below via parent links
+                if node.sha256:
+                    self.content_hashes[node.sha256] = node.local_path
+                self.discovered_pdf_urls.add(node.url)
+            self.nodes[node.url] = node
+            kept += 1
+        if kept:
+            LOGGER.info("Resumed: %s nodes kept from manifest.", kept)
 
     def _load_robots(self, robots_url: str) -> RobotFileParser | None:
         if self.args.ignore_robots:
@@ -134,6 +182,14 @@ class RlrcCrawler:
         cleaned = re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip("-.")
         return cleaned or f"document-{hashlib.sha256(url.encode()).hexdigest()[:12]}.pdf"
 
+    def _is_quarantined(self, url: str) -> bool:
+        """Names the triage script rejected: never re-download them on resume."""
+        name = Path(urlparse(url).path).name
+        if not name.lower().endswith(".pdf"):
+            name = f"{name}.pdf"
+        cleaned = re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip("-.").lower()
+        return cleaned in self.quarantined_names
+
     def _download_pdf(self, response: requests.Response, url: str, node: CrawlNode) -> None:
         content = response.content
         digest = hashlib.sha256(content).hexdigest()
@@ -186,6 +242,12 @@ class RlrcCrawler:
             )
 
         processed = 0
+        # Resume: children recorded by earlier pages but never fetched (their
+        # fetch failed last time) re-enter the queue from their parent.
+        for node in list(self.nodes.values()):
+            for child in node.children:
+                if child not in self.nodes:
+                    queue.append((child, node.depth + 1, node.url, node.title))
         while queue and processed < self.args.max_pages:
             url, depth, parent_url, link_text = queue.popleft()
             if url in self.nodes and self.nodes[url].title != "RLRC seed":
@@ -238,6 +300,10 @@ class RlrcCrawler:
 
             if looks_like_pdf:
                 self.discovered_pdf_urls.add(final_url)
+                if self._is_quarantined(final_url):
+                    LOGGER.info("Quarantined file skipped: %s", final_url)
+                    node.local_path = None
+                    continue
                 self._download_pdf(response, final_url, node)
                 continue
 
