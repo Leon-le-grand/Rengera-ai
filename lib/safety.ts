@@ -11,24 +11,15 @@ export type EmergencyRisk = {
 };
 
 const URGENT_PATTERNS = [
-  'kill',
-  'suicide',
-  'hurt myself',
-  'danger',
-  'threatened',
-  'assault',
-  'rape',
-  'violence',
-  'domestic violence',
-  'child abuse',
-  'kidnap',
-  'detained',
-  'arrested',
-  'bleeding',
-  'attack',
-  'emergency',
-  'bribe',
-  'police beating',
+  'kill', 'suicide', 'hurt myself', 'danger', 'threatened', 'assault', 'rape',
+  'violence', 'domestic violence', 'child abuse', 'kidnap', 'detained',
+  'arrested', 'bleeding', 'attack', 'emergency', 'bribe', 'police beating',
+  // Kinyarwanda
+  'ubugome', 'gufunga', 'gukubita', 'gusambanya', 'ihohoterwa', 'gufatwa',
+  'gufungwa', 'gukomereka', 'gutera', 'gusaba ruswa', 'gushimuta',
+  // French
+  'viol', 'violence', 'menace', 'agression', 'detenu', 'arrete', 'saignement',
+  'attaque', 'urgence', 'pot-de-vin', 'abus', 'kidnapping', 'suicide',
 ];
 
 export const PRIORITY_IMPLEMENTATION_MAP = [
@@ -72,7 +63,15 @@ export const PRIORITY_IMPLEMENTATION_MAP = [
 
 export function detectEmergencyRisk(text: string): EmergencyRisk {
   const normalized = text.toLowerCase();
-  const matched = URGENT_PATTERNS.some(pattern => normalized.includes(pattern));
+  const matched = URGENT_PATTERNS.some((pattern) => {
+    // Word-boundary match so "rape" does not match "grape" and "kill" does
+    // not match "kilogram". Multi-word phrases use substring matching.
+    if (pattern.includes(' ')) {
+      return normalized.includes(pattern);
+    }
+    const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`\\b${escaped}\\b`, 'i').test(normalized);
+  });
 
   if (!matched) {
     return {

@@ -295,7 +295,10 @@ function requireRetroactiveDates(source: Record<string, unknown>): Record<string
   return dates;
 }
 
-export function parseClassificationResponse(response: string): ClassifiedLaw {
+export function parseClassificationResponse(
+  response: string,
+  sourceText?: string,
+): ClassifiedLaw {
   const withoutFences = response
     .trim()
     .replace(/^```(?:json)?\s*/i, '')
@@ -318,14 +321,23 @@ export function parseClassificationResponse(response: string): ClassifiedLaw {
   const { status, type: lawType } = requireStatusAndType(object);
   const amendsLawReference = optionalString(object, 'amends_law_reference', 300);
 
+  // Field-level grounding: identifiers must appear literally in the source text.
+  // When sourceText is provided, any identifier that cannot be found is nulled
+  // out rather than stored as a fabricated fact.
+  const inSource = (value: string | null): boolean =>
+    !sourceText || value === null || sourceText.includes(value);
+
+  const referenceNumber = optionalString(object, 'reference_number', 200);
+  const gazetteReference = optionalString(object, 'gazette_reference', 300);
+  const publicationDate = optionalIsoDate(object, 'publication_date');
+  const effectiveDate = optionalIsoDate(object, 'effective_date');
+
   return {
     title: requireString(object, 'title', 500),
-    reference_number: optionalString(object, 'reference_number', 200),
-    gazette_reference: optionalString(object, 'gazette_reference', 300),
+    reference_number: inSource(referenceNumber) ? referenceNumber : null,
+    gazette_reference: inSource(gazetteReference) ? gazetteReference : null,
     status,
     type: lawType,
-    // A principal law never points at an amended target; an amendment keeps the
-    // reference only when the source actually names one.
     amends_law_reference: lawType === 'amendment' ? amendsLawReference : null,
     superseded_by: optionalString(object, 'superseded_by', 300),
     affected_articles: optionalArticleList(object, 'affected_articles'),
@@ -334,8 +346,8 @@ export function parseClassificationResponse(response: string): ClassifiedLaw {
     retroactive_effective_date: requireRetroactiveDates(object),
     category: requireString(object, 'category', 200),
     subcategories: requireStringArray(object, 'subcategories', 20),
-    publication_date: optionalIsoDate(object, 'publication_date'),
-    effective_date: optionalIsoDate(object, 'effective_date'),
+    publication_date: publicationDate && inSource(publicationDate) ? publicationDate : null,
+    effective_date: effectiveDate && inSource(effectiveDate) ? effectiveDate : null,
     language: optionalLanguage(object),
     languages_available: requireLanguagesAvailable(object),
     source_url: optionalUrl(object, 'source_url'),

@@ -1,6 +1,6 @@
 'use server';
 
-import { getAdminSession } from '@/lib/auth';
+import { getAdminSession, getUserSession } from '@/lib/auth';
 import { extractPdfText, normalizePdfText, ScannedPdfError } from '@/lib/legal-pdf';
 import { retrieveSupabaseLegalContext } from '@/lib/supabase-retrieval';
 import { getSupabaseAdminClient, isSupabaseConfigured } from '@/lib/supabase';
@@ -123,10 +123,14 @@ export async function listDeadlines(): Promise<{ success: boolean; deadlines: De
   const client = db();
   if (!client) return { success: false, deadlines: [] };
 
+  const session = await getUserSession();
+  if (!session) return { success: false, deadlines: [] };
+
   try {
     const { data, error } = await client
       .from('user_deadlines')
       .select('id, label, note, due_date, status, source_law_title, source_article')
+      .eq('user_id', session.id)
       .order('due_date', { ascending: true })
       .limit(50);
 
@@ -148,6 +152,9 @@ export async function createDeadline(input: {
   const client = db();
   if (!client) return fail('Deadlines need the database to be connected.');
 
+  const session = await getUserSession();
+  if (!session) return fail('Sign in to save a reminder.');
+
   try {
     const { error } = await client.from('user_deadlines').insert({
       label: input.label.slice(0, 160),
@@ -155,6 +162,7 @@ export async function createDeadline(input: {
       due_date: input.dueDate,
       source_law_title: input.sourceLawTitle ?? null,
       source_article: input.sourceArticle ?? null,
+      user_id: session.id,
     });
 
     if (error) throw error;
@@ -169,8 +177,15 @@ export async function setDeadlineStatus(id: string, status: 'open' | 'done') {
   const client = db();
   if (!client) return ok({ persisted: false });
 
+  const session = await getUserSession();
+  if (!session) return ok({ persisted: false });
+
   try {
-    const { error } = await client.from('user_deadlines').update({ status }).eq('id', id);
+    const { error } = await client
+      .from('user_deadlines')
+      .update({ status })
+      .eq('id', id)
+      .eq('user_id', session.id);
     if (error) throw error;
     return ok({ persisted: true });
   } catch (caught) {
@@ -183,8 +198,15 @@ export async function removeDeadline(id: string) {
   const client = db();
   if (!client) return ok({ persisted: false });
 
+  const session = await getUserSession();
+  if (!session) return ok({ persisted: false });
+
   try {
-    const { error } = await client.from('user_deadlines').delete().eq('id', id);
+    const { error } = await client
+      .from('user_deadlines')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', session.id);
     if (error) throw error;
     return ok({ persisted: true });
   } catch (caught) {

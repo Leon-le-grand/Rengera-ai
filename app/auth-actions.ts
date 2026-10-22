@@ -34,7 +34,6 @@ const MAX_LOGIN_ATTEMPTS = 5;
 const MAX_SIGNUP_ATTEMPTS = 3;
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 const DEFAULT_ADMIN_EMAIL = 'admin';
-const DEFAULT_ADMIN_PASSWORD = 'admin123';
 const MIN_PASSWORD_LENGTH = 8;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -43,8 +42,19 @@ const signupAttempts = new Map<string, LoginAttempt>();
 
 async function getClientAddress(): Promise<string> {
   const headerStore = await headers();
+  // Prefer the platform-provided header; otherwise take the LAST hop of
+  // x-forwarded-for, which is the one the proxy appended, not the client.
+  const vercelForwarded = headerStore.get('x-vercel-forwarded-for');
+  if (vercelForwarded) {
+    return vercelForwarded.split(',')[0]?.trim() || 'unknown-client';
+  }
   const forwardedFor = headerStore.get('x-forwarded-for');
-  return forwardedFor?.split(',')[0]?.trim() || 'unknown-client';
+  if (forwardedFor) {
+    const hops = forwardedFor.split(',').map((h: string) => h.trim()).filter(Boolean);
+    return hops[hops.length - 1] || 'unknown-client';
+  }
+  const realIp = headerStore.get('x-real-ip');
+  return realIp?.trim() || 'unknown-client';
 }
 
 function isBlocked(store: Map<string, LoginAttempt>, clientAddress: string, limit: number): boolean {
@@ -94,12 +104,21 @@ async function authenticateCredentials(
   const normalizedIdentifier = identifier.trim().toLowerCase();
   const configuredEmail = getConfiguredAdminEmail();
   const configuredPasswordHash = process.env.ADMIN_PASSWORD_HASH?.trim();
-  const configuredPlainPassword = process.env.ADMIN_PASSWORD?.trim() || DEFAULT_ADMIN_PASSWORD;
+  const configuredPlainPassword = process.env.ADMIN_PASSWORD?.trim();
 
   if (normalizedIdentifier === configuredEmail) {
+    // In production, require a hashed password. Never fall back to a
+    // plaintext or default password.
+    if (process.env.NODE_ENV === 'production' && !configuredPasswordHash) {
+      console.error('ADMIN_PASSWORD_HASH is required in production.');
+      return { admin: null, citizen: null };
+    }
+
     const passwordMatches = configuredPasswordHash
       ? await verifyPassword(password, configuredPasswordHash)
-      : password === configuredPlainPassword;
+      : configuredPlainPassword
+        ? password === configuredPlainPassword
+        : false;
 
     if (passwordMatches) {
       return {

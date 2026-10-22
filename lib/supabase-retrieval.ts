@@ -9,6 +9,7 @@ export interface RetrievedSource {
   citation: string;
   sourceUrl: string | null;
   language: string | null;
+  status: string | null;
   score: number;
 }
 
@@ -25,6 +26,7 @@ interface SearchContextRow {
   article_number: string | null;
   article_title: string | null;
   language: string | null;
+  status: string | null;
   source_url: string | null;
   citation: string;
   excerpt: string | null;
@@ -66,6 +68,7 @@ function formatSearchRows(rows: SearchContextRow[]): string | null {
         `Source type: ${law.source_kind}`,
         `Law: ${law.document_title}`,
         `Reference: ${law.reference_number || 'Not stated'}`,
+        `Status: ${law.status || 'active'}`,
         `Article: ${articleLabel}`,
         `Language: ${law.language || 'Not stated'}`,
         `Citation: ${law.citation}`,
@@ -101,6 +104,7 @@ function buildSources(rows: SearchContextRow[]): RetrievedSource[] {
       citation: String(row.citation || ''),
       sourceUrl: row.source_url,
       language: row.language,
+      status: row.status,
       score: Number(row.search_rank) || 0,
     }));
 }

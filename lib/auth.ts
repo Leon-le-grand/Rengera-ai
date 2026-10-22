@@ -41,13 +41,34 @@ const MIN_CITIZEN_PASSWORD_LENGTH = 8;
 const MIN_ADMIN_PASSWORD_LENGTH = 12;
 
 function getAuthSecret(): string | null {
-  const secret = process.env.AUTH_SECRET?.trim() || DEFAULT_AUTH_SECRET;
+  const raw = process.env.AUTH_SECRET?.trim();
 
-  if (!secret || Buffer.byteLength(secret, 'utf8') < 32) {
+  // Fail closed in production: never sign sessions with a publicly known
+  // secret. In development, fall back to the demo secret with a loud warning.
+  if (!raw) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'AUTH_SECRET is required in production. Refusing to sign sessions with a default secret.',
+      );
+    }
+    console.warn(
+      'AUTH_SECRET is unset; using the insecure demo secret. This is only acceptable in development.',
+    );
+    return DEFAULT_AUTH_SECRET;
+  }
+
+  if (raw === DEFAULT_AUTH_SECRET) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('AUTH_SECRET must not be the default demo secret in production.');
+    }
+    console.warn('AUTH_SECRET is set to the default demo secret. Replace it before deploying.');
+  }
+
+  if (Buffer.byteLength(raw, 'utf8') < 32) {
     return null;
   }
 
-  return secret;
+  return raw;
 }
 
 function derivePasswordKey(
@@ -68,7 +89,7 @@ function derivePasswordKey(
         p: parallelization,
         maxmem: SCRYPT_MAX_MEMORY,
       },
-      (error, derivedKey) => {
+      (error: Error | null, derivedKey: Buffer) => {
         if (error) {
           reject(error);
           return;
