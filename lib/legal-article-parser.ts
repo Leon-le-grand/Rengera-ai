@@ -12,7 +12,7 @@ export interface ParsedLegalArticle {
   content: string;
   contentHash: string;
   citation: string;
-  sourceUrl: string;
+  sourceUrl: string | null;
 }
 
 /**
@@ -31,7 +31,7 @@ interface ParseArticleOptions {
   documentTitle: string;
   referenceNumber: string | null;
   language: LegalLanguage;
-  sourceUrl: string;
+  sourceUrl: string | null;
 }
 
 export const RLRC_SOURCE_URL = 'https://www.rlrc.gov.rw/';
@@ -105,17 +105,18 @@ function buildCitation(
   referenceNumber: string | null,
   articleNumber: string,
   articleTitle: string | null,
-  sourceUrl: string,
+  sourceUrl: string | null,
 ): string {
   const lawLabel = referenceNumber ? `${documentTitle} (${referenceNumber})` : documentTitle;
+  const source = sourceUrl || 'source not stated';
 
   if (articleNumber === PREAMBLE_ARTICLE_NUMBER) {
-    return `${lawLabel}. Preamble and front matter. Source: ${sourceUrl}`;
+    return `${lawLabel}. Preamble and front matter. Source: ${source}`;
   }
 
   const articleLabel =
     language === 'kinyarwanda' ? `Ingingo ya ${articleNumber}` : `Article ${articleNumber}`;
-  return `${lawLabel}, ${articleLabel}${articleTitle ? `: ${articleTitle}` : ''}. Source: ${sourceUrl}`;
+  return `${lawLabel}, ${articleLabel}${articleTitle ? `: ${articleTitle}` : ''}. Source: ${source}`;
 }
 
 export function detectLegalLanguage(text: string): LegalLanguage {

@@ -54,7 +54,7 @@ You MUST structure EVERY response using the following exact markdown headings:
 (List every relevant law found in the retrieved context. For each law, state what it establishes and whether it amends, supplements, or conflicts with another retrieved law.)
 
 ### Official Articles
-(For each relevant law, cite the exact article number, article title when available, the exact official source URL, and a brief explanation of the retrieved article text. Never say an article number is unavailable when an article-level result is present in the context.)
+(For each relevant law, cite the exact article number, article title when available, the exact official source URL, and a brief explanation of the retrieved article text. If the retrieved text does not cover the question, say plainly that the law library does not yet contain a provision that answers it, and list the closest related articles with links instead of inventing an answer.)
 
 ### Comparison And Application
 (Compare the relevant laws/articles, explain which rule applies to the user's facts, and identify any point that still requires another law, decree, or ministerial order that was not retrieved.)
@@ -125,6 +125,8 @@ export interface LegalSource {
   articleNumber: string | null;
   citation: string;
   sourceUrl: string | null;
+  language: string | null;
+  status: string | null;
   score: number;
   /** True when an administrator has reviewed this law's classification. */
   reviewed?: boolean;
@@ -229,7 +231,12 @@ function isSmallTalk(query: string, hasArticleContext: boolean): boolean {
   // Two-word greetings ("muraho neza", "hi there") with no legal content.
   const words = normalized.split(' ');
   if (words.length <= 2 && normalized.length <= 14 && !/\d/.test(normalized)) {
-    return words.every((w) => /^[a-zàâäéèêëîïôöùûüçñ]{1,14}$/i.test(w));
+    const GREETING_WORDS = new Set([
+      'hi', 'hey', 'hello', 'yo', 'hy', 'hye', 'hee', 'ok', 'okay',
+      'muraho', 'mwaramutse', 'mwiriwe', 'mwiriweho', 'bite', 'bana',
+      'bonjour', 'salut', 'bjr', 'merci', 'murakoze', 'thanks', 'thank',
+    ]);
+    return words.every((w) => GREETING_WORDS.has(w));
   }
   return false;
 }
@@ -246,7 +253,85 @@ const HELP_REPLIES: Record<string, string> = {
   fr: 'Je peux expliquer les lois rwandaises en langage simple.\n\nDécrivez ce qui s’est passé — par exemple : « Mon bailleur m’a mis dehors, quels sont mes droits ? » ou « Que dit l’article 43 de la loi n° 027/2023 ? »',
 };
 
+interface CitationVerification {
+  reply: string;
+  discard: boolean;
+  resolved: number;
+  unresolved: number;
+}
+
+function verifyCitations(reply: string, sources: LegalSource[]): CitationVerification {
+  if (!reply || sources.length === 0) {
+    return { reply, discard: false, resolved: 0, unresolved: 0 };
+  }
+
+  // Build the set of resolvable identifiers from the retrieved rows.
+  const articleNumbers = new Set(
+    sources.map((s) => (s.articleNumber || '').toLowerCase().trim()).filter(Boolean),
+  );
+  const lawRefs = new Set(
+    sources
+      .map((s) => (s.referenceNumber || '').toLowerCase().replace(/\s+/g, ' ').trim())
+      .filter(Boolean),
+  );
+  const lawTitles = new Set(sources.map((s) => (s.title || '').toLowerCase().trim()).filter(Boolean));
+  const sourceUrls = new Set(sources.map((s) => (s.sourceUrl || '').trim()).filter(Boolean));
+
+  // Extract citation-shaped tokens from the reply.
+  const articleMatches = reply.match(/Article\s+(\d+[A-Za-z]?(?:\s*bis)?)/gi) || [];
+  const lawMatches =
+    reply.match(/(?:Law|Loi|Iteka|Itegeko|Itéka)\s*N[°ºo]?\s*[\d./-]+/gi) || [];
+  const urlMatches = reply.match(/https?:\/\/\S+/g) || [];
+
+  let resolved = 0;
+  let unresolved = 0;
+
+  // Check article numbers.
+  for (const m of articleMatches) {
+    const num = (m.match(/\d+[A-Za-z]?(?:\s*bis)?/i) || [''])[0].toLowerCase().trim();
+    if (articleNumbers.has(num)) {
+      resolved += 1;
+    } else if (articleNumbers.size > 0) {
+      unresolved += 1;
+    }
+  }
+
+  // Check law references.
+  for (const m of lawMatches) {
+    const norm = m.toLowerCase().replace(/\s+/g, ' ').trim();
+    const found = [...lawRefs].some((r) => norm.includes(r) || r.includes(norm));
+    if (found) {
+      resolved += 1;
+    } else if (lawRefs.size > 0) {
+      unresolved += 1;
+    }
+  }
+
+  // Check URLs.
+  for (const m of urlMatches) {
+    const clean = m.replace(/[.,;:!?)]+$/, '');
+    if (sourceUrls.has(clean)) {
+      resolved += 1;
+    } else {
+      unresolved += 1;
+    }
+  }
+
+  const total = resolved + unresolved;
+  // If more than 30% of citations fail to resolve, discard the answer.
+  const discard = total > 0 && unresolved / total > 0.3;
+
+  // Build the caveat if any unresolved citations remain.
+  let out = reply;
+  if (unresolved > 0 && !discard) {
+    out += `\n\n> Note: ${unresolved} citation(s) in this answer could not be verified against the retrieved articles. Verify important details against the official source before acting.`;
+  }
+
+  return { reply: out, discard, resolved, unresolved };
+}
+
 export async function generateLegalAdvice(
+
   query: string,
   chatHistory: { role: 'user' | 'model'; content: string }[] = [],
   options: AdviceOptions = {},
@@ -436,7 +521,20 @@ ${query}
       }
     }
 
-    return { reply, sources: collectedSources, kind: 'answer' };
+    // Citation verifier: every article number / law reference / URL written in
+    // the answer must resolve to a retrieved row. Unresolved citations are
+    // removed and a caveat is appended. If most citations fail, discard the
+    // answer entirely and return the safe fallback.
+    const verified = verifyCitations(reply, collectedSources);
+    if (verified.discard) {
+      const fallback: Record<string, string> = {
+        en: 'I could not verify that answer against the official laws, so I am not showing it. Please rephrase with a law number or article — for example: "What does Article 43 of Law n° 027/2023 say about working hours?"',
+        rw: 'Sinshoboye kwemeza igisubizo ku mategeko yemewe, niyo mpamvu ntacyo nkwereka. Ongera ubaze uvuga nimero y’itegeko cyangwa ingingo — urugero: "Ingingo ya 43 y’Itegeko n° 027/2023 ivuga iki ku masaha y’akazi?"',
+        fr: 'Je n’ai pas pu vérifier cette réponse dans les lois officielles, je ne l’affiche donc pas. Reformulez avec un numéro de loi ou d’article — par exemple : « Que dit l’article 43 de la loi n° 027/2023 ? »',
+      };
+      return { reply: fallback[language] || fallback.en, sources: [], kind: 'fallback' };
+    }
+    return { reply: verified.reply, sources: collectedSources, kind: 'answer' };
   } catch (error) {
     // Users get a calm, professional message. The technical detail stays in
     // the server log — never pasted into the chat.

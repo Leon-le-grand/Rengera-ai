@@ -122,9 +122,16 @@ export async function getSharedConsultation(shareToken: string): Promise<SharedC
     const supabase = getSupabasePublicClient();
     const { data, error } = await supabase
       .from('shared_consultations')
-      .select('question, answer, sources, created_at')
+      .select('question, answer, sources, created_at, expires_at')
       .eq('share_token', token)
       .maybeSingle();
+
+    if (data && (data as { expires_at?: string }).expires_at) {
+      const expires = new Date((data as { expires_at: string }).expires_at).getTime();
+      if (Number.isFinite(expires) && expires < Date.now()) {
+        return null;
+      }
+    }
 
     if (error) {
       console.error('Shared consultation lookup error:', error.message);
