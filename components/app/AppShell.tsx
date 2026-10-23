@@ -5,11 +5,13 @@ import { AnimatePresence, motion } from 'motion/react';
 import LandingPage from '@/components/landing/LandingPage';
 import { ThemeProvider } from './ThemeProvider';
 import AppDashboard, { type DashboardProps } from './AppDashboard';
+import MobileOnboarding from '../mobile/MobileOnboarding';
 import LoginScreen from './LoginScreen';
 import { logoutAdmin } from '@/app/auth-actions';
+import MobileShell from '../mobile/MobileShell';
 import type { AppView } from './Sidebar';
 
-type AppShellView = 'landing' | 'app' | 'login';
+type AppShellView = 'deciding' | 'landing' | 'app' | 'login';
 
 type AdminUser = DashboardProps['adminUser'];
 type AccountUser = DashboardProps['accountUser'];
@@ -20,8 +22,14 @@ interface AppShellProps {
 }
 
 export default function AppShell({ initialAdmin, initialAccount }: AppShellProps) {
+  // Inside the Capacitor Android WebView there is no marketing page: boot into
+  // onboarding -> login -> app. In a normal browser the landing page stays.
+  const isCapacitor =
+    typeof window !== 'undefined' &&
+    Boolean((window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.());
+
   const [currentView, setCurrentView] = useState<AppShellView>(
-    initialAdmin || initialAccount ? 'app' : 'landing',
+    initialAdmin || initialAccount ? 'app' : isCapacitor ? 'deciding' : 'landing',
   );
   const [adminUser, setAdminUser] = useState<AdminUser>(initialAdmin);
   const [accountUser, setAccountUser] = useState<AccountUser>(initialAccount);
@@ -55,9 +63,8 @@ export default function AppShell({ initialAdmin, initialAccount }: AppShellProps
     } finally {
       setAdminUser(null);
       setAccountUser(null);
-      // Signing out returns to the sign-in screen rather than dropping the
-      // user into an anonymous session without explanation.
-      setCurrentView('login');
+      // Signing out returns to the onboarding screen on mobile.
+      setCurrentView(isCapacitor ? 'deciding' : 'login');
     }
   };
 
@@ -65,9 +72,15 @@ export default function AppShell({ initialAdmin, initialAccount }: AppShellProps
 
   return (
     <ThemeProvider>
-    <main className="min-h-dvh overflow-hidden">
+      <MobileShell />
+      <main className="min-h-dvh overflow-hidden">
       <AnimatePresence mode="wait">
-        {currentView === 'landing' ? (
+        {currentView === 'deciding' ? (
+          <MobileOnboarding
+            onLogin={handleLogin}
+            onAccount={handleAccount}
+          />
+        ) : currentView === 'landing' ? (
           <motion.div
             key="landing"
             initial={{ opacity: 0 }}
