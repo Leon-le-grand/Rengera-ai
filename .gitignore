@@ -1,14 +1,39 @@
-node_modules/
-.next/
-coverage/
-.DS_Store
-*.log
+# Python
 __pycache__/
 *.py[cod]
+*.egg-info/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+coverage/
+
+# Flutter / Dart
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+mobile/ios/Pods/
+mobile/ios/.symlinks/
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/android/build/
+
+# Capacitor / Android
+android/
+capacitor.config.ts
+out/
+
+# Data (large binaries, re-downloadable)
+data/
+
+# Secrets
 .env*
 !.env.example
 
-*.tsbuildinfo
-
-# Crawled RLRC PDFs and triage output (large binaries, re-downloadable)
-data/
+# OS
+.DS_Store
+*.log
