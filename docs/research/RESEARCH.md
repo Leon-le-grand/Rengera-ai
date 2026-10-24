@@ -1,5 +1,7 @@
 # Rengera AI — RESEARCH.md
 
+> **Project-direction reference, not current-state proof.** This note records the product and algorithm thesis. Some statements about implemented retrieval, safety, review, ingestion and mobile behavior may predate current code. Use `docs/01-PRODUCT-REQUIREMENTS.md` for current scope and verify implementation claims against source and migrations before acting.
+
 ## 1. Problem
 
 Rwandan citizens, businesses, and journalists cannot reliably answer "what does the law say about X" because:

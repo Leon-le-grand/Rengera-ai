@@ -11,12 +11,6 @@ const config: CapacitorConfig = {
     url: 'https://rengera-ai.vercel.app',
     cleartext: false,
   },
-  android: {
-    backgroundColor: '#09090b',
-    allowMixedContent: false,
-    captureInput: true,
-    webContentsDebuggingEnabled: false,
-  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 2200,
