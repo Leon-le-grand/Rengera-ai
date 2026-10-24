@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 
 import '../../theme/rengera_theme.dart';
 import '../../theme/rengera_fonts.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
+const _serverBase = 'https://rengera-ai.vercel.app';
+
+class LoginScreen extends StatefulWidget {
   const LoginScreen({ super.key });
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   bool _showPassword = false;
@@ -28,17 +30,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    setState(() { _submitting = true; _error = null; });
-    // Real auth lands in the next phase (Supabase REST + secure storage).
-    // For now: validate shape and route into the app shell.
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
-    setState(() { _submitting = false; });
     if (_email.text.trim().isEmpty || _password.text.isEmpty) {
       setState(() => _error = 'Enter your email and password.');
       return;
     }
-    context.go('/app');
+    setState(() { _submitting = true; _error = null; });
+    try {
+      final dio = Dio(BaseOptions(baseUrl: _serverBase, connectTimeout: const Duration(seconds: 15)));
+      final res = await dio.post('/api/mobile/auth', data: {
+        'email': _email.text.trim(),
+        'password': _password.text,
+      });
+      if (res.data['success'] == true) {
+        if (mounted) context.go('/app');
+      } else {
+        setState(() => _error = res.data['error']?.toString() ?? 'Sign in failed.');
+      }
+    } catch (e) {
+      String msg = 'Server error. Please try again.';
+      if (e is DioException && e.response?.data is Map) {
+        msg = (e.response!.data as Map)['error']?.toString() ?? msg;
+      }
+      setState(() => _error = msg);
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override

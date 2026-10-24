@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'rw.rengera.ai',
-  appName: 'Rengera AI',
+  appName: 'Rengera',
   webDir: 'out',
   server: {
     // The app is a live Next.js site, not a static bundle, so the WebView

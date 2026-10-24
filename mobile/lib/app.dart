@@ -70,7 +70,7 @@ class RengeraApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: 'Rengera AI',
+      title: 'Rengera',
       debugShowCheckedModeBanner: false,
       theme: RengeraTheme.dark(),
       darkTheme: RengeraTheme.dark(),
