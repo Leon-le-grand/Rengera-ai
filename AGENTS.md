@@ -1,81 +1,69 @@
-# Rengera AI — AGENTS.md
+# Rengera AI — repository working rules
 
-Rules for any agent (human or AI) working in this repository. Read this first.
+Read this file before changing the repository. It describes enduring constraints; current progress belongs in `TASKS.md` and `MEMORY.md`.
 
-## Before starting ANY task
+## Project and approved boundaries
 
-1. **Read `MEMORY.md`** at the repo root. It is the single source of truth: architecture, data flow, code conventions, gotchas, verification steps, and open work. A new agent should be able to pick up and continue production work after reading it without re-exploring the whole codebase.
-2. **Check the current state** — `git status` and `git log --oneline -10` — so you know what's staged/committed and what the working tree looks like. Uncommitted changes may represent work-in-progress that you should build on, not discard.
+- Rengera AI helps people find and understand Rwandan legal information from source laws. It is not represented in this repository as a law firm or a substitute for qualified legal advice.
+- This repository contains separate `web/` and `mobile/` applications. `server/` is a proposed future project and does not currently exist. Keep dependency manifests and runtime code within their subproject.
+- Web: Next.js 15 App Router, React 19, TypeScript, Tailwind CSS 4. Mobile: Flutter/Dart. Shared data and server-side application access use Supabase Postgres and Storage. Versions in the local manifests are authoritative.
+- The web application is the current citizen and administrator product. Flutter is the canonical native application, but its implemented scope is currently onboarding, login, theme, and a shell prototype. Do not describe planned mobile features as shipped.
+- Do not introduce billing, lawyer/organization roles, a standalone API/worker, an agent framework, a new jurisdiction, or another supported language without an explicit product decision.
 
-## Architecture
+## Startup and documentation order
 
-- Parent project with three subprojects: `web/`, `mobile/`, `server/`. Never mix their dependencies.
-- Web is Next.js 15 App Router + React 19 + TypeScript + Tailwind 4. Mobile is Flutter 3.38. Data lives in Supabase (Postgres + pgvector + Storage).
-- All AI calls go through `web/lib/space-bunny.ts`. Never hard-code a model ID — read `SPACE_BUNNY_MODEL` / `SPACE_BUNNY_API_URL` / `SPACE_BUNNY_API_KEY`. The model must be switchable by env var with zero code change.
+1. Read `AGENTS.md`, `TASKS.md`, and `MEMORY.md`.
+2. Inspect `git status`, relevant manifests and implementation. Preserve unrelated staged, unstaged, and untracked work.
+3. Read the applicable specification under `docs/` and check its evidence date. Historical audits are not proof of current behavior.
+4. Resume a valid `DOING` item, otherwise select `NEXT`, otherwise the earliest dependency-ready `TODO`.
 
-## Conventions you must respect
+Documentation ownership and the map are in `docs/README.md`. Requirements and constraints belong in their specifications; `TASKS.md` is the execution queue; `MEMORY.md` is a short resumption checkpoint. If they conflict, follow the precedence recorded in `docs/README.md` and reconcile the affected documents in the same change.
 
-- **No code comments** unless the user explicitly asks.
-- Follow existing patterns exactly. When in doubt, copy the closest existing file (e.g. a new server action mirrors `web/app/legal-actions.ts`; a new Flutter screen mirrors `mobile/lib/features/shell/app_shell.dart`; a new migration mirrors `web/supabase/migrations/013_add_review_gate_and_ocr_flag.sql`).
-- Never edit generated files: `web/.next/*`, `mobile/build/*`, `mobile/.dart_tool/*`, `mobile/android/app/build/*`.
-- All user-facing strings go through the i18n system (`web/lib/answer-language.ts` `UI_STRINGS`), added for all three languages (en, rw, fr) before compiling.
-- New backend endpoints must be: server action in `web/app/*-actions.ts`, gated on `getAdminSession()` for writes, and asserted by `web/scripts/verify-server-actions.ts`.
-- **Roles are never mapped to localized labels.** Role values are bare English (`admin`, `staff`, `user`) and rendered as-is. Do not create `roleLabel`-style helpers.
-- JS/TS is single-quote enforced by eslint. Dart follows `flutter_lints`.
+## Architecture and change boundaries
 
-## Pipeline for any feature that touches the API
+- Keep web and Flutter dependencies isolated. Cross-platform communication goes through documented HTTP/API contracts or shared Supabase data access; never import one app's runtime code into the other.
+- Keep the current Next.js application as a modular monolith unless an approved decision changes it. Do not create `server/` merely because it is listed as a future idea.
+- All model calls go through `web/lib/space-bunny.ts`. Read `SPACE_BUNNY_MODEL`, `SPACE_BUNNY_API_URL`, `SPACE_BUNNY_API_KEY`, and optional fallback/embedding configuration from the environment. Never hard-code a model ID in a feature.
+- Do not add schema or dependencies to a different subproject. SQL changes are ordered migrations under `web/supabase/migrations/` and require a documented operational plan before application to a hosted database.
+- Reuse the existing brand system. Dark canvas `#09090b`, gold `#d8b485`, 3px radius. Mobile mirrors web exactly through `RengeraColors`. The redesign may improve information hierarchy and interaction patterns while retaining these tokens unless the user approves a brand change.
 
-1. Backend changes (server actions, migrations).
-2. Frontend code (components, screens).
-3. Verify: `cd web && bun run verify && bun run typecheck`, `cd mobile && flutter analyze`.
-4. Run `bun run build` for the web app.
+## Domain invariants
 
-## Updating MEMORY.md — IMPORTANT
+1. Never commit secrets. `.env*` is ignored; only `.env.example` may be tracked, with placeholders only.
+2. Never overwrite or paraphrase `laws.raw_content`. Keep source text and derived metadata in separate fields.
+3. Reject classification output that fails schema validation; do not insert partial or malformed AI metadata.
+4. The Supabase service-role key is server-only. Never expose it through `NEXT_PUBLIC_*`, client bundles, logs, or mobile configuration.
+5. Anonymous access is read-only. No anonymous write policies.
+6. Every administrator mutation checks a verified `getAdminSession()` before using privileged access. User-owned records must also be scoped to the verified user.
+7. Deterministic retrieval, safety routing, ranking fallbacks, and citation checks must remain useful without a model. The model may refine, never replace these guards.
+8. Preserve source fidelity during ingestion. Keep article text verbatim, including preamble content; summaries and classifications are derived metadata.
+9. Fail safely: provider, parser, or validation failure must not corrupt or silently persist data. Unsupported or ungrounded questions should be reported honestly.
+10. Show source provenance and review status clearly. Never imply a law is human-verified unless its stored review state says so.
 
-Every time you complete a task that adds or changes something durable about the system — new endpoints, new DB tables, new permission grants/modules, new pages/components, new conventions, new gotchas, new verification facts — **you MUST update `MEMORY.md`** to reflect it before you finish. This is how future agents "just pick up and continue".
+## Product and design rules
 
-Rules:
-- Keep it concise and factual. Update existing sections in place rather than appending duplicates.
-- Add new endpoints to the relevant feature section.
-- Record new grants/modules in the Permissions section.
-- Record new conventions/gotchas/verification commands as you discover them.
-- When in doubt, a small accurate edit is better than a big stale document. Do not delete info that is still true.
-- Do NOT write the full history of every task — only durable facts, decisions, and current structure.
+- Supported answer languages are English, Kinyarwanda, and French unless a user-approved change updates requirements and implementation together.
+- Safety and urgent-contact paths must be easy to find, language-aware, and must not delay routing behind model generation.
+- Make citation/source access, law status, and review state legible in the citizen experience. Do not make unsupported claims about corpus completeness, legal authority, or accuracy.
+- Preserve responsive behavior, keyboard operation, visible focus, semantic labels, readable contrast, and screen-reader names when redesigning UI.
+- Keep web and Flutter aligned with the same brand tokens and product terminology; do not claim full feature parity until it exists.
 
-## Hard rules
+## Implementation loop
 
-1. **Never commit secrets.** `.env*` is gitignored; only `.env.example` is tracked. Keys live in Vercel env vars and `.env.local`.
-2. **Never overwrite `raw_content`.** Metadata and source text are separate columns and stay separate.
-3. **Never store an AI classification that fails schema validation.** Throw, don't insert.
-4. **Service-role key is server-only.** No `NEXT_PUBLIC_` prefix, ever.
-5. **Public access is read-only.** No anon write policies.
-6. **Admin writes require a verified session.** Every server action checks `getAdminSession()` first.
-7. **Deterministic first, model second.** TasteRank, retrieval scoring, and the citation verifier must work with no model. The model only refines.
-8. **Fidelity over fluency.** Article text is sliced verbatim; never paraphrase at ingest.
-9. **Fail safe, not silent.** A bad model returns nothing stored, never corrupt data.
-10. **Keep the design system.** Dark canvas `#09090b`, gold `#d8b485`, 3px radius. Mobile mirrors web exactly via `RengeraColors`.
+For each selected queue item: record its outcome and failure cases; implement one cohesive slice; run the checks required by its acceptance criteria; record actual pass/fail/not-run results; update the affected specification and task status; then continue to the next ready approved item in the same authorized session. Leave exactly one `DOING` task for this working agent.
 
-## Branch workflow
+Do not mark work `DONE` because a document was written or a command was planned. Do not claim checks passed unless they were run. If blocked, record the concrete prerequisite and work on independent approved tasks.
 
-- `main` = production, always deployable. Vercel deploys from here.
-- `dev` = integration. All new work lands here first.
-- Feature branches off `dev`, merged back via PR.
-- Never force-push `main`.
+## Authorization and scope changes
 
-## Interaction expectations
+- The active user request authorizes the current product redesign, documentation, and repository organization. Use the approved product direction and existing design system; do not expand into unrelated commercial or legal/compliance features.
+- A user-selected task overrides queue priority while retaining its dependencies and constraints.
+- Production deployment, applying migrations to a hosted database, uploading corpus data, incurring spend, deleting user data, changing credentials, or contacting external parties needs explicit applicable authorization and environment access.
+- Material changes to product scope, architecture, supported languages, source fidelity, access control, or design tokens must be recorded as an approved decision before dependent implementation.
+- Preserve user changes. Do not reset, clean, or overwrite unrelated work to make a check pass.
 
-- The user works interactively and often gives direction mid-task; adapt to the latest instruction (they frequently supersede earlier guidance in the same task).
-- The user restarts the backend server themselves — after adding routes, tell them to restart so the new endpoints are live.
-- Run lint/typecheck (`bun run verify`, `tsc`, `flutter analyze`) after completing a task and fix anything you introduced.
+## Branch and handoff
 
-## Common issues & fixes
-
-See MEMORY.md. Short list:
-- "Server Action not found" — stale client tab after a deploy. Hard-refresh.
-- `FreeTierError` from OpenCode inference — free models only answer inside OpenCode. Use a service-account key + paid model.
-- Empty `package.xml` in Android SDK — copy from a sibling platform version.
-- Gradle "does not provide JAVA_COMPILER" — point at a JDK (not JRE) path.
-- Gradle "Unexpected lock protocol" — delete `~/.gradle/caches/build-cache-1`, retry.
-- `flutter pub get` fails offline — needs DNS once to resolve advisories.
-- Scanned PDFs — `extractPdfText` throws `ScannedPdfError`; run `--ocr` in the Python ingester.
-- `bun run verify` fails on unused imports — remove them; CI must stay green.
+- `main` is production; `dev` is integration; feature work normally branches from `dev` and returns through review. Never force-push `main`.
+- If the current checkout has user changes or is on another branch, do not switch branches or rewrite history as part of routine work. Report the actual branch and leave the worktree intact.
+- Keep `MEMORY.md` compact and update it after a meaningful change. At handoff, summarize delivered outcomes, changed files, checks actually run, unresolved decisions, and the next task.

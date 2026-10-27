@@ -10,7 +10,10 @@ export const metadata: Metadata = {
   title: 'RENGERA AI | Know Your Rights. Protect Your Future.',
   description: 'AI-powered legal literacy platform for Rwanda.',
   manifest: '/manifest.json',
-  themeColor: '#0f172a'
+};
+
+export const viewport = {
+  themeColor: '#0f172a',
 };
 
 /**

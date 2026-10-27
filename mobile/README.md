@@ -1,16 +1,31 @@
-# rengera_mobile
+# Rengera AI mobile
 
-A new Flutter project.
+Flutter application for Android and iOS. This is the canonical native app; the former `web/android` Capacitor Android project is no longer present in the current worktree.
 
-## Getting Started
+## Current implementation
 
-This project is a starting point for a Flutter application.
+The app currently includes a theme, onboarding flow, login screen, route selection and a shell with placeholder citizen screens. Chat, law-library integration, article reading, durable offline storage/sync and push notifications are planned, not shipped. Flutter dependencies for a capability do not establish that the capability is implemented.
 
-A few resources to get you started if this is your first Flutter project:
+## Local development
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```bash
+flutter pub get
+flutter analyze
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Before a platform build, confirm Flutter, Android SDK/JDK or Xcode tooling and signing configuration on the machine. No production API credentials belong in the app bundle.
+
+## Structure
+
+```text
+lib/app.dart                 router and MaterialApp
+lib/main.dart                startup
+lib/theme/                   shared Rengera theme and fonts
+lib/features/onboarding/     onboarding flow
+lib/features/auth/           login interface
+lib/features/shell/          current navigation prototype
+android/ and ios/            native platform projects
+```
+
+See [`docs/mobile/ARCHITECTURE.md`](../docs/mobile/ARCHITECTURE.md) for current status and proposed client contracts. The API/offline decision is still open in [`TASKS.md`](../TASKS.md).

@@ -4,7 +4,7 @@ import {
   isPreambleArticle,
   parseLegalArticles,
   PREAMBLE_ARTICLE_NUMBER,
-} from '../lib/legal-article-parser';
+} from '../lib/legal-article-parser.ts';
 
 const OPTIONS = {
   lawId: 'law_test',

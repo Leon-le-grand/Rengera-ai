@@ -1,81 +1,38 @@
-# Rengera AI — MEMORY.md
+# Rengera AI — session checkpoint
 
-Last updated: 2026-10-23. Living document — update after every meaningful change.
+Last reconciled: 2026-10-24. This file is a short resume aid; `TASKS.md` owns task status and specifications own requirements.
 
-## Repo layout (post-reorg)
+## Checkpoint
 
-```
-Rengera-ai/
-├── web/          Next.js 15 app (admin + citizen chat + library + API + migrations)
-├── mobile/      Flutter 3.38 app (Android + iOS), offline-first reader
-├── server/      (planned) standalone ingest worker + USSD gateway
-├── data/        crawled PDFs + manifests (gitignored, re-downloadable)
-├── docs/        research, plan, architecture
-├── downloads/   logo pack (gitignored)
-├── AGENTS.md    agent rules
-├── MEMORY.md    this file
-└── README.md    parent overview
-```
+- Branch at session start: `main` tracking `origin/main`.
+- The user already had an in-progress pnpm/repository cleanup in the worktree: `web/android/` and `web/out/` staged for removal, `web/bun.lock` staged for removal, `web/pnpm-lock.yaml` and `web/pnpm-workspace.yaml` untracked, plus edits to web package/config/layout/scripts and Vercel config. Preserve these changes; do not reset or replace them.
+- Documentation foundation is complete. The current product task is `WEB-001` in `TASKS.md`; the user has paused the broader redesign goal for now.
+- The duplicate Capacitor Android project was removed in the user worktree; Flutter under `mobile/` is canonical. Capacitor config/dependencies and web compatibility components still exist as cleanup candidates.
 
-## Branches
+## Repository map
 
-- `main` — production. Vercel deploys from here.
-- `dev` — integration. All new work lands here first.
+- `web/`: Next.js 15 / React 19 app, server actions, Supabase migrations and operational scripts.
+- `mobile/`: Flutter app; onboarding/login/theme/shell prototype, not feature parity.
+- `docs/`: product, architecture, data, contracts, design, security, plan, verification, source and release guidance.
+- `server/`: not present; do not treat as an existing service.
+- Root `AGENTS.md`, `TASKS.md`, `CODEX-TASK-PROMPT.md`, README and this checkpoint govern future sessions.
 
-## Progress snapshot: ~96%
+## Durable constraints
 
-### Done
+- Separate subproject dependencies. All model calls go through `web/lib/space-bunny.ts` and env-selected model/provider settings.
+- Never overwrite `laws.raw_content`; reject invalid classifications; keep the service-role key server-only; public access is read-only; admin writes check a verified session; owner-scope private user records.
+- Deterministic safety/retrieval/citation guards precede model refinement. Preserve source text verbatim and label review/status accurately.
+- Design tokens: `#09090b`, `#d8b485`, 3px radius; mobile mirrors web through `RengeraColors`.
+- The `web/android` removal did not remove all Capacitor references. Recheck actual imports/use before deciding whether to remove remaining web compatibility code/dependencies.
 
-- Chat RAG with 10-section answers, article-level deep links, multilingual (EN/RW/FR)
-- Small-talk + no-source guards (token saver)
-- Law library with reader: sticky tabs, collapsing summary, integrity panel (SHA-256, coverage, PDF flag)
-- Admin ingestion: bulk upload (up to 10), drag-and-drop, per-file status, AI Test connection
-- Admin review: soft gate + bulk-approve (principal, ≥95% coverage, no OCR flag), shift-click multi-select
-- Multilingual summaries (EN/RW/FR) via cached translation
-- Notifications: law-change alerts + TasteRank "for you today"
-- Deadlines, bookmarks, answer feedback, emergency routing (112/166/3029)
-- Accounts (scrypt, HMAC sessions, rate limiting, admin gate)
-- USSD webhook at `/api/ussd` (Africa's Talking, Kinyarwanda, RPC-only)
-- TasteRank dual-layer recommendation (deterministic + model refine)
-- Integrity: content_hash, source_pdf_sha256, coverage %, needs_ocr
-- RLRC crawl: 434 laws (955MB) + 20 quarantined non-laws
-- Igazeti crawl: 843 gazette issues 2004-2026 (1.9GB)
-- Triages: both sources cleaned
-- Mobile Flutter scaffold: onboarding, login, app shell, theme parity
-- Capacitor Android shell (alternative, still present)
-- Logo pack in ~/Downloads
+## Open prerequisites
 
-### Migrations run order
+- `TASKS.md` records first web redesign slices and decisions still needed for launch boundary, corpus/review ownership, privacy/retention, mobile API/offline scope, and any service extraction.
+- Hosted Supabase migration state, backups, corpus inventory and deployment secrets were not inspected. Do not infer migration status from local SQL.
+- No external systems were contacted and no live credentials were read.
 
-001..014 (012-014 added: integrity fields, review gate + OCR flag, summary translations). Plus 015 (retrieval fix) and 016 (shared consultation expiry) from friend's audit.
+## Verification context
 
-### Open work
-
-- [ ] Run migrations 012-016 in Supabase (001-011 already run)
-- [ ] Upload the 434 RLRC laws via admin (10 per batch)
-- [ ] Bulk-approve the safe pile, hand-review the rest
-- [ ] Golden KN/EN/FR article-parser tests
-- [ ] Prod secrets: AUTH_SECRET, ADMIN_PASSWORD_HASH, real ADMIN_EMAIL
-- [ ] Optional embedding model (semantic search)
-- [ ] Flutter: chat, library, reader, offline storage, notifications, admin
-- [ ] Build APK (Gradle JAVA_COMPILER issue — JDK path fix needed)
-- [ ] Igazeti triage (gazette issues bundle non-law content)
-
-### Common issues & fixes
-
-See AGENTS.md. Short list:
-- "Server Action not found" → hard-refresh browser
-- FreeTierError from OpenCode → use service-account key + paid model
-- Empty package.xml in Android SDK → copy from sibling platform
-- Gradle "does not provide JAVA_COMPILER" → point at JDK not JRE
-- Gradle "Unexpected lock protocol" → delete build-cache-1, retry
-- flutter pub get fails offline → needs DNS once
-- Scanned PDFs → run --ocr in Python ingester
-- bun run verify fails on unused imports → remove them
-
-### Data on disk (gitignored)
-
-- `data/rlrc/pdfs/` — 434 laws, 955MB
-- `data/rlrc/quarantine/` — 40 non-laws, 14MB
-- `data/igazeti/` — 836 gazette issues, 1.9GB
-- Total: ~2.9GB, ~1,300 files
+- Web typecheck, `verify`, production build, and Python ingestion checks passed on 2026-10-24. ESLint config was repaired to use FlatCompat but the retry stalled and was stopped, so lint remains unverified. See `docs/08-TEST-STRATEGY.md`.
+- Flutter/Dart test files were not found in the current `mobile/lib` project; `mobile/ios/RunnerTests/` contains a native iOS test file only.
+- See `docs/08-TEST-STRATEGY.md` for commands and coverage boundaries. Record actual outcomes there only when they materially change durable environment knowledge.

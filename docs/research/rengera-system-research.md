@@ -5,6 +5,8 @@
 **Method:** Read-only inspection of application code, SQL migrations, Python ingestion scripts, configuration, and git history. No code, SQL, or configuration was modified. No database was contacted. No paid AI API was called. No secret values were read from any `.env` file (none exists in the repository; only `.env.example` is committed, and it contains no live credentials).
 **Audience:** A founder who does not yet know the system, an engineer about to work on it, and an investor or government partner who will never see the repository.
 
+> **Historical audit snapshot (2026-10-20).** This report inspected an earlier checkout (`dev`, HEAD `104b459`) and includes recommendations and findings that may since have changed. The current repository is on `main` with additional user worktree changes. Treat this as a research archive, not a current system specification or approval to implement every recommendation; re-check the cited code and use the current docs under `docs/` first.
+
 ---
 
 ## How to read this document

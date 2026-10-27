@@ -1,4 +1,4 @@
-import { parseClassificationResponse } from '../lib/legal-classification';
+import { parseClassificationResponse } from '../lib/legal-classification.ts';
 
 const fence = String.fromCharCode(96).repeat(3);
 
