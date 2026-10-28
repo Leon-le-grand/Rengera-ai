@@ -71,6 +71,23 @@ function getAuthSecret(): string | null {
   return raw;
 }
 
+/**
+ * Non-throwing read of the auth secret. A missing or default secret in
+ * production means "sessions unavailable", not "crash the request". The
+ * misconfiguration is still logged loudly so it shows up in deployment logs.
+ */
+function tryGetAuthSecret(): string | null {
+  try {
+    return getAuthSecret();
+  } catch (error) {
+    console.error(
+      'AUTH_SECRET is missing or invalid in production; treating every request as signed out.',
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
+}
+
 function derivePasswordKey(
   password: string,
   salt: Buffer,
@@ -231,7 +248,7 @@ async function writeSessionCookie(
   cookieName: string,
   payload: SessionPayload,
 ): Promise<boolean> {
-  const secret = getAuthSecret();
+  const secret = tryGetAuthSecret();
   if (!secret) {
     return false;
   }
@@ -281,7 +298,7 @@ export function getConfiguredAdminEmail(): string {
 }
 
 export function createAdminSessionToken(email: string): string | null {
-  const secret = getAuthSecret();
+  const secret = tryGetAuthSecret();
   if (!secret) {
     return null;
   }
@@ -301,7 +318,7 @@ export async function clearAdminSessionCookie(): Promise<void> {
 }
 
 export async function getAdminSession(): Promise<AdminUser | null> {
-  const secret = getAuthSecret();
+  const secret = tryGetAuthSecret();
   if (!secret) {
     return null;
   }
@@ -324,7 +341,7 @@ export async function getAdminSession(): Promise<AdminUser | null> {
 }
 
 export function createUserSessionToken(account: AccountUser): string | null {
-  const secret = getAuthSecret();
+  const secret = tryGetAuthSecret();
   if (!secret) {
     return null;
   }
@@ -362,7 +379,7 @@ export async function getUserSession(): Promise<AccountUser | null> {
     };
   }
 
-  const secret = getAuthSecret();
+  const secret = tryGetAuthSecret();
   if (!secret) {
     return null;
   }
@@ -386,7 +403,7 @@ export async function getCurrentSessions(): Promise<{
 }> {
   const admin = await getAdminSession();
 
-  const secret = getAuthSecret();
+  const secret = tryGetAuthSecret();
   const payload = secret ? await verifySessionCookieValue(USER_SESSION_COOKIE, secret) : null;
 
   if (admin) {
