@@ -1,5 +1,7 @@
 # 04 — Interfaces and contracts
 
+> **Current baseline.** Target V2 API, OpenAPI-generated clients and server-enforced RBAC are in [`v2/05-API-AUTH-AND-RBAC.md`](v2/05-API-AUTH-AND-RBAC.md). Existing action contracts and guards remain in effect until migrated.
+
 This is a route/action index, not a promise that all future client APIs exist. Server action arguments and result types in source are authoritative; update this document when those contracts change.
 
 ## Web request surfaces

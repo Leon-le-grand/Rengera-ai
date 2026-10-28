@@ -142,6 +142,15 @@ export default function AppDashboard({
               {currentView === 'chat' && (
                 <ChatInterface
                   onOpenLaw={openLawReader}
+                  onOpenLibrary={() => {
+                    setOpenLaw(null);
+                    setCurrentView('library');
+                    setSidebarOpen(false);
+                  }}
+                  onOpenEmergency={() => {
+                    setCurrentView('emergency');
+                    setSidebarOpen(false);
+                  }}
                   pendingAsk={pendingAsk}
                   onPendingAskHandled={() => setPendingAsk(null)}
                   accountKey={accountKey}

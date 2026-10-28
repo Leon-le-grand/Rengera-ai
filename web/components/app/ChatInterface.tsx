@@ -4,14 +4,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   AlarmClock,
+  BookOpen,
   Car,
   Check,
+  History,
   Download,
   FileText,
   Home,
   Link2,
   Loader2,
-  Phone,
+  Plus,
   RotateCcw,
   Shield,
   ShieldAlert,
@@ -41,7 +43,6 @@ import {
   ComposerActions,
   ComposerChip,
   ComposerFrame,
-  ComposerToolbar,
   GeneratingRow,
   ScrollDownButton,
   SourceList,
@@ -55,7 +56,7 @@ interface Message {
   content: string;
   sources?: LegalSource[];
   /** Only 'answer' gets Share / Save PDF / feedback. Set by the server. */
-  kind?: 'greeting' | 'help' | 'fallback' | 'emergency' | 'answer';
+  kind?: 'greeting' | 'help' | 'fallback' | 'emergency' | 'answer' | 'connection-error';
 }
 
 /** A question handed over from the Law Library: "explain this article to me". */
@@ -67,6 +68,10 @@ export interface PendingArticleAsk {
 interface ChatInterfaceProps {
   /** Opens one article of one law inside the Law Library reader. */
   onOpenLaw?: (lawId: string, articleNumber?: string | null) => void;
+  /** Opens the public law library without selecting a particular article. */
+  onOpenLibrary?: () => void;
+  /** Opens official emergency and contact information. */
+  onOpenEmergency?: () => void;
   /** Set when the user asks a follow-up from inside a law. */
   pendingAsk?: PendingArticleAsk | null;
   onPendingAskHandled?: () => void;
@@ -106,15 +111,39 @@ function loadStoredHistory(accountKey: string): StoredChat[] {
   }
 }
 
-const SCENARIOS: { id: string; label: keyof ReturnType<typeof labelsFor>; icon: ElementType; prompt: string }[] = [
-  { id: 'tenant', label: 'tenant', icon: Home, prompt: 'My landlord locked me out. What are my rights?' },
-  { id: 'employment', label: 'employment', icon: FileText, prompt: 'My employer refuses to pay me for overtime. What should I do?' },
-  { id: 'privacy', label: 'privacy', icon: Shield, prompt: 'Someone shared my private photos without my consent. Is this illegal?' },
-  { id: 'traffic', label: 'traffic', icon: Car, prompt: 'The police stopped me and asked for a bribe. What are my rights?' },
+const SCENARIOS: { id: 'tenant' | 'employment' | 'privacy' | 'traffic'; icon: ElementType }[] = [
+  { id: 'tenant', icon: Home },
+  { id: 'employment', icon: FileText },
+  { id: 'privacy', icon: Shield },
+  { id: 'traffic', icon: Car },
 ];
 
 function labelsFor(language: AnswerLanguage) {
   return UI_STRINGS[language].scenarios;
+}
+
+function formatLawStatus(status: string | null, language: AnswerLanguage): string {
+  const strings = UI_STRINGS[language];
+  switch (status?.toLowerCase()) {
+    case 'active':
+      return strings.statusActive;
+    case 'amended':
+      return strings.statusAmended;
+    case 'repealed':
+      return strings.statusRepealed;
+    default:
+      return status?.trim() || strings.statusUnknown;
+  }
+}
+
+function safeSourceUrl(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 function greetingFor(language: AnswerLanguage): Message {
@@ -138,6 +167,8 @@ function loadStoredMessages(accountKey: string): Message[] {
 
 export default function ChatInterface({
   onOpenLaw,
+  onOpenLibrary,
+  onOpenEmergency,
   pendingAsk = null,
   onPendingAskHandled,
   accountKey = 'public',
@@ -273,6 +304,15 @@ export default function ChatInterface({
       });
     } catch (error) {
       console.error(error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: strings.connectionError,
+          kind: 'connection-error',
+        },
+      ]);
     } finally {
       setArticleContext(null);
       setIsLoading(false);
@@ -374,7 +414,6 @@ export default function ChatInterface({
     }, 50);
   };
 
-  const lastAssistant = [...messages].reverse().find((message) => message.role === 'assistant');
   const hasConversation = messages.some((message) => message.role === 'user');
 
   const openLaw = (lawId: string, articleNumber?: string | null) => {
@@ -401,7 +440,7 @@ export default function ChatInterface({
           </li>
         ),
         a: ({ node, ...props }) => (
-          <a className="text-[#1a73e8] underline underline-offset-2" target="_blank" rel="noreferrer noopener" {...props} />
+          <a className="text-[var(--chat-accent)] underline underline-offset-4" target="_blank" rel="noreferrer noopener" {...props} />
         ),
         strong: ({ node, ...props }) => <strong className="font-semibold text-[var(--chat-text)]" {...props} />,
         blockquote: ({ node, ...props }) => (
@@ -417,58 +456,90 @@ export default function ChatInterface({
   );
 
   return (
-    <div className="relative flex h-full w-full justify-center bg-[var(--chat-surround)] p-0 sm:p-4">
-      <ChatFrame className="chat-print-area relative h-full max-w-[980px]">
+    <div className="chat-workspace relative flex h-full min-h-0 w-full justify-center p-0 sm:p-3 xl:p-4">
+      <ChatFrame className="chat-print-area relative h-full max-w-[1360px]">
         <LawChangeBanner />
 
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="relative">
+          <div className="relative z-20 shrink-0">
             <ChatTopBar
-              title={hasConversation ? 'Rengera consultation' : 'New Rengera chat'}
-              onNewChat={() => setShowHistory((v) => !v)}
-              onEdit={handleNewChat}
-              onShare={() => {
-                if (lastAssistant && lastAssistant.id !== 'msg-0') {
-                  setShowShareNotice(true);
-                  handleShare(lastAssistant);
-                } else {
-                  setShareNotice('Ask a question first, then share the answer.');
-                  setShowShareNotice(true);
-                }
-              }}
+              title={hasConversation ? strings.consultationTitle : strings.workspaceTitle}
             >
               <button
                 type="button"
+                onClick={handleNewChat}
+                aria-label={strings.newQuestion}
+                title={strings.newQuestion}
+                className="inline-flex h-9 items-center justify-center gap-1.5 border border-[var(--chat-border)] px-2 text-[12px] font-medium text-[var(--chat-text-2)] transition-colors hover:bg-[var(--chat-hover)] sm:px-2.5"
+              >
+                <Plus size={15} strokeWidth={2} />
+                <span className="hidden sm:inline">{strings.newQuestion}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowHistory((v) => !v)}
+                aria-label={strings.previousChats}
+                title={strings.previousChats}
+                aria-expanded={showHistory}
+                aria-controls="rengera-chat-history"
+                className="inline-flex h-9 w-9 items-center justify-center border border-[var(--chat-border)] text-[var(--chat-muted)] transition-colors hover:bg-[var(--chat-hover)] hover:text-[var(--chat-text)]"
+              >
+                <History size={15} strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                onClick={onOpenEmergency}
+                aria-label={`${strings.urgentHelp} · 112`}
+                title={`${strings.urgentHelp} · 112`}
+                className="inline-flex h-9 items-center justify-center gap-1.5 border border-[var(--chat-danger-border)] px-2 text-[12px] font-semibold text-[var(--chat-danger-text)] transition-colors hover:bg-[var(--chat-danger-bg)] sm:px-2.5"
+              >
+                <ShieldAlert size={15} strokeWidth={2} />
+                <span className="hidden sm:inline">{strings.urgentHelp}</span>
+                <span className="tabular-nums">112</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setShowDeadlines(true)}
-                aria-label="Open deadlines"
-                className="hidden h-8 w-8 items-center justify-center rounded-full text-[var(--chat-muted)] transition-colors hover:bg-[var(--chat-chip)] hover:text-[var(--chat-text)] sm:flex"
+                aria-label={strings.openDeadlines}
+                title={strings.openDeadlines}
+                className="hidden h-9 w-9 items-center justify-center border border-[var(--chat-border)] text-[var(--chat-muted)] transition-colors hover:bg-[var(--chat-hover)] hover:text-[var(--chat-text)] sm:flex"
               >
                 <AlarmClock size={15} strokeWidth={2} />
               </button>
-              <LanguageMenu value={language} onChange={setLanguage} className="ml-auto sm:ml-0" />
             </ChatTopBar>
 
             {showHistory && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)} />
-                <div className="absolute left-4 top-full z-50 mt-1 w-72 overflow-hidden rounded-xl border border-[var(--chat-border)] bg-[var(--chat-panel)] shadow-xl">
+                <button
+                  type="button"
+                  aria-label={strings.closeHistory}
+                  className="fixed inset-0 z-30 cursor-default"
+                  onClick={() => setShowHistory(false)}
+                />
+                <div
+                  id="rengera-chat-history"
+                  role="region"
+                  aria-label={strings.previousChats}
+                  className="absolute right-3 top-full z-40 mt-1 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden border border-[var(--chat-border)] bg-[var(--chat-panel)] shadow-[0_12px_32px_-12px_rgba(0,0,0,0.55)] sm:right-5"
+                >
                   <button
                     type="button"
                     onClick={handleNewChat}
-                    className="flex w-full items-center gap-2 border-b border-[var(--chat-border-soft)] px-4 py-3 text-left text-[13px] font-semibold text-[var(--chat-text)] transition-colors hover:bg-[var(--chat-chip)]"
+                    className="flex w-full items-center gap-2 border-b border-[var(--chat-border)] px-4 py-3 text-left text-[13px] font-semibold text-[var(--chat-text)] transition-colors hover:bg-[var(--chat-hover)]"
                   >
-                    + New chat
+                    <Plus size={15} />
+                    {strings.newQuestion}
                   </button>
                   <div className="max-h-64 overflow-y-auto">
                     {history.length === 0 ? (
                       <p className="px-4 py-5 text-center text-xs text-[var(--chat-muted)]">
-                        No previous chats yet.
+                        {strings.noPreviousChats}
                       </p>
                     ) : (
                       history.map((chat) => (
                         <div
                           key={chat.id}
-                          className="group flex items-center gap-2 border-b border-[var(--chat-border-soft)] px-4 py-2.5 last:border-0 hover:bg-[var(--chat-chip)]"
+                          className="group flex items-center gap-2 border-b border-[var(--chat-border)] px-4 py-2.5 last:border-0 hover:bg-[var(--chat-hover)]"
                         >
                           <button
                             type="button"
@@ -479,15 +550,18 @@ export default function ChatInterface({
                               {chat.title}
                             </p>
                             <p className="text-[11px] text-[var(--chat-muted-2)]">
-                              {new Date(chat.updatedAt).toLocaleDateString()} ·{' '}
-                              {chat.messages.filter((m) => m.role === 'user').length} questions
+                              {new Date(chat.updatedAt).toLocaleDateString(language)} ·{' '}
+                              {(() => {
+                                const count = chat.messages.filter((m) => m.role === 'user').length;
+                                return `${count} ${count === 1 ? strings.questionSingular : strings.questionPlural}`;
+                              })()}
                             </p>
                           </button>
                           <button
                             type="button"
                             onClick={() => deleteChat(chat.id)}
-                            aria-label={`Delete ${chat.title}`}
-                            className="shrink-0 rounded-full px-2 py-1 text-[11px] text-[var(--chat-muted-2)] opacity-0 transition-opacity hover:text-red-600 group-hover:opacity-100"
+                            aria-label={`${strings.deleteChat}: ${chat.title}`}
+                            className="shrink-0 px-2 py-1 text-[11px] text-[var(--chat-muted)] transition-colors hover:text-red-400"
                           >
                             ×
                           </button>
@@ -501,9 +575,21 @@ export default function ChatInterface({
           </div>
 
           <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col">
-            <div ref={streamRef} className="scrollbar-hide min-h-0 flex-1 overflow-y-auto">
-              <div className="mx-auto flex w-full max-w-[820px] flex-col gap-5 px-3 pb-5 pt-2 sm:px-5">
+            <div
+              ref={streamRef}
+              role="log"
+              aria-label={strings.conversation}
+              aria-live="polite"
+              aria-relevant="additions text"
+              aria-busy={isLoading}
+              className="scrollbar-hide min-h-0 flex-1 overflow-y-auto"
+            >
+              <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-7 px-4 pb-5 pt-6 sm:px-6 sm:pt-8">
                 {messages.map((msg) => {
+                  if (msg.role === 'assistant' && msg.id === 'msg-0' && hasConversation) {
+                    return null;
+                  }
+
                   if (msg.role === 'user') {
                     return (
                       <motion.div
@@ -511,7 +597,7 @@ export default function ChatInterface({
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.25, ease: 'easeOut' }}
-                        className="flex flex-col gap-2"
+                        className="mx-auto flex w-full max-w-[820px] flex-col gap-2"
                       >
                         <UserBubble>{msg.content}</UserBubble>
                       </motion.div>
@@ -535,35 +621,114 @@ export default function ChatInterface({
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.25, ease: 'easeOut' }}
-                      className="flex flex-col gap-3"
+                      className={isWelcome ? 'w-full' : 'mx-auto flex w-full max-w-[820px] flex-col gap-3'}
                     >
-                      <AssistantBlock>
-                        {isWelcome ? (
-                          <p className="text-[15px] font-medium leading-[1.65] text-[var(--chat-text)]">{msg.content}</p>
-                        ) : (
-                          renderMarkdown(msg.content)
-                        )}
-                      </AssistantBlock>
-
                       {isWelcome && (
-                        <div className="flex flex-wrap gap-2">
-                          {SCENARIOS.map((scenario) => (
+                        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_290px] xl:gap-14">
+                          <section className="max-w-[720px] py-2" aria-labelledby="rengera-start-title">
+                            <h2 id="rengera-start-title" className="max-w-[17ch] text-[30px] font-semibold leading-[1.1] tracking-[-0.025em] text-[var(--chat-text)] sm:text-[42px]">
+                              {strings.startTitle}
+                            </h2>
+                            <p className="mt-4 max-w-[62ch] text-[15px] leading-7 text-[var(--chat-text-2)]">
+                              {strings.startDescription}
+                            </p>
+
+                            <div className="mt-7">
+                              <p className="mb-2 text-[12px] font-semibold text-[var(--chat-muted)]">{strings.trySample}</p>
+                              <div className="grid gap-2 sm:grid-cols-2">
+                                {SCENARIOS.map((scenario) => (
+                                  <button
+                                    key={scenario.id}
+                                    type="button"
+                                    onClick={() => handleSubmit(undefined, strings.prompts[scenario.id])}
+                                    className="flex min-h-11 items-center gap-3 border border-[var(--chat-border)] px-3 py-2.5 text-left text-[13px] font-medium leading-5 text-[var(--chat-text-2)] transition-colors hover:border-[var(--chat-accent)] hover:bg-[var(--chat-hover)]"
+                                  >
+                                    <scenario.icon size={16} strokeWidth={1.8} className="shrink-0 text-[var(--chat-accent)]" />
+                                    <span>{scenarios[scenario.id]}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
                             <button
-                              key={scenario.id}
                               type="button"
-                              onClick={() => handleSubmit(undefined, scenario.prompt)}
-                              className="inline-flex items-center gap-2 rounded-full border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] px-3.5 py-2 text-[13px] font-semibold text-[var(--chat-text-2)] outline-none transition-colors hover:bg-[var(--chat-chip)]"
+                              onClick={onOpenLibrary}
+                              className="mt-5 inline-flex min-h-10 items-center gap-2 text-[13px] font-semibold text-[var(--chat-accent)] underline underline-offset-4"
                             >
-                              <scenario.icon size={14} strokeWidth={2} className="text-[var(--chat-muted)]" />
-                              {scenarios[scenario.label]}
+                              <BookOpen size={15} strokeWidth={2} />
+                              {strings.openLawLibrary}
                             </button>
-                          ))}
+                          </section>
+
+                          <aside className="self-start border-t border-[var(--chat-border)] pt-5 xl:mt-2 xl:border-t-0 xl:border-l xl:pl-6 xl:pt-0" aria-labelledby="rengera-source-path-title">
+                            <h3 id="rengera-source-path-title" className="text-[14px] font-semibold text-[var(--chat-text)]">
+                              {strings.sourcePathTitle}
+                            </h3>
+                            <ol className="mt-5 space-y-4">
+                              {[strings.sourcePathQuestion, strings.sourcePathLaw, strings.sourcePathArticle].map((step, index) => (
+                                <li key={step} className="flex items-start gap-3">
+                                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center border border-[var(--chat-border)] text-[11px] font-semibold tabular-nums text-[var(--chat-accent)]">
+                                    {index + 1}
+                                  </span>
+                                  <span className="pt-0.5 text-[13px] leading-5 text-[var(--chat-text-2)]">{step}</span>
+                                </li>
+                              ))}
+                            </ol>
+                            <p className="mt-5 border-t border-[var(--chat-border)] pt-4 text-[12px] leading-5 text-[var(--chat-muted)]">
+                              {strings.sourcePathNote}
+                            </p>
+                          </aside>
                         </div>
                       )}
 
+                      {!isWelcome && msg.kind === 'emergency' && (
+                        <div role="alert" className="flex flex-col gap-3 border border-[var(--chat-danger-border)] bg-[var(--chat-danger-bg)] p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+                          <div className="flex items-start gap-3">
+                            <ShieldAlert size={18} className="mt-0.5 shrink-0 text-[var(--chat-danger-text)]" />
+                            <div>
+                              <h3 className="text-[13px] font-semibold text-[var(--chat-danger-text)]">{strings.urgentHelp}</h3>
+                              <p className="mt-1 text-[12px] leading-5 text-[var(--chat-danger-text)] opacity-85">{strings.urgentGuidance}</p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={onOpenEmergency}
+                            className="min-h-10 shrink-0 border border-[var(--chat-danger-border)] px-3 text-[12px] font-semibold text-[var(--chat-danger-text)] transition-colors hover:bg-[var(--chat-danger-bg)]"
+                          >
+                            {strings.openEmergencyContacts}
+                          </button>
+                        </div>
+                      )}
+
+                      {!isWelcome && msg.kind === 'connection-error' && (
+                        <div role="alert" className="border border-[var(--chat-danger-border)] bg-[var(--chat-danger-bg)] p-4 text-[13px] leading-6 text-[var(--chat-danger-text)]">
+                          {strings.connectionError}
+                        </div>
+                      )}
+
+                      {!isWelcome && msg.kind === 'fallback' && sources.length === 0 && (
+                        <section role="note" className="border border-[var(--chat-border)] bg-[var(--chat-user)] p-4">
+                          <h3 className="text-[13px] font-semibold text-[var(--chat-text)]">{strings.noCitationTitle}</h3>
+                          <p className="mt-1.5 max-w-[68ch] text-[13px] leading-6 text-[var(--chat-text-2)]">
+                            {strings.noCitationDescription}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={onOpenLibrary}
+                            className="mt-3 min-h-10 border border-[var(--chat-border)] px-3 text-[12px] font-semibold text-[var(--chat-accent)] transition-colors hover:bg-[var(--chat-hover)]"
+                          >
+                            {strings.openLawLibrary}
+                          </button>
+                        </section>
+                      )}
+
+                      {!isWelcome && msg.kind !== 'connection-error' && (
+                        <AssistantBlock>{renderMarkdown(msg.content)}</AssistantBlock>
+                      )}
+
                       {!isWelcome && showAnswerTools && deadlineHints.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-2 rounded-[14px] border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] p-3">
-                          <AlarmClock size={14} strokeWidth={2} className="text-[#1a73e8]" />
+                          <div className="flex flex-wrap items-center gap-2 border border-[var(--chat-border)] bg-[var(--chat-panel)] p-3">
+                          <AlarmClock size={14} strokeWidth={2} className="text-[var(--chat-accent)]" />
                           <span className="text-[12px] text-[var(--chat-text-2)]">Time limit found — save it?</span>
                           {deadlineHints.map((hint) => (
                             <button
@@ -578,7 +743,7 @@ export default function ChatInterface({
                                 });
                                 setShowDeadlines(true);
                               }}
-                              className="rounded-full bg-[var(--chat-blue-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--chat-blue)] transition-colors hover:bg-[var(--chat-blue-soft)]"
+                              className="border border-[var(--chat-border)] bg-[var(--chat-accent-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--chat-accent)] transition-colors hover:bg-[var(--chat-hover)]"
                             >
                               {hint.label}
                             </button>
@@ -586,9 +751,10 @@ export default function ChatInterface({
                         </div>
                       )}
 
-                      {!isWelcome && showAnswerTools && sources.length > 0 && (
+                      {!isWelcome && sources.length > 0 && (
                         <>
                           <ViewedRow
+                            label={showAnswerTools ? strings.sourcesUsed : strings.sourcesRetrieved}
                             source={
                               sources[0].articleNumber
                                 ? `Art. ${sources[0].articleNumber}`
@@ -596,31 +762,24 @@ export default function ChatInterface({
                             }
                           />
                           <SourceList
-                            countLabel={`${sources.length} result${sources.length === 1 ? '' : 's'}`}
+                            countLabel={`${strings.sourcesHeading} · ${sources.length}`}
+                            openArticleLabel={strings.openArticle}
+                            officialSourceLabel={strings.officialSource}
                             onSelect={(key) => {
                               const source = sources.find((item) => `${item.lawId}-${item.articleNumber ?? ''}` === key);
                               if (source) openLaw(source.lawId, source.articleNumber);
                             }}
                             items={sources.map((source, index) => ({
                               key: `${source.lawId}-${source.articleNumber ?? index}`,
-                              title: `${source.referenceNumber || source.title}${
-                                source.articleNumber ? ` — Article ${source.articleNumber}` : ''
-                              }`,
-                              icon: <FileText size={12} strokeWidth={2} />,
+                              title: source.title || source.referenceNumber || strings.openArticle,
+                              subtitle: source.citation || `${source.referenceNumber || ''}${source.articleNumber ? ` · ${source.articleNumber}` : ''}`,
+                              statusLabel: `${strings.lawStatusLabel}: ${formatLawStatus(source.status, language)}`,
+                              reviewLabel: `${strings.classificationReviewLabel}: ${source.reviewed === true ? strings.classificationReviewed : source.reviewed === false ? strings.classificationPending : strings.classificationUnavailable}`,
+                              sourceUrl: safeSourceUrl(source.sourceUrl),
                               active: index === 0,
-                              verified: Boolean(source.reviewed),
                             }))}
                           />
-                          <div className="flex flex-wrap items-center gap-3">
-                            {onOpenLaw && (
-                              <button
-                                type="button"
-                                onClick={() => openLaw(sources[0].lawId, sources[0].articleNumber)}
-                                className="text-[12px] font-medium text-[#1a73e8] outline-none hover:underline"
-                              >
-                                Open the full article in the Law Library
-                              </button>
-                            )}
+                          {showAnswerTools && <div className="flex flex-wrap items-center gap-3">
                             <button
                               type="button"
                               onClick={() => {
@@ -629,13 +788,13 @@ export default function ChatInterface({
                                   referenceNumber: sources[0].referenceNumber,
                                   articleNumber: sources[0].articleNumber,
                                 });
-                                setInput('Explain this article in simpler words: ');
+                                setInput(strings.followUpPrompt);
                               }}
-                              className="text-[12px] font-medium text-[#1a73e8] outline-none hover:underline"
+                              className="text-[12px] font-medium text-[var(--chat-accent)] outline-none underline underline-offset-4"
                             >
-                              Ask a follow-up about this article
+                              {strings.askArticleFollowUp}
                             </button>
-                          </div>
+                          </div>}
                         </>
                       )}
 
@@ -648,17 +807,17 @@ export default function ChatInterface({
                                 setShowShareNotice(true);
                                 handleShare(msg);
                               }}
-                              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] px-3 py-[6px] text-[12px] font-medium text-[var(--chat-text-2)] outline-none transition-colors hover:bg-[var(--chat-chip)]"
+                              className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--chat-border)] bg-[var(--chat-panel)] px-3 py-[6px] text-[12px] font-medium text-[var(--chat-text-2)] outline-none transition-colors hover:bg-[var(--chat-hover)]"
                             >
                               {sharingMessageId === msg.id ? (
                                 <Loader2 size={12} className="animate-spin" />
                               ) : sharedMessageId === msg.id ? (
-                                <Check size={12} className="text-[#1a73e8]" />
+                                <Check size={12} className="text-[var(--chat-accent)]" />
                               ) : (
                                 <Link2 size={12} strokeWidth={2} />
                               )}
                               {sharingMessageId === msg.id
-                                ? 'Creating link…'
+                                ? strings.creatingLink
                                 : sharedMessageId === msg.id
                                   ? strings.share
                                   : strings.share}
@@ -667,7 +826,7 @@ export default function ChatInterface({
                             <button
                               type="button"
                               onClick={handleSaveAsPdf}
-                              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] px-3 py-[6px] text-[12px] font-medium text-[var(--chat-text-2)] outline-none transition-colors hover:bg-[var(--chat-chip)]"
+                              className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--chat-border)] bg-[var(--chat-panel)] px-3 py-[6px] text-[12px] font-medium text-[var(--chat-text-2)] outline-none transition-colors hover:bg-[var(--chat-hover)]"
                             >
                               <Download size={12} strokeWidth={2} />
                               {strings.savePdf}
@@ -676,7 +835,7 @@ export default function ChatInterface({
                             <button
                               type="button"
                               onClick={handleNewChat}
-                              className="inline-flex items-center gap-1.5 rounded-full px-2 py-[6px] text-[12px] font-medium text-[var(--chat-muted)] outline-none transition-colors hover:bg-[var(--chat-chip)]"
+                              className="inline-flex min-h-9 items-center gap-1.5 px-2 py-[6px] text-[12px] font-medium text-[var(--chat-muted)] outline-none transition-colors hover:bg-[var(--chat-hover)]"
                             >
                               <RotateCcw size={12} strokeWidth={2} />
                               {strings.newChat}
@@ -701,7 +860,7 @@ export default function ChatInterface({
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
-                      className="flex flex-col gap-3"
+                      className="mx-auto flex w-full max-w-[820px] flex-col gap-3"
                     >
                       <GeneratingRow label={strings.generating} />
                     </motion.div>
@@ -712,9 +871,11 @@ export default function ChatInterface({
           </div>
         </div>
 
-        <ScrollDownButton
-          onClick={() => streamRef.current?.scrollTo({ top: streamRef.current.scrollHeight, behavior: 'smooth' })}
-        />
+        {hasConversation && (
+          <ScrollDownButton
+            onClick={() => streamRef.current?.scrollTo({ top: streamRef.current.scrollHeight, behavior: 'smooth' })}
+          />
+        )}
 
         <ComposerFrame
           emergency={
@@ -727,27 +888,24 @@ export default function ChatInterface({
                   transition={{ duration: 0.22, ease: 'easeOut' }}
                   className="overflow-hidden"
                 >
-                  <div className="rounded-[16px] border border-[var(--chat-border)] bg-[var(--chat-user)] p-3">
+                  <div className="flex flex-col gap-3 border border-[var(--chat-danger-border)] bg-[var(--chat-danger-bg)] p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-start gap-3">
-                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#c5221f] text-white">
-                        <ShieldAlert size={15} strokeWidth={2.25} />
-                      </span>
-                      <div className="min-w-0 flex-1">
+                      <ShieldAlert size={18} strokeWidth={2} className="mt-0.5 shrink-0 text-[var(--chat-danger-text)]" />
+                      <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-[13px] font-semibold text-[#f0b4b4]">{emergencyRisk.title}</p>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--chat-panel)] px-2 py-[2px] text-[11px] font-medium text-[#e5a3a3] ring-1 ring-[var(--chat-border)]">
-                            <Phone size={10} strokeWidth={2.5} /> Police 112
-                          </span>
-                          <span className="inline-flex items-center rounded-full bg-[var(--chat-panel)] px-2 py-[2px] text-[11px] font-medium text-[#e5a3a3] ring-1 ring-[var(--chat-border)]">
-                            RIB 166
-                          </span>
+                          <p className="text-[13px] font-semibold text-[var(--chat-danger-text)]">{strings.urgentHelp}</p>
+                          <span className="border border-[var(--chat-danger-border)] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[var(--chat-danger-text)]">112</span>
                         </div>
-                        <p className="mt-0.5 text-[12px] leading-[1.55] text-[#c5221f]">
-                          If someone is in immediate danger, contact official emergency services before
-                          continuing the chat.
-                        </p>
+                        <p className="mt-1 text-[12px] leading-5 text-[var(--chat-danger-text)] opacity-85">{strings.urgentGuidance}</p>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={onOpenEmergency}
+                      className="min-h-10 shrink-0 border border-[var(--chat-danger-border)] px-3 text-[12px] font-semibold text-[var(--chat-danger-text)] transition-colors hover:bg-[var(--chat-danger-bg)]"
+                    >
+                      {strings.openEmergencyContacts}
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -756,13 +914,13 @@ export default function ChatInterface({
         >
           <form onSubmit={handleSubmit} className="flex flex-col">
             {showShareNotice && shareNotice && (
-              <div className="mb-2 flex items-center justify-between gap-3 rounded-[10px] bg-[var(--chat-panel)] px-3 py-2 text-[12px] text-[var(--chat-text-2)] ring-1 ring-[var(--chat-border-soft)]">
+              <div className="mb-2 flex items-center justify-between gap-3 border border-[var(--chat-border)] bg-[var(--chat-panel)] px-3 py-2 text-[12px] text-[var(--chat-text-2)]">
                 <span className="truncate">{shareNotice}</span>
                 <button
                   type="button"
                   onClick={() => setShowShareNotice(false)}
                   className="text-[var(--chat-muted)] outline-none hover:text-[var(--chat-text)]"
-                  aria-label="Dismiss"
+                  aria-label={strings.dismissNotice}
                 >
                   ×
                 </button>
@@ -771,7 +929,7 @@ export default function ChatInterface({
 
             {(emergencyRisk.level === 'urgent' || articleContext) && (
               <div className="mb-2 flex flex-wrap gap-2">
-                {emergencyRisk.level === 'urgent' && <ComposerChip label="Urgent case" />}
+                {emergencyRisk.level === 'urgent' && <ComposerChip label={strings.urgentHelp} />}
                 {articleContext && (
                   <ComposerChip
                     label={`${articleContext.referenceNumber || articleContext.lawTitle || 'Article'}${
@@ -783,16 +941,20 @@ export default function ChatInterface({
               </div>
             )}
 
-            <label htmlFor="rengera-chat-input" className="sr-only">
-              Ask Rengera a legal question
-            </label>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <span className="text-[12px] font-semibold text-[var(--chat-muted)]">
+                {strings.answerLanguageLabel}
+              </span>
+              <LanguageMenu value={language} onChange={setLanguage} label={strings.answerLanguageLabel} />
+            </div>
+            <label htmlFor="rengera-chat-input" className="sr-only">{strings.questionInputLabel}</label>
             <textarea
               id="rengera-chat-input"
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder={strings.placeholder}
               rows={1}
-              className="scrollbar-hide max-h-32 min-h-[40px] w-full resize-none border-none bg-transparent px-1 py-1 text-[16px] leading-[1.5] text-[var(--chat-text)] outline-none placeholder:text-[var(--chat-muted-2)]"
+              className="scrollbar-hide max-h-32 min-h-[56px] w-full resize-y border-none bg-transparent px-1 py-1 text-[16px] leading-[1.5] text-[var(--chat-text)] outline-none placeholder:text-[var(--chat-muted-2)] sm:min-h-[68px]"
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {
                   event.preventDefault();
@@ -801,12 +963,13 @@ export default function ChatInterface({
               }}
             />
 
-            <div className="mt-1 flex items-end justify-between gap-2">
-              <ComposerToolbar />
+            <div className="mt-1 flex items-end justify-end gap-2">
               <ComposerActions
                 onSend={() => handleSubmit()}
                 sendDisabled={!input.trim() || isLoading}
                 sending={isLoading}
+                sendLabel={strings.sendMessage}
+                sendingLabel={strings.sendingMessage}
               />
             </div>
           </form>

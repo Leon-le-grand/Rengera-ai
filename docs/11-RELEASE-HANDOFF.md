@@ -1,5 +1,7 @@
 # 11 — Release handoff
 
+> **Current application handoff.** V2 deployment and failure-isolation planning is in [`v2/06-OPERATIONS-AND-FAILURES.md`](v2/06-OPERATIONS-AND-FAILURES.md). No V2 deployment has been performed.
+
 ## Local setup
 
 ### Web
@@ -37,7 +39,7 @@ Never expose service-role/model/session secrets via `NEXT_PUBLIC_*` or the mobil
 
 ## Web deployment
 
-`vercel.json` currently specifies `pnpm install` and `pnpm run build` from `web/`, with Next.js output. Confirm provider root-directory behavior and environment configuration in the target project before release. A local build does not deploy or verify production routing/secrets.
+No tracked `vercel.json` was found in the current checkout. Confirm actual provider configuration, root-directory behavior and environment settings in the target project before release. A local build does not deploy or verify production routing or secrets.
 
 ## Supabase migrations and data
 

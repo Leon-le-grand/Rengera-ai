@@ -49,9 +49,9 @@ Add a layer only when a feature needs it. Keep platform-specific details out of 
 
 Flutter tokens must use `RengeraColors` and preserve the approved canvas `#09090b`, gold `#d8b485`, 3px radius and common product language. Match web source/status/safety meaning while respecting native navigation and accessibility behavior. Current Flutter is dark-only; do not claim theme parity beyond what is implemented.
 
-## Integration decision required
+## Integration direction and remaining decisions
 
-Before chat, library or offline work, select the API boundary: current Next route handlers, Supabase public RPCs, or a future API facade. Then define session refresh/expiry, request/response schemas, rate limits, pagination, retries, idempotency, offline data ownership, conflict behavior and cache invalidation. The decision is tracked as `DEC-002` in `TASKS.md`.
+The user requested a dedicated V2 API shared by web and Flutter; see [`../v2/05-API-AUTH-AND-RBAC.md`](../v2/05-API-AUTH-AND-RBAC.md). Before mobile feature work, resolve session migration, refresh/expiry, request/response schemas, rate limits, pagination, retries, idempotency, offline ownership, conflict behavior and cache invalidation. The current login mismatch remains tracked as `DEC-002` in `TASKS.md`.
 
 ## Offline behavior (proposed, not implemented)
 

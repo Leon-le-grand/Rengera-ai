@@ -1,5 +1,7 @@
 # 03 — Data design
 
+> **Current schema baseline.** V2 source versions, transactional ingestion, optional classifiers and retrieval are specified in [`v2/03-DATA-INGESTION-AND-RAG.md`](v2/03-DATA-INGESTION-AND-RAG.md); none is implied to be migrated or deployed.
+
 ## Storage boundary
 
 Supabase Postgres and Storage are the shared persistent backend. The local ordered migration set is `web/supabase/migrations/001_...sql` through `016_...sql`. The repository does **not** establish which migrations have been applied to a hosted project; inspect the target environment read-only before any write or migration.

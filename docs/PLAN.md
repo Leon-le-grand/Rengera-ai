@@ -1,5 +1,7 @@
 # 07 — Implementation plan
 
+> **Baseline milestones.** For the requested V2 migration use [`v2/PLAN_RESEARCH.md`](v2/PLAN_RESEARCH.md) and the root `TASKS.md` queue. The milestones below retain current product and safety acceptance context; V2 is not yet implemented.
+
 This plan defines milestone outcomes and gates. `TASKS.md` selects the next concrete slice and is the current execution queue. Dates are intentionally omitted until scope, owners and external dependencies are known.
 
 ## M0 — Reconcile foundation and set redesign acceptance
@@ -38,7 +40,7 @@ This plan defines milestone outcomes and gates. `TASKS.md` selects the next conc
 
 ## M5 — Scale only when measured
 
-Candidate work includes a durable ingestion worker, API extraction, retrieval improvements, push delivery and billing. These remain parked until measurements show need and the product owner approves their costs, operations and migration plan.
+The user requested a dedicated API and ingestion worker in V2. Select their operational implementation with a migration plan and measurements. Semantic retrieval remains evaluation-gated; push delivery and billing remain outside the approved direction.
 
 ## Current advancement
 

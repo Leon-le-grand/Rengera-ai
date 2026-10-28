@@ -1,5 +1,7 @@
 # 08 — Verification strategy
 
+> **Current commands and baseline.** V2 contract, RBAC, RAG, failure and migration checks are specified in [`v2/PLAN_RESEARCH.md`](v2/PLAN_RESEARCH.md) and root `TASKS.md`. These are acceptance requirements, not completed test results.
+
 Verification is risk-based. A command proves only the behavior it covers. Record `PASS`, `FAIL`, `NOT RUN`, or `BLOCKED`; never infer hosted production correctness from a local check.
 
 ## Existing commands

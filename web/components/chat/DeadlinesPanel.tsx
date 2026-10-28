@@ -150,7 +150,7 @@ export default function DeadlinesPanel({
       >
         <div className="flex items-center justify-between border-b border-[var(--chat-chip)] px-4 py-3">
           <p className="flex items-center gap-2 text-[13px] font-semibold text-[var(--chat-text)]">
-            <AlarmClock size={15} strokeWidth={2} className="text-[#1a73e8]" />
+            <AlarmClock size={15} strokeWidth={2} className="text-[var(--chat-accent)]" />
             Your deadlines
           </p>
           <button
@@ -169,20 +169,20 @@ export default function DeadlinesPanel({
               value={label}
               onChange={(event) => setLabel(event.target.value)}
               placeholder="What must you do?"
-              className="w-full rounded-[10px] border border-[var(--chat-border)] px-3 py-2 text-[12px] text-[var(--chat-text)] outline-none placeholder:text-[var(--chat-muted-2)] focus:border-[#1a73e8]"
+              className="w-full border border-[var(--chat-border)] px-3 py-2 text-[12px] text-[var(--chat-text)] outline-none placeholder:text-[var(--chat-muted-2)] focus:border-[var(--chat-accent)]"
             />
             <div className="flex gap-2">
               <input
                 type="date"
                 value={dueDate}
                 onChange={(event) => setDueDate(event.target.value)}
-                className="flex-1 rounded-[10px] border border-[var(--chat-border)] px-3 py-2 text-[12px] text-[var(--chat-text)] outline-none focus:border-[#1a73e8]"
+                className="flex-1 border border-[var(--chat-border)] px-3 py-2 text-[12px] text-[var(--chat-text)] outline-none focus:border-[var(--chat-accent)]"
               />
               <button
                 type="button"
                 onClick={add}
                 disabled={saving || !label.trim() || !dueDate}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#1a73e8] px-3 py-2 text-[12px] font-medium text-white transition-opacity disabled:opacity-40"
+                className="inline-flex min-h-10 items-center gap-1.5 bg-[var(--chat-accent)] px-3 py-2 text-[12px] font-semibold text-[var(--app-bg)] transition-opacity disabled:opacity-40"
               >
                 <Plus size={13} strokeWidth={2.5} />
                 Add
@@ -206,7 +206,7 @@ export default function DeadlinesPanel({
                 return (
                   <li
                     key={deadline.id}
-                    className="flex items-start gap-3 rounded-[14px] border border-[var(--chat-chip)] p-3"
+                    className="flex items-start gap-3 border border-[var(--chat-border)] p-3"
                   >
                     <button
                       type="button"

@@ -1,5 +1,7 @@
 # 06 — Security and operations
 
+> **Current baseline.** V2 preserves the controls here and adds server-enforced permission and ownership checks for staff/admin operations; see [`v2/05-API-AUTH-AND-RBAC.md`](v2/05-API-AUTH-AND-RBAC.md). Existing Next.js admin mutations still require `getAdminSession()` until a verified replacement is implemented.
+
 ## Trust boundaries
 
 ```text

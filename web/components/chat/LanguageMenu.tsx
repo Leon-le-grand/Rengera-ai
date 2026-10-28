@@ -41,10 +41,12 @@ export function useStoredLanguage(): [AnswerLanguage, (next: AnswerLanguage) => 
 export default function LanguageMenu({
   value,
   onChange,
+  label = 'Answer language',
   className,
 }: {
   value: AnswerLanguage;
   onChange: (next: AnswerLanguage) => void;
+  label?: string;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -68,7 +70,9 @@ export default function LanguageMenu({
         onClick={() => setOpen((current) => !current)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--chat-border)] px-3 py-[7px] text-[12px] font-medium text-[var(--chat-text)] outline-none transition-colors hover:bg-[var(--chat-hover)]"
+        aria-label={`${label}: ${LANGUAGE_DEFINITIONS[value].label}`}
+        title={`${label}: ${LANGUAGE_DEFINITIONS[value].label}`}
+        className="inline-flex items-center gap-1.5 border border-[var(--chat-border)] px-2.5 py-[7px] text-[12px] font-medium text-[var(--chat-text)] outline-none transition-colors hover:bg-[var(--chat-hover)] sm:px-3"
       >
         <Globe size={13} strokeWidth={2} className="text-[var(--chat-muted)]" />
         {LANGUAGE_DEFINITIONS[value].native}
@@ -77,7 +81,7 @@ export default function LanguageMenu({
       {open && (
         <div
           role="listbox"
-          className="absolute right-0 top-[calc(100%+6px)] z-40 w-44 overflow-hidden rounded-[14px] border border-[var(--chat-border-soft)] bg-white py-1 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.28)]"
+          className="absolute right-0 top-[calc(100%+6px)] z-40 w-48 overflow-hidden border border-[var(--chat-border)] bg-[var(--chat-panel)] py-1 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.28)]"
         >
           {ANSWER_LANGUAGES.map((code) => (
             <button
@@ -95,7 +99,7 @@ export default function LanguageMenu({
                 <span className="font-medium">{LANGUAGE_DEFINITIONS[code].native}</span>
                 <span className="text-[10px] text-[var(--chat-muted-2)]">{LANGUAGE_DEFINITIONS[code].label}</span>
               </span>
-              {code === value && <Check size={13} strokeWidth={3} className="text-[#1a73e8]" />}
+              {code === value && <Check size={13} strokeWidth={3} className="text-[var(--chat-accent)]" />}
             </button>
           ))}
         </div>

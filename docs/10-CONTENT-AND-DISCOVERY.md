@@ -1,5 +1,7 @@
 # 10 — Legal content and discovery
 
+> **Enduring content constraints.** V2 source versioning, classifier evaluation and retrieval plans are in [`v2/03-DATA-INGESTION-AND-RAG.md`](v2/03-DATA-INGESTION-AND-RAG.md).
+
 ## Source authority and provenance
 
 - Ingest only legal materials from an identified source; record source URL, source name, instrument identifier, publication/effective dates when known, source filename and retrieval date where schema permits.

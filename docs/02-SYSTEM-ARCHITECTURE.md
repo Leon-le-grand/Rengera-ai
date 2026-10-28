@@ -1,5 +1,7 @@
 # 02 — System architecture
 
+> **Current baseline.** The requested V2 target is documented in [`v2/02-SYSTEM-ARCHITECTURE.md`](v2/02-SYSTEM-ARCHITECTURE.md). The Next.js shape below is implemented today; it is not the final target.
+
 ## Current shape
 
 The repository is a parent project with two present applications. There is no standalone `server/` service today.
@@ -59,11 +61,11 @@ Python crawling/ingestion scripts exist under `web/scripts/`; verify whether a p
 - `web/app/api/mobile/auth/route.ts` is the current mobile auth endpoint. It calls `signIn`, which creates the same HTTP-only cookie session used by web and returns account data without a bearer token. Flutter's Dio login path navigates to `/app` but does not persist a cookie/token; `initialRoute()` separately looks for a SharedPreferences token. Treat mobile auth/session as an unresolved implementation defect, not as working token auth. Do not assume the shell has complete chat/library APIs or offline sync.
 - Flutter dependencies include Riverpod, Dio, Drift and secure storage, but dependency presence is not implementation evidence for offline features.
 
-## Proposed structure and evolution
+## Target structure and evolution
 
-**Proposed:** retain the modular monolith while the product and corpus are being validated. Keep public UI, privileged server actions, Supabase SQL and provider configuration separated by responsibility. Prefer feature-cohesive modules inside the existing `web/` and `mobile/` roots over a large cross-stack rewrite.
+The user requested a React frontend with TanStack Router and Query, a dedicated modular FastAPI backend, generated OpenAPI clients, staff RBAC, scalable RAG and bounded workflows. Migrate in reviewed slices while preserving the current app. The first server should be modular, with an explicit answer pipeline and a separate worker when required.
 
-Do not create `server/`, a background queue, a model registry, vector pipeline, or new auth service until an approved decision names a measured need, migration path, owner, operations plan and acceptance gate. Existing `docs/research/rengera-system-research.md` contains broader proposals; those are not approved by inclusion there.
+Hosting and queue vendor, vector search and advanced workflow configuration require operational evidence and evaluation. Existing `docs/research/rengera-system-research.md` is a historical audit; its proposals are not automatically adopted.
 
 ## Failure boundaries
 

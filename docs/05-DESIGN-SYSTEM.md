@@ -1,5 +1,7 @@
 # 05 — Design system and redesign brief
 
+> **Current brand and redesign constraints.** V2 routes, UI states and migration map are in [`v2/01-PRODUCT-AND-UI.md`](v2/01-PRODUCT-AND-UI.md); preserve the existing `WEB-001` work during migration.
+
 ## Approved visual foundation
 
 The repository instructions define the design system; the redesign retains these tokens unless the user approves a brand change.

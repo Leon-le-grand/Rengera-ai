@@ -1,12 +1,14 @@
 # 01 — Product requirements
 
+> **Current baseline.** The user subsequently requested the V2 frontend, dedicated server, staff RBAC and bounded agent direction in [`docs/v2/`](v2/README.md). V2 is not yet implemented. Current product and safety constraints below continue unless explicitly superseded.
+
 ## Product outcome
 
 Rengera AI is a Rwanda-focused legal-literacy product. Its product direction is to help people locate relevant law, understand the exact source provision in accessible language, and know when the system cannot safely answer. The source of authority remains the official law, not a generated answer.
 
 **Approved constraints:** the repository is configured for English, Kinyarwanda and French; the legal text must remain faithful to source; answers need retrievable sources; urgent-risk routing must not depend on AI. **Current implementation:** the web application includes a citizen assistant, library/reader, account features, administrator ingestion/review surfaces and a USSD route. Flutter currently implements onboarding, login and a shell prototype only.
 
-The founder has not supplied a separate launch brief, a measurable first-release boundary, or an approved visual reference in this task. Requirements below distinguish existing direction from decisions still open. Do not treat a proposed redesign as approval for billing, legal representation, new roles, or new backend services.
+The launch brief, measurable first-release boundary and approved visual reference remain open. The user has requested the V2 server and staff role; this does not authorize billing or legal representation.
 
 ## Users and primary workflows
 
@@ -46,8 +48,8 @@ These are product/design acceptance outcomes for the user-authorized redesign. N
 ## Non-goals and explicit boundaries
 
 - The product does not issue legal representation or guarantee a legal outcome.
-- Do not add a payment system, subscriptions, institutional tenant model, lawyer network, agent framework, or additional jurisdiction/language in this redesign.
-- Do not split the current web application into services or create a `server/` directory absent measured need and an approved architecture decision.
+- Do not add a payment system, subscriptions, institutional tenant model, lawyer network, or additional jurisdiction/language without a separate decision.
+- V2 introduces a dedicated server and bounded agent workflows through the planned migration; preserve the existing app and authorization while each slice is transitioned.
 - Do not describe planned OCR, durable queues, production corpus coverage, vector search, push delivery, or complete mobile offline support as current capabilities.
 - Do not load or modify production data as part of a UI or documentation task.
 

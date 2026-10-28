@@ -14,7 +14,7 @@ data/      Local crawled PDFs/manifests when present; gitignored
 downloads/ Local design assets; gitignored where configured
 ```
 
-`server/` does not currently exist. Do not create it without an approved architecture decision. Web and mobile keep separate dependency manifests.
+`server/` does not currently exist. The user-requested V2 target adds a dedicated FastAPI server and migrates the web app to React with TanStack Router and Query. The migration is planned, not implemented; dependencies remain isolated by subproject.
 
 ## Start locally
 
@@ -47,6 +47,7 @@ From `web/`: `pnpm run lint`, `pnpm run typecheck`, `pnpm run verify`, and `pnpm
 
 - Begin with [`AGENTS.md`](AGENTS.md), [`TASKS.md`](TASKS.md), and [`MEMORY.md`](MEMORY.md).
 - [`docs/README.md`](docs/README.md) is the full documentation map.
+- [`docs/v2/README.md`](docs/v2/README.md) describes the requested target architecture, UI, migration and reliability review. The older numbered specifications document the current implementation and enduring constraints.
 - [`CODEX-TASK-PROMPT.md`](CODEX-TASK-PROMPT.md) starts or resumes an authorized implementation session.
 
 ## Product and security boundaries

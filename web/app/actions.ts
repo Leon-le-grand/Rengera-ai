@@ -95,11 +95,10 @@ function cosineSimilarity(a: number[], b: number[]) {
 }
 
 /**
- * Which of these laws have been checked by a human administrator. Drives the
- * "Verified" badge on a citation. A lookup failure must never break an answer,
- * so it degrades to an empty set.
+ * Which laws have an administrator-reviewed classification. A lookup failure
+ * must never break an answer, so it returns null and leaves review state unknown.
  */
-async function loadReviewedLawIds(lawIds: string[]): Promise<Set<string>> {
+async function loadReviewedLawIds(lawIds: string[]): Promise<Set<string> | null> {
   const unique = Array.from(new Set(lawIds)).filter(Boolean);
   if (unique.length === 0 || !isSupabaseConfigured()) return new Set();
 
@@ -114,7 +113,7 @@ async function loadReviewedLawIds(lawIds: string[]): Promise<Set<string>> {
     return new Set(((data || []) as { id: string }[]).map((row) => String(row.id)));
   } catch (error) {
     console.error('Reviewed-law lookup failed:', error);
-    return new Set();
+    return null;
   }
 }
 
@@ -128,8 +127,8 @@ export interface LegalSource {
   language: string | null;
   status: string | null;
   score: number;
-  /** True when an administrator has reviewed this law's classification. */
-  reviewed?: boolean;
+  /** True/false from the review lookup; null/undefined means the state is unknown. */
+  reviewed?: boolean | null;
 }
 
 export interface LegalAnswer {
@@ -380,7 +379,7 @@ export async function generateLegalAdvice(
         collectedSources.push(
           ...(retrieval?.sources || []).map((source) => ({
             ...source,
-            reviewed: reviewedIds.has(source.lawId),
+            reviewed: reviewedIds?.has(source.lawId) ?? null,
           })),
         );
       } catch (error) {

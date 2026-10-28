@@ -5,25 +5,25 @@ Read this file before changing the repository. It describes enduring constraints
 ## Project and approved boundaries
 
 - Rengera AI helps people find and understand Rwandan legal information from source laws. It is not represented in this repository as a law firm or a substitute for qualified legal advice.
-- This repository contains separate `web/` and `mobile/` applications. `server/` is a proposed future project and does not currently exist. Keep dependency manifests and runtime code within their subproject.
-- Web: Next.js 15 App Router, React 19, TypeScript, Tailwind CSS 4. Mobile: Flutter/Dart. Shared data and server-side application access use Supabase Postgres and Storage. Versions in the local manifests are authoritative.
+- This repository currently contains separate `web/` and `mobile/` applications; `server/` does not yet exist. The user-requested V2 target adds a dedicated Python/FastAPI server and migrates web from Next.js to React with TanStack Router and Query. Keep manifests and runtime code isolated by subproject.
+- Current web: Next.js 15 App Router, React 19, TypeScript, Tailwind CSS 4. Mobile: Flutter/Dart. Shared data and server-side application access use Supabase Postgres and Storage. Versions in local manifests are authoritative for existing code; V2 remains future work.
 - The web application is the current citizen and administrator product. Flutter is the canonical native application, but its implemented scope is currently onboarding, login, theme, and a shell prototype. Do not describe planned mobile features as shipped.
-- Do not introduce billing, lawyer/organization roles, a standalone API/worker, an agent framework, a new jurisdiction, or another supported language without an explicit product decision.
+- The user requested admin-managed staff, a dedicated API/worker and bounded AI workflows in V2. Do not add billing, lawyer/organization roles, a new jurisdiction or another supported language without a separate product decision.
 
 ## Startup and documentation order
 
 1. Read `AGENTS.md`, `TASKS.md`, and `MEMORY.md`.
 2. Inspect `git status`, relevant manifests and implementation. Preserve unrelated staged, unstaged, and untracked work.
-3. Read the applicable specification under `docs/` and check its evidence date. Historical audits are not proof of current behavior.
+3. For target architecture and migration read `docs/v2/README.md`; use the older numbered `docs/` specifications for current-system evidence and enduring constraints, and check their evidence dates. Historical audits are not proof of current behavior.
 4. Resume a valid `DOING` item, otherwise select `NEXT`, otherwise the earliest dependency-ready `TODO`.
 
 Documentation ownership and the map are in `docs/README.md`. Requirements and constraints belong in their specifications; `TASKS.md` is the execution queue; `MEMORY.md` is a short resumption checkpoint. If they conflict, follow the precedence recorded in `docs/README.md` and reconcile the affected documents in the same change.
 
 ## Architecture and change boundaries
 
-- Keep web and Flutter dependencies isolated. Cross-platform communication goes through documented HTTP/API contracts or shared Supabase data access; never import one app's runtime code into the other.
-- Keep the current Next.js application as a modular monolith unless an approved decision changes it. Do not create `server/` merely because it is listed as a future idea.
-- All model calls go through `web/lib/space-bunny.ts`. Read `SPACE_BUNNY_MODEL`, `SPACE_BUNNY_API_URL`, `SPACE_BUNNY_API_KEY`, and optional fallback/embedding configuration from the environment. Never hard-code a model ID in a feature.
+- Keep web, Flutter and future server dependencies isolated. Cross-platform communication goes through documented HTTP/API contracts or shared Supabase data access; never import one app's runtime code into the other.
+- Preserve the current Next.js monolith as the migration baseline until its V2 slices are ready. V2 uses one modular FastAPI backend and a worker when needed; implementation follows the queue and versioned contracts.
+- Current web model calls go through `web/lib/space-bunny.ts`. At V2 cutover the server provider adapter takes ownership; all model access remains centrally configured and controlled. Never hard-code a model ID in a feature.
 - Do not add schema or dependencies to a different subproject. SQL changes are ordered migrations under `web/supabase/migrations/` and require a documented operational plan before application to a hosted database.
 - Reuse the existing brand system. Dark canvas `#09090b`, gold `#d8b485`, 3px radius. Mobile mirrors web exactly through `RengeraColors`. The redesign may improve information hierarchy and interaction patterns while retaining these tokens unless the user approves a brand change.
 
@@ -34,7 +34,7 @@ Documentation ownership and the map are in `docs/README.md`. Requirements and co
 3. Reject classification output that fails schema validation; do not insert partial or malformed AI metadata.
 4. The Supabase service-role key is server-only. Never expose it through `NEXT_PUBLIC_*`, client bundles, logs, or mobile configuration.
 5. Anonymous access is read-only. No anonymous write policies.
-6. Every administrator mutation checks a verified `getAdminSession()` before using privileged access. User-owned records must also be scoped to the verified user.
+6. In the current Next application, every administrator mutation checks a verified `getAdminSession()` before privileged access. The future server must verify the principal and enforce explicit permission and resource scope for every privileged action, including staff actions; user-owned records must be scoped to the verified user. Do not remove the current guard before a verified replacement exists.
 7. Deterministic retrieval, safety routing, ranking fallbacks, and citation checks must remain useful without a model. The model may refine, never replace these guards.
 8. Preserve source fidelity during ingestion. Keep article text verbatim, including preamble content; summaries and classifications are derived metadata.
 9. Fail safely: provider, parser, or validation failure must not corrupt or silently persist data. Unsupported or ungrounded questions should be reported honestly.

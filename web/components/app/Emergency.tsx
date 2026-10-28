@@ -1,114 +1,120 @@
 'use client';
 import { ShieldAlert, Phone, Search, ClipboardCheck, Clock, Users } from 'lucide-react';
 import { useState } from 'react';
+import { UI_STRINGS } from '@/lib/answer-language';
+import { useStoredLanguage } from '@/components/chat/LanguageMenu';
 
 const CONTACTS = [
   {
     id: 1,
     name: 'Rwanda Investigation Bureau (RIB)',
-    description: 'For reporting crimes, fraud, and severe legal violations.',
     phone: '166',
     altPhone: '+250 788 311 152',
-    category: 'Police & Investigation',
+    descriptionKey: 'rib',
+    categoryKey: 'police',
     tags: ['crime', 'fraud', 'theft', 'assault']
   },
   {
     id: 2,
     name: 'Rwanda National Police (RNP)',
-    description: 'For immediate emergency assistance, traffic accidents, and security.',
     phone: '112',
     altPhone: '113 (Traffic)',
-    category: 'Police & Investigation',
+    descriptionKey: 'rnp',
+    categoryKey: 'police',
     tags: ['emergency', 'traffic', 'accident', 'security']
   },
   {
     id: 3,
     name: 'MAJ (Access to Justice)',
-    description: 'Free legal advice and assistance for citizens at the district level.',
     phone: 'Find your district MAJ',
-    category: 'Legal Aid',
+    descriptionKey: 'maj',
+    categoryKey: 'legalAid',
+    altPhone: null,
     tags: ['free lawyer', 'advice', 'district', 'civil']
   },
   {
     id: 4,
     name: 'National Cyber Security Authority (NCSA)',
-    description: 'For reporting cyber incidents, data breaches, and online fraud.',
     phone: '4045',
-    category: 'Cyber & Data',
+    descriptionKey: 'ncsa',
+    categoryKey: 'cyber',
+    altPhone: null,
     tags: ['cybercrime', 'hacking', 'privacy', 'online']
   },
   {
     id: 5,
     name: 'Ministry of Public Service and Labour (MIFOTRA)',
-    description: 'For reporting severe labor violations and workplace issues.',
     phone: '4455',
-    category: 'Labour & Employment',
+    descriptionKey: 'mifotra',
+    categoryKey: 'labour',
+    altPhone: null,
     tags: ['work', 'employer', 'salary', 'contract']
   },
   {
     id: 6,
     name: 'Isange One Stop Center',
-    description: 'Support and justice for victims of gender-based violence and child abuse.',
     phone: '3029',
-    category: 'Social Support',
+    descriptionKey: 'isange',
+    categoryKey: 'socialSupport',
+    altPhone: null,
     tags: ['gbv', 'abuse', 'violence', 'women', 'children']
   }
-];
+ ] as const;
 
-const URGENT_FLOWS = [
+const URGENT_FLOW_KEYS = [
   {
-    title: 'Immediate danger or violence',
-    route: 'Call 112 first',
+    id: 'immediateDanger',
     icon: ShieldAlert,
-    steps: ['Move to a safer place if possible.', 'Share your location clearly.', 'Avoid confronting the person alone.'],
   },
   {
-    title: 'Crime, threat, fraud, or abuse',
-    route: 'Contact RIB on 166',
+    id: 'reportIssue',
     icon: ClipboardCheck,
-    steps: ['Write down names, dates, and locations.', 'Keep messages and documents.', 'Ask for a case/reference number.'],
   },
   {
-    title: 'GBV or child abuse',
-    route: 'Contact Isange on 3029',
+    id: 'gbv',
     icon: Users,
-    steps: ['Seek medical and survivor support quickly.', 'Preserve clothes/messages if safe.', 'Bring a trusted person if possible.'],
   },
   {
-    title: 'Workplace or pay emergency',
-    route: 'Contact MIFOTRA on 4455',
+    id: 'workplace',
     icon: Clock,
-    steps: ['Keep your contract and payslips.', 'Write a timeline of events.', 'Do not sign unclear settlement papers under pressure.'],
   },
-];
+] as const;
 
 export default function Emergency() {
   const [search, setSearch] = useState('');
+  const [language] = useStoredLanguage();
+  const strings = UI_STRINGS[language];
 
   const filteredContacts = CONTACTS.filter(contact => 
     contact.name.toLowerCase().includes(search.toLowerCase()) ||
     contact.tags.some(tag => tag.includes(search.toLowerCase())) ||
-    contact.description.toLowerCase().includes(search.toLowerCase())
+    strings.emergencyContactDescriptions[contact.descriptionKey].toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="flex flex-col h-full bg-slate-100">
+    <div className="app-surface flex h-full flex-col">
       <div className="app-surface border-b border-slate-200 px-6 py-8">
         <div className="max-w-5xl mx-auto">
-          <div className="mb-6 border-l-2 border-[#d8b485] border-y border-r border-[#d8b485]/30 bg-transparent p-4">
-            <h1 className="text-2xl font-bold text-red-800 mb-2 flex items-center gap-3">
+          <div className="mb-6 border p-4 sm:p-5" style={{ borderColor: 'var(--app-danger-border)', backgroundColor: 'var(--app-danger-bg)' }}>
+            <h1 className="mb-2 flex items-center gap-3 text-2xl font-bold" style={{ color: 'var(--app-danger-text)' }}>
               <ShieldAlert size={28} />
-              Emergency & Official Services
+              {strings.emergencyPageTitle}
             </h1>
-            <p className="text-red-900/80 text-sm leading-6 max-w-3xl">
-              If you are in immediate danger, call Rwanda National Police on 112 first. Use this page to route urgent legal situations to the right official service and collect the right evidence safely.
+            <p className="max-w-3xl text-sm leading-6" style={{ color: 'var(--app-danger-text)', opacity: 0.88 }}>
+              {strings.emergencyPageIntro}
             </p>
+            <a href="tel:112" className="mt-4 inline-flex min-h-11 items-center gap-2 border px-4 text-sm font-semibold transition-colors hover:brightness-95" style={{ borderColor: 'var(--app-danger-border)', color: 'var(--app-danger-text)' }}>
+              <Phone size={16} />
+              {strings.call112}
+            </a>
           </div>
           
           <div className="relative max-w-2xl">
+            <label htmlFor="rengera-emergency-search" className="sr-only">{strings.searchContactsLabel}</label>
             <input 
+              id="rengera-emergency-search"
               type="text"
-              placeholder="Describe your issue (e.g., 'car accident', 'unpaid salary', 'cybercrime')..."
+              placeholder={strings.searchContactsPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full border border-slate-200 bg-slate-50 py-4 pl-12 pr-4 text-slate-900 transition-shadow focus:border-[#d8b485] focus:ring-2 focus:ring-[#d8b485]/30"
@@ -121,41 +127,42 @@ export default function Emergency() {
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-5xl mx-auto space-y-6">
           <section>
-            <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">What to do now</h2>
+            <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">{strings.whatToDoNow}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {URGENT_FLOWS.map(flow => (
-                <div key={flow.title} className="border border-slate-200 bg-white p-5">
+              {URGENT_FLOW_KEYS.map(({ id, icon: FlowIcon }) => {
+                const flow = strings.emergencyFlows[id];
+                return <div key={id} className="border border-slate-200 bg-white p-5">
                   <div className="mb-4 flex items-start justify-between gap-4">
                     <div>
                       <h3 className="font-bold text-slate-950">{flow.title}</h3>
                       <p className="mt-1 text-sm font-semibold text-[#d8b485]">{flow.route}</p>
                     </div>
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-[#d8b485]/30 text-[#d8b485]">
-                      <flow.icon size={20} />
+                      <FlowIcon size={20} />
                     </div>
                   </div>
                   <ul className="space-y-2">
                     {flow.steps.map(step => (
                       <li key={step} className="flex gap-2 text-sm leading-5 text-slate-600">
-                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-transparent0" />
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d8b485]" />
                         {step}
                       </li>
                     ))}
                   </ul>
-                </div>
-              ))}
+                </div>;
+              })}
             </div>
           </section>
 
           <section>
-            <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">Official contacts</h2>
+            <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">{strings.officialContactsHeading}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredContacts.map(contact => (
             <div key={contact.id} className="border border-slate-200 bg-white p-5 transition-colors hover:border-red-500/40">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 block">
-                    {contact.category}
+                    {strings.emergencyContactCategories[contact.categoryKey]}
                   </span>
                   <h2 className="text-xl font-bold text-slate-900">{contact.name}</h2>
                 </div>
@@ -165,17 +172,17 @@ export default function Emergency() {
               </div>
               
               <p className="text-slate-500 text-sm mb-6 min-h-[40px]">
-                {contact.description}
+                {strings.emergencyContactDescriptions[contact.descriptionKey]}
               </p>
               
               <div className="flex flex-col gap-2 border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-slate-600">Primary Number:</span>
+                    <span className="text-sm font-medium text-slate-600">{strings.primaryNumberLabel}:</span>
                   <span className="font-bold text-lg text-slate-900">{contact.phone}</span>
                 </div>
                 {contact.altPhone && (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-slate-600">Alternative:</span>
+                    <span className="text-sm font-medium text-slate-600">{strings.alternativeNumberLabel}:</span>
                     <span className="font-semibold text-slate-900">{contact.altPhone}</span>
                   </div>
                 )}
@@ -185,7 +192,7 @@ export default function Emergency() {
 
           {filteredContacts.length === 0 && (
             <div className="col-span-full py-12 text-center text-slate-500">
-              No specific authorities found for your search. For general emergencies, please dial 112.
+              {strings.noContactsFound} {strings.generalEmergencyNote}
             </div>
           )}
             </div>

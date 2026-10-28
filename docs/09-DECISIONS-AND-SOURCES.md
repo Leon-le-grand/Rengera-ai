@@ -2,12 +2,16 @@
 
 ## Approved constraints
 
+### V2 direction requested by the user
+
+The user selected a React/Vite frontend using TanStack Router and Query, a dedicated Python/FastAPI server, OpenAPI-generated clients, staff management with server-enforced RBAC, scalable RAG and bounded configurable AI workflows. See [`docs/v2/`](v2/README.md) for the proposed contracts, migration and later simplification review. This is a target decision, not evidence of implementation or approval for production deployment, hosted writes, provider spend or external contact. Exact vendor, region, cost, quality thresholds and operational ownership remain to be established. Existing Next.js security and source-fidelity rules remain effective until their replacements are verified.
+
 | ID | Decision | Authority / evidence |
 | --- | --- | --- |
 | A-01 | Separate `web/`, `mobile/` and future service concerns; never mix dependencies | Repository `AGENTS.md` instructions supplied by the user and current manifests |
-| A-02 | Web stack is Next.js 15 / React 19 / TypeScript / Tailwind 4; mobile uses Flutter | `web/package.json`, `mobile/pubspec.yaml` (local version constraints are authoritative) |
+| A-02 | Current web stack is Next.js 15 / React 19 / TypeScript / Tailwind 4; mobile uses Flutter. V2 targets React/Vite and FastAPI. | `web/package.json`, `mobile/pubspec.yaml`; V2 user direction |
 | A-03 | Shared persistence is Supabase Postgres/Storage; privileged key stays server-only | `web/lib/supabase.ts`, `.env.example`, migrations 001–016 and repository instructions |
-| A-04 | All AI calls use `web/lib/space-bunny.ts`; model/provider are environment-configurable | `web/lib/space-bunny.ts`, `.env.example`, repository instructions |
+| A-04 | Current web AI calls use `web/lib/space-bunny.ts`; the V2 server adapter will assume that boundary at cutover. | `web/lib/space-bunny.ts`, `.env.example`, V2 direction |
 | A-05 | Preserve `raw_content`, reject invalid classifications, public access is read-only, admin writes require verified session | Repository invariants, `web/app/legal-actions.ts`, `web/lib/auth.ts`, SQL migrations |
 | A-06 | Deterministic safety/retrieval/citation behavior precedes model refinement | Repository instructions, `web/app/actions.ts`, `web/lib/safety.ts`, `web/lib/supabase-retrieval.ts` |
 | A-07 | Dark canvas `#09090b`, gold `#d8b485`, 3px radius; Flutter token source is `RengeraColors` | Repository instructions, web styles and Flutter theme |
@@ -18,9 +22,9 @@
 | ID | Proposal | Gate before implementation |
 | --- | --- | --- |
 | P-01 | Redesign the citizen workspace source-first, with chat and library as primary tasks | Authorized by current request; task acceptance in `TASKS.md` |
-| P-02 | Keep a modular monolith until measured traffic/reliability needs justify service extraction | Architecture decision naming trigger, owner, operations and migration path |
+| P-02 | Superseded as a final target: retain the current Next.js monolith during migration to the requested modular V2 server | V2 migration and cutover evidence in `TASKS.md` |
 | P-03 | Make Flutter a usable native citizen app with offline capabilities | Decide client API, auth lifecycle, sync/conflict semantics and offline scope |
-| P-04 | Create durable ingestion worker, vector search, billing or multi-organization support | Separate explicit product/architecture approval and operational evidence |
+| P-04 | V2 includes a durable ingestion worker; evaluate vector search against the lexical baseline | Operational plan and evaluation; billing and multi-organization support remain outside approved scope |
 
 ## Current implementation decisions
 
@@ -32,7 +36,7 @@
 
 | Claim | Primary repository evidence | Checked |
 | --- | --- | --- |
-| Web dependencies and scripts | `web/package.json`, `web/pnpm-lock.yaml`, `vercel.json` | 2026-10-24 |
+| Web dependencies and scripts | `web/package.json`, `web/pnpm-lock.yaml` | 2026-10-24; no tracked `vercel.json` was found in the current checkout |
 | Flutter dependencies and features | `mobile/pubspec.yaml`, `mobile/lib/` | 2026-10-24 |
 | Server actions/routes | `web/app/`, `web/lib/` | 2026-10-24 |
 | SQL shape | `web/supabase/migrations/001`–`016` | 2026-10-24 |
@@ -48,6 +52,5 @@ The ESLint configuration change was separately checked against the Next.js 15 ES
 - Product owner, launch scope, measurable release gates and primary user segment.
 - Corpus sources, update responsibility, legal reviewer capacity, completeness/freshness target.
 - Data retention, privacy and incident owners, vendor/data residency choices, counsel-approved legal wording.
-- Mobile API boundary and the offline first-release promise.
-- Whether to split marketing, public workspace and authenticated app into separate routes.
-- When traffic/cost/reliability measurements justify queue/service extraction or semantic retrieval.
+- Mobile account/session migration and the offline first-release promise.
+- Hosting/queue provider, region, capacity, cost and the measurements required to adopt semantic retrieval.

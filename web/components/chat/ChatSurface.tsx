@@ -1,29 +1,15 @@
 'use client';
 
-/**
- * Shared chat surface.
- *
- * This is a faithful port of the "chat-template-desktop" reference: the same
- * window chrome (title + Private pill + icon rail), the same airy message
- * column (indigo context chip, gray user bubble with avatar on the right, plain
- * assistant copy with inline citation chips), the same status rows (Thought /
- * Viewed / Generating), the same "N results" source list, and the same composer
- * with the model pill, tool rail, mic and the blue send button.
- *
- * Both the live product chat (`components/app/ChatInterface.tsx`) and the static
- * landing showcase render these primitives, so the two can never drift apart.
- */
+/** Shared, source-first chat primitives used by the live workspace. */
 
 import type { ReactNode } from 'react';
 import {
   ArrowUp,
-  BadgeCheck,
+  ArrowUpRight,
   ChevronDown,
   Eye,
   FileText,
   Lightbulb,
-  Lock,
-  Plus,
   UserRound,
   X,
   Loader2,
@@ -34,15 +20,15 @@ import { cn } from '@/lib/utils';
 /* Design tokens                                                       */
 /* ------------------------------------------------------------------ */
 
-export const CHAT_ACCENT = '#1a73e8';
-export const CHAT_CHIP = '#4f46e5';
+export const CHAT_ACCENT = 'var(--chat-accent)';
+export const CHAT_CHIP = 'var(--chat-chip)';
 
 /** Page-level backdrop that surrounds the chat window. */
 export function ChatBackdrop({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'flex min-h-full w-full items-center justify-center bg-[radial-gradient(120%_90%_at_50%_0%,#f4f4f4_0%,#e6e6e6_55%,#dedede_100%)]',
+        'flex min-h-full w-full items-center justify-center bg-[var(--chat-surround)]',
         className,
       )}
     />
@@ -60,7 +46,7 @@ export function ChatFrame({
   return (
     <div
       className={cn(
-        'relative flex w-full flex-col overflow-hidden rounded-[3px]',
+        'relative flex w-full flex-col overflow-hidden rounded-[3px] border border-[var(--chat-border)] bg-[var(--chat-panel)]',
         className,
       )}
     >
@@ -75,56 +61,19 @@ export function ChatFrame({
 
 export function ChatTopBar({
   title = 'New Rengera chat',
-  privateLabel = 'Private',
-  onNewChat,
-  onEdit,
-  onShare,
-  onMore,
-  onClose,
-  actions,
   children,
 }: {
   title?: string;
-  privateLabel?: string;
-  onNewChat?: () => void;
-  onEdit?: () => void;
-  onShare?: () => void;
-  onMore?: () => void;
-  onClose?: () => void;
-  /** Optional custom icon rail (the app swaps this in for its own controls). */
-  actions?: ReactNode;
-  /** Extra controls rendered between the title and the icon rail. */
+  /** Accessible workspace actions, supplied by the live chat. */
   children?: ReactNode;
 }) {
   return (
-    <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-3 sm:px-5">
-      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-        <button
-          type="button"
-          onClick={onNewChat}
-          className="group flex shrink-0 items-center gap-1 text-[15px] font-bold tracking-[-0.01em] text-[var(--chat-text)] outline-none transition-opacity hover:opacity-70"
-        >
-          <span className="truncate">{title}</span>
-          <ChevronDown size={15} strokeWidth={2.5} className="text-[var(--chat-muted)]" />
-        </button>
-
-        <span className="hidden items-center gap-1 rounded-full bg-[var(--chat-chip)] px-2.5 py-[3px] text-xs font-semibold text-[var(--chat-muted)] sm:inline-flex">
-          <Lock size={11} strokeWidth={2.5} />
-          {privateLabel}
-        </span>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--chat-border)] px-3 py-2.5 sm:px-5">
+      <h1 className="min-w-0 truncate text-[14px] font-semibold tracking-[-0.01em] text-[var(--chat-text)] sm:text-[15px]">
+        {title}
+      </h1>
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         {children}
-        {actions ?? (
-          <button
-            type="button"
-            onClick={onShare}
-            className="rounded-full border border-[var(--chat-border)] px-3.5 py-[7px] text-[12px] font-medium text-[var(--chat-text)] outline-none transition-colors hover:bg-[var(--chat-hover)] active:bg-[var(--chat-chip)]"
-          >
-            Share
-          </button>
-        )}
       </div>
     </div>
   );
@@ -210,7 +159,7 @@ export function UserBubble({
 }) {
   return (
     <div className={cn('flex items-start justify-end gap-2.5', className)}>
-      <div className="max-w-[85%] rounded-[20px] bg-[var(--chat-user)] px-4 py-2.5 text-sm font-medium leading-[1.55] text-[var(--chat-text)]">
+      <div className="max-w-[85%] border border-[var(--chat-border)] bg-[var(--chat-user)] px-4 py-2.5 text-sm font-medium leading-[1.55] text-[var(--chat-text)]">
         {children}
       </div>
       <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--chat-chip)] text-[var(--chat-muted)]">
@@ -231,7 +180,7 @@ export function AssistantBlock({
   return (
     <div
       className={cn(
-        'text-sm font-medium leading-[1.65] text-[var(--chat-text)] [&_a]:text-[#1a73e8] [&_a]:underline [&_a]:underline-offset-2',
+        'text-sm font-medium leading-[1.7] text-[var(--chat-text)] [&_a]:text-[var(--chat-accent)] [&_a]:underline [&_a]:underline-offset-2',
         className,
       )}
     >
@@ -251,7 +200,7 @@ export function AssistantHeading({ children }: { children: ReactNode }) {
 /** Small inline citation token that trails a sentence. */
 export function CitationChip({ children }: { children: ReactNode }) {
   return (
-    <span className="mx-0.5 inline-flex translate-y-[-1px] items-center gap-1 rounded-[5px] bg-[var(--chat-chip)] px-1.5 py-[1px] align-middle text-[10px] font-medium text-[var(--chat-muted)]">
+    <span className="mx-0.5 inline-flex translate-y-[-1px] items-center gap-1 border border-[var(--chat-border)] bg-[var(--chat-chip)] px-1.5 py-[1px] align-middle text-[10px] font-medium text-[var(--chat-muted)]">
       <FileText size={9} strokeWidth={2.5} />
       {children}
     </span>
@@ -313,7 +262,7 @@ export function ViewedRow({ label = 'Viewed', source }: { label?: string; source
     <StatusRow
       icon={<Eye size={13} strokeWidth={2} />}
       trailing={
-        <span className="inline-flex items-center gap-1 rounded-[6px] bg-[var(--chat-blue-soft)] px-2 py-[2px] text-[11px] font-medium text-[var(--chat-blue)]">
+        <span className="inline-flex items-center gap-1 border border-[var(--chat-border)] bg-[var(--chat-accent-soft)] px-2 py-[2px] text-[11px] font-medium text-[var(--chat-accent)]">
           <FileText size={10} strokeWidth={2.5} />
           {source}
         </span>
@@ -341,38 +290,69 @@ export function SourceList({
   countLabel,
   items,
   onSelect,
+  openArticleLabel,
+  officialSourceLabel,
   className,
 }: {
   countLabel: string;
-  items: { key: string; title: string; icon?: ReactNode; active?: boolean; verified?: boolean }[];
+  items: {
+    key: string;
+    title: string;
+    subtitle?: string;
+    statusLabel: string;
+    reviewLabel: string;
+    sourceUrl?: string | null;
+    active?: boolean;
+  }[];
   onSelect?: (key: string) => void;
+  openArticleLabel: string;
+  officialSourceLabel: string;
   className?: string;
 }) {
   return (
     <div className={cn('mt-1', className)}>
-      <p className="mb-1.5 text-[11px] text-[var(--chat-muted-2)]">{countLabel}</p>
-      <ul className="divide-y divide-[var(--chat-chip)]">
+      <p className="mb-2 text-[11px] font-semibold text-[var(--chat-muted)]">{countLabel}</p>
+      <ul className="divide-y divide-[var(--chat-border)] border-y border-[var(--chat-border)]">
         {items.map((item) => (
-          <li key={item.key}>
-            <button
-              type="button"
-              onClick={() => onSelect?.(item.key)}
-              className={cn(
-                'flex w-full items-center gap-2.5 py-2 text-left text-[13px] text-[var(--chat-text)] outline-none transition-colors hover:underline',
-                item.active && 'font-semibold',
-              )}
-            >
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-[var(--chat-chip)] text-[var(--chat-muted)]">
-                {item.icon ?? <FileText size={12} strokeWidth={2} />}
-              </span>
-              <span className="min-w-0 truncate">{item.title}</span>
-              {item.verified && (
-                <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-[1px] text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-200">
-                  <BadgeCheck size={9} strokeWidth={3} />
-                  Verified
+          <li key={item.key} className="py-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+              <button
+                type="button"
+                onClick={() => onSelect?.(item.key)}
+                aria-label={`${item.title}${item.subtitle ? `, ${item.subtitle}` : ''}`}
+                className={cn(
+                  'flex min-w-0 items-start gap-2.5 text-left text-[13px] text-[var(--chat-text)] transition-colors hover:text-[var(--chat-accent)]',
+                  item.active && 'font-semibold',
+                )}
+              >
+                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center border border-[var(--chat-border)] bg-[var(--chat-chip)] text-[var(--chat-accent)]">
+                  <FileText size={13} strokeWidth={2} />
                 </span>
+                <span className="min-w-0">
+                  <span className="block font-semibold leading-5">{item.title}</span>
+                  {item.subtitle && <span className="mt-0.5 block text-[11px] font-normal leading-4 text-[var(--chat-muted)]">{item.subtitle}</span>}
+                  <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--chat-accent)]">
+                    {openArticleLabel}
+                    <ArrowUpRight size={12} strokeWidth={2} />
+                  </span>
+                </span>
+              </button>
+              {item.sourceUrl && (
+                <a
+                  href={item.sourceUrl}
+                  aria-label={`${officialSourceLabel}: ${item.title}`}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="ml-[38px] shrink-0 text-[11px] font-semibold text-[var(--chat-accent)] underline underline-offset-4 sm:ml-0"
+                >
+                  {officialSourceLabel}
+                </a>
               )}
-            </button>
+            </div>
+            <div className="ml-[38px] mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] leading-4 text-[var(--chat-muted)] sm:ml-[38px]">
+              <span>{item.statusLabel}</span>
+              <span>{item.reviewLabel}</span>
+            </div>
           </li>
         ))}
       </ul>
@@ -394,7 +374,7 @@ export function ScrollDownButton({
         type="button"
         aria-label="Scroll to latest"
         onClick={onClick}
-        className="pointer-events-auto flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--chat-border)] bg-[var(--chat-panel)] text-[var(--chat-muted)] shadow-[0_2px_8px_rgba(0,0,0,0.12)] outline-none transition-colors hover:bg-[var(--chat-hover)] hover:text-[var(--chat-text)]"
+        className="pointer-events-auto flex h-9 w-9 -translate-y-1/2 items-center justify-center border border-[var(--chat-border)] bg-[var(--chat-panel)] text-[var(--chat-muted)] shadow-[0_2px_8px_rgba(0,0,0,0.12)] outline-none transition-colors hover:bg-[var(--chat-hover)] hover:text-[var(--chat-text)]"
       >
         <ChevronDown size={16} strokeWidth={2.5} />
       </button>
@@ -417,9 +397,9 @@ export function ComposerFrame({
 }) {
   return (
     <div className={cn('shrink-0 px-4 pb-3 pt-1 sm:px-6', className)}>
-      <div className="mx-auto w-full max-w-[820px]">
+      <div className="mx-auto w-full max-w-[980px]">
         {emergency}
-        <div className="rounded-[26px] border border-[var(--chat-border)] bg-[var(--chat-composer)] p-3 transition-colors focus-within:border-[var(--chat-border)] focus-within:bg-[var(--chat-panel)]">
+        <div className="border border-[var(--chat-border)] bg-[var(--chat-composer)] p-3 transition-colors focus-within:border-[var(--chat-accent)] focus-within:bg-[var(--chat-panel)] sm:p-4">
           {children}
         </div>
       </div>
@@ -435,7 +415,7 @@ export function ComposerChip({
   onRemove?: () => void;
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] py-1 pl-1 pr-2">
+    <span className="inline-flex items-center gap-1.5 border border-[var(--chat-border-soft)] bg-[var(--chat-panel)] py-1 pl-1 pr-2">
       <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-[var(--chat-chip)] text-[var(--chat-muted)]">
         <UserRound size={12} strokeWidth={2.25} />
       </span>
@@ -452,62 +432,30 @@ export function ComposerChip({
   );
 }
 
-/**
- * The composer rail is deliberately minimal: attach, type, send. The model
- * picker, web search, assistant sparkle and overflow menu were decoration that
- * did nothing, so they are gone rather than left as dead controls.
- */
-export function ComposerToolbar({ onAdd }: { onAdd?: () => void }) {
-  return (
-    <div className="mt-2 flex items-center gap-1.5">
-      <ComposerAction label="Add attachment" onClick={onAdd}>
-        <Plus size={16} strokeWidth={2.25} />
-      </ComposerAction>
-    </div>
-  );
-}
-
-function ComposerAction({
-  children,
-  label,
-  onClick,
-}: {
-  children: ReactNode;
-  label: string;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--chat-muted)] outline-none transition-colors hover:bg-[var(--chat-hover)] hover:text-[var(--chat-text)]"
-    >
-      {children}
-    </button>
-  );
-}
-
 export function ComposerActions({
   onSend,
   sendDisabled,
   sending,
+  sendLabel,
+  sendingLabel,
   className,
 }: {
   onSend?: () => void;
   sendDisabled?: boolean;
   sending?: boolean;
+  sendLabel: string;
+  sendingLabel: string;
   className?: string;
 }) {
   return (
     <div className={cn('mt-2 flex items-center justify-end gap-2', className)}>
       <button
         type="button"
-        aria-label="Send message"
+        aria-label={sending ? sendingLabel : sendLabel}
+        title={sending ? sendingLabel : sendLabel}
         onClick={onSend}
         disabled={sendDisabled}
-        className="flex h-9 w-9 items-center justify-center rounded-full text-white outline-none transition-all hover:brightness-110 disabled:opacity-35"
+        className="flex h-11 min-w-11 items-center justify-center border border-[var(--chat-accent)] text-[var(--app-bg)] outline-none transition-colors hover:brightness-110 disabled:opacity-35"
         style={{ backgroundColor: CHAT_ACCENT }}
       >
         {sending ? (
