@@ -2,6 +2,8 @@
 
 **Assessment:** the frontend/backend boundary, source fidelity, server authorization and evidence-first answer flow are sound. The initial research overcommitted to multiple vendors, a generic agent platform, vectors and operational components before measuring need. Build a modular backend with one worker, one explicit answer pipeline and lexical retrieval first; expand only when evidence justifies complexity. These are design judgments, not measured production results.
 
+V2 implementation targets `platform/` (React/Vite, `platform/src/`) and `server/` (FastAPI), with contracts in `contracts/`; the `web/` Next.js app remains the runnable legacy baseline and the source of the current-code gaps below until each slice is ported. See [the approved layout](../09-DECISIONS-AND-SOURCES.md#approved-v2-repository-layout-2026-10-28).
+
 ## Modularity and failure boundaries
 
 Modules need explicit interfaces and independent failure tests, not separate deployments. Auth, library, retrieval, workflows, model adapter, ingestion and observability can share one FastAPI application. A background worker isolates long-running extraction. AI failure must not prevent law reading; vector failure must not prevent lexical search; worker failure must not corrupt the published corpus; authentication failure must deny privileged actions while allowing independent public paths where possible. Database and API remain critical dependencies. Liveness must not restart healthy instances due to external provider failure; component dashboards need timestamped healthy/degraded/down/unknown states and alerts.

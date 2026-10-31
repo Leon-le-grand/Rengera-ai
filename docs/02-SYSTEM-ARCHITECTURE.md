@@ -4,7 +4,7 @@
 
 ## Current shape
 
-The repository is a parent project with two present applications. There is no standalone `server/` service today.
+The repository currently ships two applications: the Next.js web app in `web/` and the Flutter prototype in `mobile/`. The approved V2 target adds a new React/Vite frontend in `platform/` and a Python/FastAPI backend in `server/`; both are under construction and are not shipped. `web/` remains the runnable migration baseline.
 
 ```mermaid
 flowchart LR
@@ -18,7 +18,7 @@ flowchart LR
   USSDRoute --> Supabase
 ```
 
-**Current evidence:** `web/app/` contains the App Router page, server actions, share pages and API routes; `web/lib/` contains auth, retrieval, PDF parsing and model adapters; SQL migrations live in `web/supabase/migrations/`. Flutter source is under `mobile/lib/`. `server/` is mentioned in older planning docs but is absent from the checkout.
+**Current evidence (2026-10-28):** `web/app/` contains the App Router page, server actions, share pages and API routes; `web/lib/` contains auth, retrieval, PDF parsing and model adapters; SQL migrations live in `web/supabase/migrations/`. Flutter source is under `mobile/lib/`. The approved V2 directories `platform/`, `server/` and `contracts/` were absent when this inspection began; untracked V2 scaffolding now exists in the worktree. Presence is not completion: implementation checks and task status belong in `TASKS.md`.
 
 ## Component responsibilities
 
@@ -63,7 +63,9 @@ Python crawling/ingestion scripts exist under `web/scripts/`; verify whether a p
 
 ## Target structure and evolution
 
-The user requested a React frontend with TanStack Router and Query, a dedicated modular FastAPI backend, generated OpenAPI clients, staff RBAC, scalable RAG and bounded workflows. Migrate in reviewed slices while preserving the current app. The first server should be modular, with an explicit answer pipeline and a separate worker when required.
+The approved target is a new React frontend in `platform/` using Vite, TanStack Router and TanStack Query, a dedicated modular FastAPI backend in `server/`, versioned OpenAPI contracts in `contracts/`, and generated TypeScript/Dart clients. The user also requested staff RBAC, scalable RAG and bounded workflows. Migrate in reviewed slices while preserving the current app in `web/`. The first server should be modular, with an explicit answer pipeline and a separate worker when required.
+
+`platform/` owns UI and generated API clients; `server/` owns authentication, authorization, data access, safety, retrieval, orchestration and provider secrets. Flutter never imports `web/` or `platform/` runtime code. SQL migrations remain in `web/supabase/migrations/` until a recorded ownership move. See [`v2/02-SYSTEM-ARCHITECTURE.md`](v2/02-SYSTEM-ARCHITECTURE.md) and the [approved layout decision](09-DECISIONS-AND-SOURCES.md#approved-v2-repository-layout-2026-10-28).
 
 Hosting and queue vendor, vector search and advanced workflow configuration require operational evidence and evaluation. Existing `docs/research/rengera-system-research.md` is a historical audit; its proposals are not automatically adopted.
 

@@ -5,8 +5,8 @@ Read this file before changing the repository. It describes enduring constraints
 ## Project and approved boundaries
 
 - Rengera AI helps people find and understand Rwandan legal information from source laws. It is not represented in this repository as a law firm or a substitute for qualified legal advice.
-- This repository currently contains separate `web/` and `mobile/` applications; `server/` does not yet exist. The user-requested V2 target adds a dedicated Python/FastAPI server and migrates web from Next.js to React with TanStack Router and Query. Keep manifests and runtime code isolated by subproject.
-- Current web: Next.js 15 App Router, React 19, TypeScript, Tailwind CSS 4. Mobile: Flutter/Dart. Shared data and server-side application access use Supabase Postgres and Storage. Versions in local manifests are authoritative for existing code; V2 remains future work.
+- This repository contains `web/` (the preserved Next.js 15 baseline), `mobile/` (Flutter), and the V2 rebuild in `platform/` (React/Vite with TanStack Router and Query) and `server/` (Python/FastAPI), plus versioned contracts under `contracts/`. `web/` stays runnable until its capabilities are ported and accepted; do not delete or overwrite it during migration. Keep manifests, lockfiles and runtime code isolated by subproject.
+- `web/`: Next.js 15 App Router, React 19, TypeScript, Tailwind CSS 4 (legacy product baseline). `platform/`: React 19, Vite, TypeScript, TanStack Router and Query, Tailwind CSS 4 (V2 frontend). `server/`: Python/FastAPI (V2 backend). `mobile/`: Flutter/Dart. Shared persistence is Supabase Postgres and Storage. Versions in each local manifest are authoritative for that subproject; V2 remains under construction, not shipped.
 - The web application is the current citizen and administrator product. Flutter is the canonical native application, but its implemented scope is currently onboarding, login, theme, and a shell prototype. Do not describe planned mobile features as shipped.
 - The user requested admin-managed staff, a dedicated API/worker and bounded AI workflows in V2. Do not add billing, lawyer/organization roles, a new jurisdiction or another supported language without a separate product decision.
 
@@ -22,7 +22,7 @@ Documentation ownership and the map are in `docs/README.md`. Requirements and co
 ## Architecture and change boundaries
 
 - Keep web, Flutter and future server dependencies isolated. Cross-platform communication goes through documented HTTP/API contracts or shared Supabase data access; never import one app's runtime code into the other.
-- Preserve the current Next.js monolith as the migration baseline until its V2 slices are ready. V2 uses one modular FastAPI backend and a worker when needed; implementation follows the queue and versioned contracts.
+- Preserve `web/` as the migration baseline until its V2 slices are ready; build new work in `platform/` and `server/`. V2 uses one modular FastAPI backend and a worker when needed; implementation follows the queue and versioned contracts. Do not share runtime code or dependencies between `web/`, `platform/` and `server/`.
 - Current web model calls go through `web/lib/space-bunny.ts`. At V2 cutover the server provider adapter takes ownership; all model access remains centrally configured and controlled. Never hard-code a model ID in a feature.
 - Do not add schema or dependencies to a different subproject. SQL changes are ordered migrations under `web/supabase/migrations/` and require a documented operational plan before application to a hosted database.
 - Reuse the existing brand system. Dark canvas `#09090b`, gold `#d8b485`, 3px radius. Mobile mirrors web exactly through `RengeraColors`. The redesign may improve information hierarchy and interaction patterns while retaining these tokens unless the user approves a brand change.

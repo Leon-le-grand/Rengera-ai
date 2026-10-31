@@ -4,6 +4,8 @@
 
 Help residents of Rwanda and Rwandans abroad locate and understand Rwandan legal sources. Support English, Kinyarwanda and French. Explain only what retrieved material supports, distinguish unknown from unavailable, surface original sources and classification-review scope, and make emergency help accessible before AI generation. Do not imply a complete corpus, legal representation or guaranteed outcome.
 
+The V2 UI is built in `platform/` (React/Vite with TanStack Router); the legacy `web/` Next.js UI remains runnable and is the visual/interaction baseline until each route is ported. Do not add new V2 routes to `web/`.
+
 ## Target user journeys
 
 | User | Journey | Permission boundary |
@@ -19,7 +21,7 @@ Help residents of Rwanda and Rwandans abroad locate and understand Rwandan legal
 
 Target routes cover landing, authentication, chat, library, law/article reader, emergency, settings, deadlines, expiring share view, staff intake/jobs, admin review/staff/workflows/analytics, 403 and 404. See [full route inventory](RESEARCH.md#complete-ui-and-navigation-specification). Each route defines loading, empty, success, forbidden, expired, network and service-unavailable states. Chat separates sourced answer, abstention and emergency; reader distinguishes original source, extracted text and AI summary, and shows status and what was actually reviewed.
 
-Use accessible semantic navigation, labelled controls, visible focus, keyboard and screen-reader support, reduced motion, contrast and text scaling. Design for narrow and wide screens, long Kinyarwanda/French labels, low connectivity and shared devices. Preserve the dark canvas `#09090b`, gold `#d8b485`, 3px standard radius and existing visual identity. Use `<Can>` and route guards for presentation; enforce all access in the API. Preserve current `WEB-001` changes during migration. The complete component, route and source-file map appears in [research](RESEARCH.md#ui-implementation-and-acceptance-map).
+Use accessible semantic navigation, labelled controls, visible focus, keyboard and screen-reader support, reduced motion, contrast and text scaling. Design for narrow and wide screens, long Kinyarwanda/French labels, low connectivity and shared devices. Preserve the dark canvas `#09090b`, gold `#d8b485`, 3px standard radius and existing visual identity. Use `<Can>` and route guards for presentation; enforce all access in the API. Preserve the `WEB-001` redesign in `web/` as the porting reference; do not treat its unrun rendered review as accepted. The complete component, route and source-file map appears in [research](RESEARCH.md#ui-implementation-and-acceptance-map); target paths are under `platform/src/`, while legacy `web/` paths remain evidence for the current app.
 
 ## Acceptance
 

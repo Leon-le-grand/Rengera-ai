@@ -1,0 +1,2147 @@
+{
+  "components": {
+    "schemas": {
+      "AccountStatus": {
+        "description": "Account states allowed by the identity schema.",
+        "enum": [
+          "active",
+          "suspended"
+        ],
+        "title": "AccountStatus",
+        "type": "string"
+      },
+      "AccountSummary": {
+        "description": "Presentation-safe account identity; never includes tokens or secrets.",
+        "properties": {
+          "email": {
+            "description": "Account email address.",
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "description": "Server account identifier.",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role",
+            "description": "Server-owned application role."
+          },
+          "status": {
+            "$ref": "#/components/schemas/AccountStatus",
+            "description": "Current account status."
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "status"
+        ],
+        "title": "AccountSummary",
+        "type": "object"
+      },
+      "AnswerErrorBody": {
+        "description": "Safe error body for answer dependency failures.",
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/AnswerErrorCode"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
+        "title": "AnswerErrorBody",
+        "type": "object"
+      },
+      "AnswerErrorCode": {
+        "description": "Answer-specific failure codes that must not be reported as abstentions.",
+        "enum": [
+          "search_unavailable",
+          "provider_unavailable",
+          "provider_not_configured"
+        ],
+        "title": "AnswerErrorCode",
+        "type": "string"
+      },
+      "AnswerErrorResponse": {
+        "description": "Error envelope for answer dependency failures.",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/AnswerErrorBody"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "AnswerErrorResponse",
+        "type": "object"
+      },
+      "AnswerKind": {
+        "description": "Stable outcome kinds; clients must distinguish all five.",
+        "enum": [
+          "answered",
+          "abstained",
+          "emergency",
+          "greeting",
+          "help"
+        ],
+        "title": "AnswerKind",
+        "type": "string"
+      },
+      "AnswerLanguage-Input": {
+        "description": "Supported answer languages; changing this needs a product decision.",
+        "enum": [
+          "en",
+          "rw",
+          "fr"
+        ],
+        "title": "AnswerLanguage",
+        "type": "string"
+      },
+      "AnswerRequest": {
+        "additionalProperties": false,
+        "description": "Grounded question input. Deliberately contains no article-text field.",
+        "properties": {
+          "article_number": {
+            "anyOf": [
+              {
+                "description": "Stored article number, for example '43', '5 bis', or '5.2'.",
+                "maxLength": 40,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9.\\- ]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional exact stored article number; fetched server-side.",
+            "title": "Article Number"
+          },
+          "language": {
+            "$ref": "#/components/schemas/AnswerLanguage-Input",
+            "description": "Requested answer language."
+          },
+          "law_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional law ID. The server fetches its articles itself.",
+            "title": "Law Id"
+          },
+          "question": {
+            "description": "Citizen question. No article text may be supplied by the client.",
+            "maxLength": 2000,
+            "minLength": 2,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "language"
+        ],
+        "title": "AnswerRequest",
+        "type": "object"
+      },
+      "AnswerResponse": {
+        "description": "One of five explicit outcomes; sources are only present when answered.",
+        "properties": {
+          "abstention_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abstention Reason"
+          },
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "disclaimer": {
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "emergency": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmergencyGuidanceOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AnswerKind"
+          },
+          "language": {
+            "$ref": "#/components/schemas/app__safety__messages__AnswerLanguage"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/AnswerSource"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "answer",
+          "language",
+          "disclaimer"
+        ],
+        "title": "AnswerResponse",
+        "type": "object"
+      },
+      "AnswerSource": {
+        "description": "Evidence actually cited by the validated answer.",
+        "properties": {
+          "article_content_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Article Content Hash"
+          },
+          "article_number": {
+            "title": "Article Number",
+            "type": "string"
+          },
+          "article_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Article Title"
+          },
+          "citation": {
+            "title": "Citation",
+            "type": "string"
+          },
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "excerpt": {
+            "description": "Bounded verbatim excerpt of the cited article text.",
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "law_content_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Law Content Hash"
+          },
+          "law_id": {
+            "title": "Law Id",
+            "type": "string"
+          },
+          "law_title": {
+            "title": "Law Title",
+            "type": "string"
+          },
+          "reference_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Number"
+          },
+          "review_status": {
+            "description": "Classification-review state; not a legal-review claim.",
+            "enum": [
+              "reviewed",
+              "pending"
+            ],
+            "title": "Review Status",
+            "type": "string"
+          },
+          "source_pdf_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Pdf Sha256"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "law_id",
+          "law_title",
+          "article_number",
+          "status",
+          "review_status",
+          "citation",
+          "excerpt"
+        ],
+        "title": "AnswerSource",
+        "type": "object"
+      },
+      "ApiMeta": {
+        "properties": {
+          "api_version": {
+            "description": "Versioned API prefix, for example v1.",
+            "title": "Api Version",
+            "type": "string"
+          },
+          "app_version": {
+            "description": "Running server application version.",
+            "title": "App Version",
+            "type": "string"
+          },
+          "capabilities": {
+            "description": "Capabilities implemented by this build, not the planned roadmap.",
+            "items": {
+              "$ref": "#/components/schemas/Capability"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "supported_answer_languages": {
+            "description": "Languages the answered product supports.",
+            "items": {
+              "$ref": "#/components/schemas/app__api__v1__routes__meta__AnswerLanguage"
+            },
+            "title": "Supported Answer Languages",
+            "type": "array"
+          }
+        },
+        "required": [
+          "api_version",
+          "app_version",
+          "supported_answer_languages",
+          "capabilities"
+        ],
+        "title": "ApiMeta",
+        "type": "object"
+      },
+      "ArticleDetailOut": {
+        "description": "One article plus its law-level provenance for a stable deep link.",
+        "properties": {
+          "article_number": {
+            "title": "Article Number",
+            "type": "string"
+          },
+          "article_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Article Title"
+          },
+          "chunk_type": {
+            "description": "'article' or 'preamble'.",
+            "title": "Chunk Type",
+            "type": "string"
+          },
+          "citation": {
+            "title": "Citation",
+            "type": "string"
+          },
+          "content": {
+            "description": "Exact stored source text; never paraphrased.",
+            "title": "Content",
+            "type": "string"
+          },
+          "content_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Hash"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "law_id": {
+            "title": "Law Id",
+            "type": "string"
+          },
+          "law_source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Law Source Url"
+          },
+          "law_title": {
+            "title": "Law Title",
+            "type": "string"
+          },
+          "reference_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Number"
+          },
+          "sort_order": {
+            "title": "Sort Order",
+            "type": "integer"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Stored document URL only when it is a valid http(s) URL.",
+            "title": "Source Url"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "article_number",
+          "chunk_type",
+          "sort_order",
+          "content",
+          "citation",
+          "law_id",
+          "law_title",
+          "status"
+        ],
+        "title": "ArticleDetailOut",
+        "type": "object"
+      },
+      "ArticleOut": {
+        "description": "One exact stored article or preamble chunk.",
+        "properties": {
+          "article_number": {
+            "title": "Article Number",
+            "type": "string"
+          },
+          "article_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Article Title"
+          },
+          "chunk_type": {
+            "description": "'article' or 'preamble'.",
+            "title": "Chunk Type",
+            "type": "string"
+          },
+          "citation": {
+            "title": "Citation",
+            "type": "string"
+          },
+          "content": {
+            "description": "Exact stored source text; never paraphrased.",
+            "title": "Content",
+            "type": "string"
+          },
+          "content_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Hash"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "sort_order": {
+            "title": "Sort Order",
+            "type": "integer"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Stored document URL only when it is a valid http(s) URL.",
+            "title": "Source Url"
+          }
+        },
+        "required": [
+          "id",
+          "article_number",
+          "chunk_type",
+          "sort_order",
+          "content",
+          "citation"
+        ],
+        "title": "ArticleOut",
+        "type": "object"
+      },
+      "Capability": {
+        "description": "Implemented API capabilities. Do not list planned features here.",
+        "enum": [
+          "health",
+          "meta",
+          "session",
+          "laws",
+          "answers"
+        ],
+        "title": "Capability",
+        "type": "string"
+      },
+      "CheckResult": {
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Safe explanation for operators; never contains secret values.",
+            "title": "Detail"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CheckStatus"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "CheckResult",
+        "type": "object"
+      },
+      "CheckStatus": {
+        "enum": [
+          "ok",
+          "unavailable"
+        ],
+        "title": "CheckStatus",
+        "type": "string"
+      },
+      "CurrentAccountResponse": {
+        "description": "Verified account and effective capabilities for the current session.",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/AccountSummary"
+          },
+          "capabilities": {
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "policy_version": {
+            "default": "rbac-v1",
+            "title": "Policy Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account",
+          "capabilities"
+        ],
+        "title": "CurrentAccountResponse",
+        "type": "object"
+      },
+      "EmergencyContactOut": {
+        "description": "One official urgent-response contact.",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "title": "Phone",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "reason"
+        ],
+        "title": "EmergencyContactOut",
+        "type": "object"
+      },
+      "EmergencyGuidanceOut": {
+        "description": "Structured localized urgent guidance returned before any model work.",
+        "properties": {
+          "contacts": {
+            "items": {
+              "$ref": "#/components/schemas/EmergencyContactOut"
+            },
+            "title": "Contacts",
+            "type": "array"
+          },
+          "immediate_actions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Immediate Actions",
+            "type": "array"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "immediate_actions",
+          "contacts"
+        ],
+        "title": "EmergencyGuidanceOut",
+        "type": "object"
+      },
+      "ErrorBody": {
+        "description": "Error payload carried by every non-success JSON response.",
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode",
+            "description": "Stable machine-readable error code."
+          },
+          "details": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional structured details, such as field validation errors.",
+            "title": "Details"
+          },
+          "message": {
+            "description": "Safe, human-readable message; never internal details.",
+            "title": "Message",
+            "type": "string"
+          },
+          "request_id": {
+            "description": "Correlation ID, also returned in the request ID header.",
+            "title": "Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
+        "title": "ErrorBody",
+        "type": "object"
+      },
+      "ErrorCode": {
+        "description": "Stable machine-readable error codes; clients may depend on these values.",
+        "enum": [
+          "bad_request",
+          "unauthorized",
+          "forbidden",
+          "not_found",
+          "method_not_allowed",
+          "conflict",
+          "payload_too_large",
+          "unsupported_media_type",
+          "validation_error",
+          "rate_limited",
+          "request_failed",
+          "internal_error",
+          "service_unavailable"
+        ],
+        "title": "ErrorCode",
+        "type": "string"
+      },
+      "ErrorResponse": {
+        "description": "Top-level error envelope.",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "LawCategoryOut": {
+        "description": "One legal category and the number of searchable laws in it.",
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "count"
+        ],
+        "title": "LawCategoryOut",
+        "type": "object"
+      },
+      "LawDetailOut": {
+        "description": "Full reader payload with preamble, ordered articles and integrity fields.",
+        "properties": {
+          "article_count": {
+            "title": "Article Count",
+            "type": "integer"
+          },
+          "articles": {
+            "items": {
+              "$ref": "#/components/schemas/ArticleOut"
+            },
+            "title": "Articles",
+            "type": "array"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "content_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Hash"
+          },
+          "effective_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Date"
+          },
+          "extraction_char_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction Char Count"
+          },
+          "extraction_coverage_percent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction Coverage Percent"
+          },
+          "gazette_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gazette Reference"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "languages_available": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Exactly as stored; null and empty are preserved, never expanded.",
+            "title": "Languages Available"
+          },
+          "needs_ocr": {
+            "title": "Needs Ocr",
+            "type": "boolean"
+          },
+          "preamble": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArticleOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "publication_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publication Date"
+          },
+          "reference_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Number"
+          },
+          "review_scope": {
+            "const": "classification",
+            "default": "classification",
+            "description": "Review applies to classification metadata only; it is not a claim of legal or human legal review of the source text.",
+            "title": "Review Scope",
+            "type": "string"
+          },
+          "review_status": {
+            "description": "Classification-review state derived from the stored review timestamp. It is not a claim of legal or human legal review of the source text.",
+            "enum": [
+              "reviewed",
+              "pending"
+            ],
+            "title": "Review Status",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "reviewed_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By"
+          },
+          "source_pdf_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Pdf Sha256"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Validated document URL; null when missing or not a document URL.",
+            "title": "Source Url"
+          },
+          "status": {
+            "description": "Stored legal status. Unknown values stay 'unknown'; never defaulted to active.",
+            "title": "Status",
+            "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "type",
+          "review_status",
+          "needs_ocr",
+          "article_count"
+        ],
+        "title": "LawDetailOut",
+        "type": "object"
+      },
+      "LawListResponse": {
+        "description": "Paginated lexical law search results and the category filter catalog.",
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/LawCategoryOut"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LawSummaryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "LawListResponse",
+        "type": "object"
+      },
+      "LawSummaryOut": {
+        "description": "List-card projection of one law with honest status and review scope.",
+        "properties": {
+          "article_count": {
+            "title": "Article Count",
+            "type": "integer"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "effective_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Date"
+          },
+          "gazette_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gazette Reference"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "languages_available": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Exactly as stored; null and empty are preserved, never expanded.",
+            "title": "Languages Available"
+          },
+          "needs_ocr": {
+            "title": "Needs Ocr",
+            "type": "boolean"
+          },
+          "publication_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publication Date"
+          },
+          "reference_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Number"
+          },
+          "review_scope": {
+            "const": "classification",
+            "default": "classification",
+            "description": "Review applies to classification metadata only; it is not a claim of legal or human legal review of the source text.",
+            "title": "Review Scope",
+            "type": "string"
+          },
+          "review_status": {
+            "description": "Classification-review state derived from the stored review timestamp. It is not a claim of legal or human legal review of the source text.",
+            "enum": [
+              "reviewed",
+              "pending"
+            ],
+            "title": "Review Status",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "reviewed_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Validated document URL; null when missing or not a document URL.",
+            "title": "Source Url"
+          },
+          "status": {
+            "description": "Stored legal status. Unknown values stay 'unknown'; never defaulted to active.",
+            "title": "Status",
+            "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "type",
+          "review_status",
+          "needs_ocr",
+          "article_count"
+        ],
+        "title": "LawSummaryOut",
+        "type": "object"
+      },
+      "LivenessResponse": {
+        "properties": {
+          "status": {
+            "const": "ok",
+            "default": "ok",
+            "description": "Always ok when the process can respond.",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "LivenessResponse",
+        "type": "object"
+      },
+      "Permission": {
+        "description": "Every explicit permission the server can grant.",
+        "enum": [
+          "law.read",
+          "law.draft",
+          "law.publish",
+          "staff.manage",
+          "workflow.manage",
+          "analytics.read"
+        ],
+        "title": "Permission",
+        "type": "string"
+      },
+      "ReadinessReport": {
+        "properties": {
+          "checks": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CheckResult"
+            },
+            "title": "Checks",
+            "type": "object"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CheckStatus"
+          }
+        },
+        "required": [
+          "status",
+          "checks"
+        ],
+        "title": "ReadinessReport",
+        "type": "object"
+      },
+      "Role": {
+        "description": "Account roles supported by the product.",
+        "enum": [
+          "user",
+          "staff",
+          "admin"
+        ],
+        "title": "Role",
+        "type": "string"
+      },
+      "SessionCreateRequest": {
+        "additionalProperties": false,
+        "description": "Start a browser session from credentials or an existing access token.\n\nExactly one mechanism must be supplied:\n\n* ``email`` + ``password`` for the first-party web sign-in form;\n* ``access_token`` for a client that already holds a Supabase token, such as\n  the Flutter application after its own sign-in flow.\n\nThe server verifies the resulting Supabase token in both cases before it\ncreates an opaque session. A token's claims can never grant a role.",
+        "properties": {
+          "access_token": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Supabase access token issued by the configured identity provider. It is never logged or stored in plaintext.",
+            "title": "Access Token"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "description": "Account email address.",
+                "maxLength": 254,
+                "minLength": 3,
+                "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Email address for first-party password sign-in.",
+            "title": "Email"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "description": "Account password; never logged or stored by this API.",
+                "format": "password",
+                "maxLength": 128,
+                "minLength": 8,
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Password for first-party sign-in; never logged.",
+            "title": "Password"
+          }
+        },
+        "title": "SessionCreateRequest",
+        "type": "object"
+      },
+      "SessionResponse": {
+        "description": "Current browser session state and display-only capability snapshot.",
+        "properties": {
+          "account": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AccountSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "authenticated": {
+            "description": "Whether a live server session was resolved.",
+            "title": "Authenticated",
+            "type": "boolean"
+          },
+          "capabilities": {
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "csrf_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Returned when a session is created. The same value is also set as a readable double-submit cookie so a reloaded browser tab can recover it.",
+            "title": "Csrf Token"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "policy_version": {
+            "default": "rbac-v1",
+            "title": "Policy Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "authenticated"
+        ],
+        "title": "SessionResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "app__api__v1__routes__meta__AnswerLanguage": {
+        "description": "Supported answer languages; changing this requires a product decision.",
+        "enum": [
+          "en",
+          "rw",
+          "fr"
+        ],
+        "title": "AnswerLanguage",
+        "type": "string"
+      },
+      "app__safety__messages__AnswerLanguage": {
+        "description": "Supported answer languages; changing this needs a product decision.",
+        "enum": [
+          "en",
+          "rw",
+          "fr"
+        ],
+        "title": "AnswerLanguage",
+        "type": "string"
+      }
+    }
+  },
+  "info": {
+    "title": "Rengera AI API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/health/live": {
+      "get": {
+        "description": "Report that the API process is running; never touches external services.",
+        "operationId": "getHealthLive",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LivenessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Liveness probe",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "description": "Evaluate registered readiness checks and return 503 when any is unavailable.",
+        "operationId": "getHealthReady",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessReport"
+                }
+              }
+            },
+            "description": "At least one registered foundation check is unavailable."
+          }
+        },
+        "summary": "Readiness probe",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/v1/answers": {
+      "post": {
+        "description": "Urgent-safety and greeting/help questions are answered deterministically without a model call. Legal questions retrieve server-side evidence and only then may call the configured provider. Dependency failures are reported as errors, never as an empty-library abstention.",
+        "operationId": "createAnswer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error; the request ID is also returned in the response header."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerErrorResponse"
+                }
+              }
+            },
+            "description": "Provider unavailable."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerErrorResponse"
+                }
+              }
+            },
+            "description": "Law search or answer provider is unavailable/not configured."
+          }
+        },
+        "summary": "Ask a grounded question about Rwandan law",
+        "tags": [
+          "answers"
+        ]
+      }
+    },
+    "/v1/laws": {
+      "get": {
+        "description": "Lexical PostgreSQL search over stored titles, references, summaries and source text. Repealed laws are never returned by search.",
+        "operationId": "listLaws",
+        "parameters": [
+          {
+            "description": "Lexical search over titles, references, summaries and source text.",
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 300,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Lexical search over titles, references, summaries and source text.",
+              "title": "Query"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LawListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error; the request ID is also returned in the response header."
+          }
+        },
+        "summary": "Search and page the public law library",
+        "tags": [
+          "laws"
+        ]
+      }
+    },
+    "/v1/laws/{law_id}": {
+      "get": {
+        "description": "Direct detail access also returns repealed laws with their honest stored status. Repeal filtering applies to search, not to an explicit deep link.",
+        "operationId": "getLaw",
+        "parameters": [
+          {
+            "description": "Law UUID.",
+            "in": "path",
+            "name": "law_id",
+            "required": true,
+            "schema": {
+              "description": "Law UUID.",
+              "format": "uuid",
+              "title": "Law Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LawDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error; the request ID is also returned in the response header."
+          }
+        },
+        "summary": "Read one law with its preamble and ordered articles",
+        "tags": [
+          "laws"
+        ]
+      }
+    },
+    "/v1/laws/{law_id}/articles/{article_number}": {
+      "get": {
+        "description": "Returns stored source text unchanged, or 404 when it is absent.",
+        "operationId": "getLawArticle",
+        "parameters": [
+          {
+            "description": "Law UUID.",
+            "in": "path",
+            "name": "law_id",
+            "required": true,
+            "schema": {
+              "description": "Law UUID.",
+              "format": "uuid",
+              "title": "Law Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Stored article number, for example '43' or '5 bis'.",
+            "in": "path",
+            "name": "article_number",
+            "required": true,
+            "schema": {
+              "description": "Stored article number, for example '43' or '5 bis'.",
+              "maxLength": 40,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9.\\- ]*$",
+              "title": "Article Number",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticleDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error; the request ID is also returned in the response header."
+          }
+        },
+        "summary": "Read one exact stored article",
+        "tags": [
+          "laws"
+        ]
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "description": "Return server-derived identity and a display-only capability snapshot.",
+        "operationId": "getCurrentAccount",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentAccountResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A live server session is required."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error; the request ID is also returned in the response header."
+          }
+        },
+        "summary": "Get the verified account and effective capabilities",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/v1/meta": {
+      "get": {
+        "operationId": "getMeta",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMeta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error; the request ID is also returned in the response header."
+          }
+        },
+        "summary": "API metadata and implemented capabilities",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/v1/session": {
+      "delete": {
+        "description": "Revoke server state and expire both cookies; CSRF is enforced upstream.",
+        "operationId": "deleteSession",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "No live session was presented."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The CSRF header was missing or did not match."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error; the request ID is also returned in the response header."
+          }
+        },
+        "summary": "Revoke the current session and clear session cookies",
+        "tags": [
+          "session"
+        ]
+      },
+      "get": {
+        "description": "Return authenticated state, or a 200 anonymous snapshot with empty grants.",
+        "operationId": "getSession",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error; the request ID is also returned in the response header."
+          }
+        },
+        "summary": "Get the current browser session (never fails for anonymous callers)",
+        "tags": [
+          "session"
+        ]
+      },
+      "post": {
+        "description": "Authenticate credentials or a token, then set opaque session cookies.",
+        "operationId": "createSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The credentials or access token were rejected."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too many session-creation attempts from this client."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error; the request ID is also returned in the response header."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Supabase token verification is not configured or the identity provider is unreachable."
+          }
+        },
+        "summary": "Exchange a Supabase access token for a server session",
+        "tags": [
+          "session"
+        ]
+      }
+    }
+  }
+}

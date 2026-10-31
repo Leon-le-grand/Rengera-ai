@@ -1,6 +1,6 @@
 # 07 — Implementation plan
 
-> **Baseline milestones.** For the requested V2 migration use [`v2/PLAN_RESEARCH.md`](v2/PLAN_RESEARCH.md) and the root `TASKS.md` queue. The milestones below retain current product and safety acceptance context; V2 is not yet implemented.
+> **Baseline milestones.** For the requested V2 migration use [`v2/PLAN_RESEARCH.md`](v2/PLAN_RESEARCH.md) and the root `TASKS.md` queue. The milestones below retain current product and safety acceptance context; V2 is under construction in `platform/` and `server/`, not shipped.
 
 This plan defines milestone outcomes and gates. `TASKS.md` selects the next concrete slice and is the current execution queue. Dates are intentionally omitted until scope, owners and external dependencies are known.
 
@@ -38,10 +38,10 @@ This plan defines milestone outcomes and gates. `TASKS.md` selects the next conc
 
 **Gate:** launch metrics and risk owners exist; target Supabase migration state is reconciled; backups/restore are proven; no release claim relies on local-only verification.
 
-## M5 — Scale only when measured
+## M5 — Build the approved V2 platform in reviewed slices
 
-The user requested a dedicated API and ingestion worker in V2. Select their operational implementation with a migration plan and measurements. Semantic retrieval remains evaluation-gated; push delivery and billing remain outside the approved direction.
+The approved V2 layout is a new React/Vite frontend in `platform/`, a dedicated FastAPI backend in `server/`, and versioned contracts in `contracts/`; `web/` stays runnable until each capability is ported and accepted. The user requested a dedicated API and ingestion worker, generated clients, staff RBAC, RAG and bounded workflows. Select operational implementations with a migration plan and measurements. Semantic retrieval remains evaluation-gated; push delivery and billing remain outside the approved direction.
 
 ## Current advancement
 
-M0 documentation foundation is complete. M1 is the next implementation milestone, with `WEB-001` first in `TASKS.md`. Data operations and mobile features retain their external/architecture prerequisites; they do not block independent web redesign work.
+M0 documentation foundation is complete, including the V2 baseline inventory and approved-layout reconciliation. `V2-003` and later implementation slices are the active queue in `TASKS.md`. `WEB-001` is handed off as blocked on its unrun rendered review; its accepted work remains in `web/` and migrates through `V2-013`. Data operations and mobile features retain their external/architecture prerequisites; they do not block independent V2 build work.

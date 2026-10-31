@@ -2,9 +2,9 @@
 
 ## API contract
 
-FastAPI exposes versioned OpenAPI with stable unique operation IDs, explicit schemas, security, errors and media types. Pin Hey API to generate TypeScript SDK and TanStack Query options; generate a Dart client with a compatible OpenAPI Generator configuration. CI exports and validates the contract, regenerates clients, detects drift and compiles consumers. Keep handwritten auth/CSRF/stream adapters outside generated output. Generated types do not replace server validation.
+The `server/` FastAPI application exposes versioned OpenAPI with stable unique operation IDs, explicit schemas, security, errors and media types; the reproducible artifact lives under `contracts/openapi/`. Pin Hey API to generate the TypeScript SDK and TanStack Query options for `platform/src/api/generated/`; generate a Dart client for `mobile/lib/core/api/` with a compatible OpenAPI Generator configuration. CI exports and validates the contract, regenerates clients, detects drift and compiles consumers. Keep handwritten auth/CSRF/stream adapters outside generated output. Generated types do not replace server validation.
 
-Initial groups include `/v1/session`, `/v1/me`, `/v1/laws`, `/v1/answers`, owner-scoped deadlines/shares, staff ingestion, admin review/staff/workflows/analytics, and the USSD callback. Synchronous answer requests are the first contract; define session-bound access, event schemas, cancellation and retention separately before adding asynchronous answers or SSE. See [endpoint inventory and examples](RESEARCH.md#openapi-generated-clients-and-route-inventory).
+Initial groups include `/v1/session`, `/v1/me`, `/v1/laws`, `/v1/answers`, owner-scoped deadlines/shares, staff ingestion, admin review/staff/workflows/analytics, and the USSD callback. Synchronous answer requests are the first contract; define session-bound access, event schemas, cancellation and retention separately before adding asynchronous answers or SSE. The legacy `web/` app continues to use its server actions and HTTP-only cookie session until cutover; it does not become a generated-client consumer. See [endpoint inventory and examples](RESEARCH.md#openapi-generated-clients-and-route-inventory).
 
 ## Identity and permission checks
 

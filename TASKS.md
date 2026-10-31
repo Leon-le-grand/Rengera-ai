@@ -4,7 +4,18 @@ Update this queue when a task starts or closes. Keep one `DOING` task for this w
 
 ## V2 direction and queue precedence
 
-The user requested React/Vite with TanStack Router and Query, a dedicated Python/FastAPI server, OpenAPI-generated TypeScript and Dart clients, server-enforced RBAC with admin-managed staff, scalable RAG and bounded agent workflows. `docs/v2/` documents this target; it is not shipped. The current Next application and its guards remain the migration baseline. Preserve the worktree and `WEB-001` progress. `WEB-001` remains the sole `DOING` item; after handoff, continue with the first dependency-ready V2 item. This root file is the sole authoritative execution queue.
+The user requested React/Vite with TanStack Router and Query, a dedicated Python/FastAPI server, OpenAPI-generated TypeScript and Dart clients, server-enforced RBAC with admin-managed staff, scalable RAG and bounded agent workflows. `docs/v2/` documents this target; it is not shipped. The approved layout is `platform/` (React/Vite), `server/` (FastAPI) and `contracts/` (OpenAPI); `web/` remains the current product and runnable migration baseline, and its `getAdminSession()` guards stay until a verified server replacement exists. Preserve the worktree and `WEB-001` progress. `WEB-001` is handed off as blocked on its unrun rendered review; `V2-003` is the sole `DOING` item. This root file is the sole authoritative execution queue.
+
+## Repository map
+
+- `web/` — current Next.js 15 product and migration baseline; kept runnable until its capabilities are ported and accepted.
+- `platform/` — approved V2 React 19/Vite frontend with TanStack Router and Query; under construction.
+- `server/` — approved V2 Python/FastAPI backend and worker target; under construction.
+- `contracts/` — versioned OpenAPI contracts and generated-client policy.
+- `mobile/` — Flutter client; onboarding, login, theme and shell prototype, not feature parity.
+- `docs/` — specifications; [`docs/v2/BASELINE.md`](docs/v2/BASELINE.md) is the source-backed current-state inventory.
+
+SQL migrations remain under `web/supabase/migrations/` until a recorded ownership move. Root `TASKS.md` is the sole queue; `MEMORY.md` is the resumption checkpoint.
 
 The earlier `DEC-002` and `DEC-003` entries record historical open questions: the user has chosen a dedicated server direction, while mobile session migration, offline scope, hosting/region, operational ownership and release measures remain open until evidenced. Legacy tasks below remain as progress history and may be completed through mapped V2 slices; do not run competing implementations or mark either item done without its acceptance evidence.
 
@@ -12,35 +23,41 @@ The earlier `DEC-002` and `DEC-003` entries record historical open questions: th
 
 Each item includes dependencies, outcome and required verification. Start the first dependency-ready item, record actual outcomes and failure cases, and leave exactly one item marked `DOING`. Tests listed here are required when implementing the corresponding slice; never claim a pass without running it. No hosted migration, deployment, corpus upload, provider spend or external contact without applicable authorization.
 
-- [ ] `V2-001` · TODO — Complete V2 documentation reconciliation and task boundaries.
+**Parallel build wave (2026-10-28):** once their recorded prerequisites are satisfied, `V2-004`, `V2-005`/`V2-006`, `V2-008` and `V2-010` may proceed concurrently across separate implementation agents because they own distinct directories and contract surfaces. Coordinate shared schema, OpenAPI and auth decisions through `contracts/`; each agent records its actual checks in this queue. This note does not authorize hosted migrations, deployment, corpus uploads or provider spend.
+
+- [x] `V2-001` · DONE — Complete V2 documentation reconciliation and task boundaries.
   - After: active `WEB-001` handoff; `docs/v2/RESEARCH.md`, `docs/v2/PLAN_RESEARCH.md`, `docs/v2/ARCHITECTURE_REVIEW.md`.
   - Outcome: update `AGENTS.md` and affected product, architecture, contracts, data, security, design, operations and decision specs to reflect the user's requested React/TanStack, FastAPI, staff RBAC and bounded agent direction; explicitly preserve existing-code authorization until cutover, source fidelity and supported languages. Map legacy tasks and retain user changes.
-  - Verify: document precedence, local links, no contradictions about shipped status, dependencies and one `DOING` item.
+  - Evidence (2026-10-28): approved layout recorded as decision A-09 in `docs/09-DECISIONS-AND-SOURCES.md`; `docs/v2/README.md`, `BASELINE.md`, `01-PRODUCT-AND-UI.md`, `02-SYSTEM-ARCHITECTURE.md`, `05-API-AUTH-AND-RBAC.md`, `PLAN_RESEARCH.md`, `ARCHITECTURE_REVIEW.md`, `RESEARCH.md`, plus numbered `docs/README.md`, `01-PRODUCT-REQUIREMENTS.md`, `02-SYSTEM-ARCHITECTURE.md`, `PLAN.md` and `11-RELEASE-HANDOFF.md`, now describe `platform/` + `server/` + `contracts/` and keep `web/` as the current baseline. `AGENTS.md` already carried the approved layout and was left unchanged per the documentation ownership boundary. Local Markdown link check: `python3 /tmp/opencode/check_md_links.py` → `Markdown files scanned: 38`, `Local links checked: 87`, `Broken local links: 0`. Anchored-heading check: 14 anchored links checked, 0 unresolved. Code/build checks were not run; this slice changed documentation only.
 
-- [ ] `V2-002` · TODO — Capture baseline behavior and migration inventory.
+- [x] `V2-002` · DONE — Capture baseline behavior and migration inventory.
   - After: `V2-001`.
   - Outcome: list current routes, server actions, UI, roles, schema 001–016, provider calls, source/review behavior, UX and current check results. Record observed gaps and owner-scoping issues with evidence; avoid implying hosted state.
-  - Verify: trace each inventory item to source and record runnable baseline checks and unavailable environment checks.
+  - Evidence (2026-10-28): [`docs/v2/BASELINE.md`](docs/v2/BASELINE.md) cites each inventory item to `web/` source and records the observed security, source-fidelity, review-label and owner-scoping gaps. Recorded checks: web typecheck/`verify`/build PASS on 2026-10-24; Python ingestion PASS; ESLint NOT VERIFIED; Flutter checks NOT RUN; rendered/accessibility review NOT RUN; hosted schema, corpus, backups and deployment NOT VERIFIED. No new application checks were run for this documentation slice.
 
-- [ ] `V2-003` · TODO — Define versioned OpenAPI contracts and generate clients.
+- [ ] `V2-003` · DOING — Define versioned OpenAPI contracts and generate clients.
   - After: `V2-001`, `V2-002`.
   - Outcome: define stable operation IDs, schemas, errors, auth, pagination, uploads, USSD media and compatibility; create deterministic schema export and pinned Hey API TypeScript/TanStack Query plus OpenAPI Generator Dart client processes.
   - Verify: schema validation, no duplicate IDs, generated-client drift checks, TypeScript/Dart compilation, representative HTTP contract and backwards-compatibility checks. Define SSE event contracts separately if adopted.
+  - Progress (2026-10-28): TypeScript client generation is complete and checked in (`platform/src/api/generated/`, 5 files) with a drift job in `.github/workflows/ci.yml`. Contract tests validate the OpenAPI 3.1 document with `openapi-spec-validator` (246 server tests pass), unique operation IDs, deterministic rendering and the checked-in artifact. `@hey-api/openapi-ts` is pinned to `0.99.0` in `platform/package.json`. `contracts/README.md` documents validation, drift and the pinned generator. Remaining: OpenAPI Generator Dart client and its compilation check; a pinned generator configuration; representative HTTP contract/backwards-compatibility checks beyond the exact path/operation list; and contract definitions for future upload and USSD slices when those endpoints land.
 
 - [ ] `V2-004` · TODO — Build dedicated server foundation.
   - After: `V2-001`, `V2-003`.
   - Outcome: create isolated `server/` FastAPI application, validated environment, lifespan, health/readiness, structured redacted logging, request IDs, error envelope and request limits; keep dependencies in server manifest.
   - Verify: server static checks and tests, startup failure for missing production config, secret-redaction and OpenAPI contract checks.
+  - Progress (2026-10-28): implemented and tested locally: `app/main.py`, settings validation, health/readiness, request context/IDs, error envelope, middleware, redacted logging and production-required settings. Checks: `uv run ruff check .` pass; `uv run pytest -q` 246 pass. Hosted/deployment verification remains outstanding.
 
 - [ ] `V2-005` · TODO — Establish identity and session lifecycle.
   - After: `V2-003`, `V2-004`.
   - Outcome: Supabase Auth integration, browser server-side session and secure cookie/CSRF flow, Flutter bearer/token lifecycle, account-status and revocation checks, staged legacy `app_users` mapping and rollback plan.
   - Verify: login/signup, refresh, logout, expiry, suspension, revocation, OAuth PKCE callback, cookie/CSRF, cross-device and identity-provider outage tests with controlled identities.
+  - Progress (2026-10-28): browser session lifecycle is implemented and tested: email/password via Supabase GoTrue (`server/app/auth/password.py`), access-token exchange, opaque `public.server_sessions`, HttpOnly session cookie plus readable CSRF cookie, session create/get/delete, CSRF enforcement, rate limiting, and session tests. Gaps remain: refresh-token rotation, password reset, account deletion, OAuth PKCE, cross-device and hosted identity-provider verification; legacy `app_users` migration is unperformed.
 
 - [ ] `V2-006` · TODO — Implement server RBAC and ownership.
   - After: `V2-004`, `V2-005`.
   - Outcome: ordered migrations and server policy for user/staff/admin roles, explicit permissions, resource ownership, active account checks, deny-by-default and audited privileged actions; no generic admin bypass or client-controlled grants.
   - Verify: full role/action matrix, anonymous access, foreign-owner IDs, forged roles, direct endpoint calls, stale/revoked sessions and concurrent policy changes; inspect RLS and service-role bypass paths.
+  - Progress (2026-10-28): server-owned role/permission catalog, permission snapshot, account principal and authorization dependencies are implemented and tested; migration `017_v2_identity_and_rbac.sql` exists but is not applied or verified against hosted Supabase. No privileged staff/admin endpoints exist yet; owner-scoped private records beyond sessions are not implemented.
 
 - [ ] `V2-007` · TODO — Build admin staff-management lifecycle.
   - After: `V2-006`.
@@ -51,16 +68,19 @@ Each item includes dependencies, outcome and required verification. Start the fi
   - After: `V2-003`, `V2-005`, `V2-006`.
   - Outcome: typed public/citizen/staff/admin routes, auth provider, route guards, `Can`, generated API transport and permission-aware navigation; clean private cache on logout, account switch or revocation. Preserve existing redesign and tokens.
   - Verify: route refresh/deep links, direct unauthorized API calls, loading/error/403/401, cache races, keyboard and responsive behavior; build/typecheck and accessibility checks. No UI guard substitutes for server authorization.
+  - Progress (2026-10-28): implemented in `platform/` with public/citizen/staff/admin routes, auth store/guards, generated transport, CSRF cookie recovery and cache clearing; 94 Vitest tests pass, lint/typecheck/build pass. Browser end-to-end, keyboard/responsive/accessibility review and live API runs remain outstanding.
 
 - [ ] `V2-009` · TODO — Port landing, login, settings and share journeys.
   - After: `V2-008`.
   - Outcome: preserve landing and brand, accessible auth and account states, owned settings and expiring share routes; implement prerendered public metadata and dynamic share metadata without exposing private data in shared cache.
   - Verify: direct navigation, expiry/revocation, accessibility, SEO/social metadata, no secret leakage and browser history behavior.
+  - Progress (2026-10-28): landing, login, emergency, library, reader, settings and guarded staff/admin shells are implemented. Share journeys, password reset, account deletion and prerendered social metadata are not implemented.
 
 - [ ] `V2-010` · TODO — Move law library, reader and source access end to end.
   - After: `V2-003`, `V2-004`, `V2-008`.
   - Outcome: versioned search, categories, law detail, exact ordered articles, preamble, provenance, status, review scope and amendment timeline; React reader and stable deep links.
   - Verify: current-source parity fixtures, article/source fidelity, no-result/error distinction, unreviewed and unknown status, responsive, keyboard and screen-reader checks. Maps to `WEB-002` only after its acceptance criteria pass.
+  - Progress (2026-10-28): implemented end to end at API and UI level: `/v1/laws` search/categories, `/v1/laws/{id}`, exact article route, preamble ordering, review status and source/provenance fields; platform library/reader route. Checks: server and platform suites pass. Amendment timeline and parity fixtures remain.
 
 - [ ] `V2-011` · TODO — Establish legal evaluation baseline.
   - After: `V2-002`, `V2-010`.
@@ -71,11 +91,13 @@ Each item includes dependencies, outcome and required verification. Start the fi
   - After: `V2-003`, `V2-004`, `V2-010`, `V2-011`.
   - Outcome: deterministic urgent routing, exact-reference and lexical search, bounded evidence package, provider adapter, structured answer, source/citation checks and honest abstention; distinct unavailable error.
   - Verify: no model call for urgent/no-evidence cases, exact law/article/version pairing, model/parser failures, unsupported claims, provider outage, all supported languages and baseline evaluation.
+  - Progress (2026-10-28): deterministic safety guards, lexical retrieval, provider adapter, citation validation and synchronous `/v1/answers` are implemented with five answer kinds and distinct dependency errors; platform chat renders them. `V2-011` legal evaluation baseline remains blocked, so quality claims are not made.
 
 - [ ] `V2-013` · TODO — Port citizen chat, emergency and evidence journeys.
   - After: `V2-008`, `V2-010`, `V2-012`.
   - Outcome: migrate existing `WEB-001` work to React routes; question composer, language, answer/evidence, source deep links, urgent help and distinct loading/abstention/error states.
   - Verify: API/UI contracts, keyboard/screen reader, phone/tablet/desktop, accessible async announcements, missing/expired session and provider/database failure. Maps to `WEB-001` only when its outstanding acceptance checks are satisfied.
+  - Progress (2026-10-28): chat, emergency and evidence journeys are implemented in `platform/` with source links, urgent help and loading/abstention/error states. Rendered accessibility/responsive review and live API behavior remain unverified.
 
 - [ ] `V2-014` · TODO — Build source-versioned transactional ingestion and review.
   - After: `V2-006`, `V2-010`, `V2-011`.
@@ -132,22 +154,15 @@ Each item includes dependencies, outcome and required verification. Start the fi
   - Outcome: liveness/readiness and timestamped healthy/degraded/unavailable/unknown status for API, database, storage, auth, search, provider, queue, worker, index and USSD; redacted traces, metrics, synthetic checks, alerts and documented ownership.
   - Verify: inject independent outages, prevent cascading restarts, observe correct status and fallback, test alert delivery and fail-closed protected operations in a controlled environment.
 
-## Active
+## Legacy product work (V2-mapped)
 
-- [x] `DOC-001` · DONE — Establish the source-backed project documentation system and reconcile stale entry points.
-  - After: none.
-  - Spec: `docs/README.md`, `docs/01-PRODUCT-REQUIREMENTS.md`–`docs/11-RELEASE-HANDOFF.md`.
-  - Done when: README, operating rules, queue, memory, session prompt, architecture/product specifications and subproject guides agree with inspected repository state; stale Android guide is clearly superseded.
-  - Evidence: inspected manifests, routes/actions and migrations on 2026-10-24; all 30 local Markdown links resolve; web typecheck, `verify`, build and Python ingestion checks pass. ESLint was not verified after config repair; see `docs/08-TEST-STRATEGY.md`.
-
-## Ready after DOC-001
-
-- [ ] `WEB-001` · DOING — Redesign the citizen web workspace entry and chat surface around a clear question → grounded answer → source path.
+- [ ] `WEB-001` · BLOCKED — Redesign the citizen web workspace entry and chat surface around a clear question → grounded answer → source path.
   - After: `DOC-001`.
   - Spec: `docs/01-PRODUCT-REQUIREMENTS.md` (redesign outcomes), `docs/04-INTERFACES-AND-CONTRACTS.md`, `docs/05-DESIGN-SYSTEM.md`.
   - Done when: the public workspace makes language choice, question entry, source links, law/review status, abstention, and urgent help clear on desktop and mobile while preserving existing auth/data contracts and brand tokens.
   - Verify: applicable `pnpm --dir web run lint`, `typecheck`, `verify`, and `build`; review responsive, keyboard, focus, and screen-reader behavior.
-  - Progress (2026-10-28): source-first entry, source/status cards, honest no-source/provider-error states, localized urgent guidance, accessible emergency-search label, and theme-aware warning colors implemented. Current `typecheck`, `verify`, and `build` pass; targeted ESLint reports 0 errors and 13 warnings; full lint stalled. Rendered/responsive/accessibility review remains not run per the no-launch request. Keep `DOING` until that review is resolved or formally handed off as blocked.
+  - Progress (2026-10-28): source-first entry, source/status cards, honest no-source/provider-error states, localized urgent guidance, accessible emergency-search label, and theme-aware warning colors implemented. Current `typecheck`, `verify`, and `build` pass; targeted ESLint reports 0 errors and 13 warnings; full lint stalled. Rendered/responsive/accessibility review remains not run per the no-launch request.
+  - Handoff (2026-10-28): not accepted and never marked DONE. The remaining rendered review is blocked by the user's no-launch instruction. The implemented `web/` work stays intact and migrates through `V2-013`, which maps back to `WEB-001` only when its outstanding acceptance checks are satisfied.
 
 - [ ] `WEB-002` · TODO — Redesign the law library and article reader as the source-verification companion to chat.
   - After: `WEB-001`.
@@ -187,8 +202,8 @@ Each item includes dependencies, outcome and required verification. Start the fi
 
 - `DEC-001` — Confirm launch boundary, corpus completeness target, reviewer capacity, supported channels, privacy/retention owner, and legal review requirements. The current product brief does not answer these.
 - `DEC-002` — Resolve the current mobile auth mismatch and document V2 session migration, offline sync and conflict semantics before mobile feature work. The dedicated API direction is selected; the existing implementation remains incomplete.
-- `DEC-003` — Dedicated server and bounded workflow direction requested by the user; exact hosting, queue, capacity and migration implementation still require evidence and an operational plan. No `server/` project is present today.
+- `DEC-003` — Dedicated server and bounded workflow direction requested by the user. The approved target is `server/` (FastAPI) plus `platform/` and `contracts/`, being built in the V2 parallel wave; exact hosting, queue, capacity and migration implementation still require evidence, an operational plan and applicable authorization.
 
 ## Completed
 
-- `DOC-001` — Source-backed documentation system and stale guide reconciliation. This completes documentation setup only; it does not complete product redesign or implementation.
+- `DOC-001` — Source-backed documentation system and stale guide reconciliation. This completes documentation setup only; it does not complete product redesign or implementation. Historical evidence: inspected manifests, routes/actions and migrations on 2026-10-24; 30 local Markdown links resolved; web typecheck, `verify`, build and Python ingestion checks passed; ESLint was not verified. The current 2026-10-28 link check (87 links, 0 broken) is recorded under `V2-001`.

@@ -1,6 +1,6 @@
 # 01 — Product requirements
 
-> **Current baseline.** The user subsequently requested the V2 frontend, dedicated server, staff RBAC and bounded agent direction in [`docs/v2/`](v2/README.md). V2 is not yet implemented. Current product and safety constraints below continue unless explicitly superseded.
+> **Current baseline.** The user subsequently requested the V2 frontend, dedicated server, staff RBAC and bounded agent direction in [`docs/v2/`](v2/README.md). V2 is under construction in `platform/` and `server/`, not shipped. Current product and safety constraints below continue unless explicitly superseded.
 
 ## Product outcome
 

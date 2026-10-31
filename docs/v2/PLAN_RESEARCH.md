@@ -1,10 +1,10 @@
 # Rengera AI — proposed transformation plan v2
 
-**Status:** research plan, 2026-10-28. No phase below is implemented by this document. This is a proposed sequence for the user's requested dedicated API and agent architecture; reconcile the approved architecture, security, data, interface and task documents before implementation. Keep the existing `WEB-001` work and user changes intact. A production deployment, hosted migration, corpus upload or paid provider call needs separate applicable authorization.
+**Status:** research plan, 2026-10-28. Implementation status belongs only in [root `TASKS.md`](../../TASKS.md); this document does not establish that a phase is shipped. The approved layout is a new `platform/` React/Vite frontend (source under `platform/src/`), a new `server/` FastAPI backend, and versioned contracts under `contracts/`; legacy `web/` stays runnable as the migration baseline and keeps SQL migration ownership. See [the decision record](../09-DECISIONS-AND-SOURCES.md#approved-v2-repository-layout-2026-10-28). A production deployment, hosted migration, corpus upload or paid provider call needs separate applicable authorization.
 
 ## Decisions and measurable starting point
 
-1. Use Python/FastAPI, React/Vite with TanStack Router and Query, Supabase Auth, Hey API for TypeScript client generation and OpenAPI Generator for Dart as specified in `RESEARCH.md`. Run a representative prototype to validate compatibility and performance; nominate maintainers and pin versions. Assign environments, region, budgets and service objectives from the actual account and measurements.
+1. Use Python/FastAPI in `server/`, React/Vite with TanStack Router and Query in `platform/`, Supabase Auth, Hey API for TypeScript client generation and OpenAPI Generator for Dart as specified in `RESEARCH.md` and `contracts/`. Run a representative prototype to validate compatibility and performance; nominate maintainers and pin versions. Assign environments, region, budgets and service objectives from the actual account and measurements.
 2. Inventory actual deployed schemas, corpus versions, review states, clients, user accounts, secrets, integrations and backups through authorized read-only access. Capture existing behavior and open security gaps. Establish legal-review, retention, deletion, source licensing and incident owners.
 3. Build a reviewed EN/RW/FR evaluation set and record baseline retrieval recall, claim support, citation accuracy, abstention, urgent routing, accessibility and latency. Include rural/low-data, diaspora, disability and shared-device scenarios through consented user research. Establish thresholds with responsible reviewers; do not invent numerical targets.
 
@@ -16,9 +16,9 @@ Fix or isolate current session revalidation and owner-scope gaps, including inte
 
 ## Phase 2 — dedicated API and identity
 
-Create a separately managed `server/` only after the architecture decision is recorded. Build a stateless API with configuration validation, health/readiness, structured redacted logs, request tracing, distributed rate limits and a provider adapter. Introduce a web same-origin proxy and a Flutter bearer-token client. Adopt the selected identity system with browser and native session lifecycle, admin authorization, account status/revocation, key rotation, CSRF and exact CORS rules. Define migration mapping for `app_users`, existing cookies, ownership records and recovery; rehearse on a copy and support rollback without exposing credentials.
+Build `server/` and `platform/` under the approved layout. Build a stateless API with configuration validation, health/readiness, structured redacted logs, request tracing, distributed rate limits and a provider adapter. Introduce a same-origin platform proxy and a Flutter bearer-token client. Adopt the selected identity system with browser and native session lifecycle, admin authorization, account status/revocation, key rotation, CSRF and exact CORS rules. Define migration mapping for `app_users`, existing cookies, ownership records and recovery; rehearse on a copy and support rollback without exposing credentials.
 
-Move one read-only vertical slice first: library search → law → exact article and source. Then move chat behind a feature flag; compare old and new responses on the approved evaluation set and use canary traffic in staging. Preserve old paths until compatibility, authorization and rollback are demonstrated. **Gate:** web and Flutter contract tests, expired/revoked sessions, cross-user denial, CORS/CSRF, mobile restart/refresh/logout, load and outage tests pass against agreed criteria.
+Move one read-only vertical slice first: library search → law → exact article and source. Then move chat behind a feature flag; compare old and new responses on the approved evaluation set and use canary traffic in staging. Preserve the `web/` paths until compatibility, authorization and rollback are demonstrated. **Gate:** platform and Flutter contract tests, expired/revoked sessions, cross-user denial, CORS/CSRF, mobile restart/refresh/logout, load and outage tests pass against agreed criteria.
 
 ## Phase 3 — ingestion and scalable retrieval
 
@@ -50,14 +50,14 @@ The following order gives the next agent concrete, independently reviewable slic
 
 ### 0. Reconcile direction and protect the worktree
 
-- Record the user's React/TanStack, dedicated Python server and staff-management direction in `AGENTS.md` and the architecture, interfaces, security and decisions specifications. Replace the old admin-only mutation rule with an explicit permission-checked server rule only as part of that decision; retain the current rule for the existing Next app until cutover.
-- Add dependency-ready implementation tasks to `TASKS.md` while preserving the existing `WEB-001` state and all user changes. Confirm actual branch and dirty files; do not switch or reset.
-- Capture an inventory of current routes, actions, model calls, dependencies, user-visible behavior and migration chain; establish a dated baseline. Record current failure cases and acceptance gates.
+- The approved layout and staff-management direction are recorded in `AGENTS.md`, [the decision record](../09-DECISIONS-AND-SOURCES.md#approved-v2-repository-layout-2026-10-28) and the affected specifications. Retain the current `getAdminSession()` rule for the existing `web/` app until cutover.
+- Task status and dependencies live only in `TASKS.md`; keep user changes and the preserved `web/` baseline intact. Confirm actual branch and dirty files; do not switch or reset.
+- [BASELINE.md](BASELINE.md) records the current routes, actions, model calls, dependencies, user-visible behavior, migration chain, failure cases and acceptance gates as of 2026-10-28.
 
 ### 1. API foundation and contract generation
 
 - Create `server/pyproject.toml`, `server/app/main.py`, `server/app/api/v1/`, settings and a health/readiness endpoint. Add explicit schemas and stable operation IDs. Fail startup on missing required production configuration; never print secret values.
-- Export deterministic `contracts/openapi/v1.json`. Set up a pinned Hey API generator under `web/` and a pinned Dart generator under `mobile/`; keep generated code separate from handwritten transport. Cover upload, auth, error, pagination and USSD media types; add a small streaming adapter with separately documented event schemas.
+- Export deterministic `contracts/openapi/v1.json`. Set up a pinned Hey API generator for `platform/src/api/generated/` and a pinned Dart generator for `mobile/lib/core/api/`; keep generated code separate from handwritten transport. Do not generate V2 clients into the legacy `web/` app. Cover upload, auth, error, pagination and USSD media types; add a small streaming adapter with separately documented event schemas.
 - CI validates the schema, checks unique operation IDs and incompatible changes, regenerates clients and fails on drift, then typechecks/builds the consumers. Contract tests send real HTTP requests and compare response status, shape and content type to the schema.
 - Failure cases: stale generated code, incompatible generator/OpenAPI version, unmodelled 401/403/429, multipart errors, absent secrets and schema export changing between runs.
 
@@ -70,7 +70,7 @@ The following order gives the next agent concrete, independently reviewable slic
 
 ### 3. Replace the web shell with React and TanStack
 
-- Create `web/src/app/`, router and QueryClient; configure Vite, typed routes and static assets. Port theme/brand styles and the existing landing, login, citizen shell and administrator shell without discarding the current redesign.
+- Create `platform/src/app/`, router and QueryClient; configure Vite, typed routes and static assets. Port theme/brand styles and the existing landing, login, citizen shell and administrator shell from `web/` without discarding the current redesign. Keep `web/` runnable.
 - Add public routes for landing, login, chat, library and share; nested authenticated routes for account features; and permission-guarded staff/admin layouts. Use router `beforeLoad` and `Can` only for navigation and visibility. Use generated API options in loaders and components; implement private cache cleanup on session change.
 - Route direct visits and refreshes to the SPA, retain deep links and share-token behavior, and supply prerendered public metadata plus dynamic server-rendered share metadata. Preserve accessible names, keyboard operation, focus, responsive behavior and all three answer languages.
 - Verify direct URL navigation, refresh, forbidden routes, denied API calls, stale permissions, loading and unavailable states, shared devices, logout race conditions and SEO metadata. Run browser tests against controlled API fixtures and a live staging API.

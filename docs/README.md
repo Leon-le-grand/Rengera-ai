@@ -15,14 +15,14 @@ This documentation separates approved product constraints, current implementatio
 4. Read the product, architecture, data, interface, design, security and release specifications relevant to the task.
 5. Confirm every current-state claim against the implementation and current git state.
 
-For the user-requested **V2 target**, start with [`docs/v2/README.md`](v2/README.md). The numbered documents below describe the current Next.js/Flutter baseline and still-valid source, security and operational constraints. Earlier proposals to retain Next.js as the final architecture are superseded by the V2 direction; do not treat V2 as already implemented. The sole authoritative execution queue is root [`TASKS.md`](../TASKS.md).
+For the user-requested **V2 target**, start with [`docs/v2/README.md`](v2/README.md) and the source-backed [`docs/v2/BASELINE.md`](v2/BASELINE.md). The approved V2 layout builds a new React/Vite frontend in `platform/`, a Python/FastAPI backend in `server/`, and versioned contracts in `contracts/`; `web/` remains the runnable Next.js migration baseline until its capabilities are ported and accepted. SQL migrations stay under `web/supabase/migrations/` until a recorded ownership move. The numbered documents below describe the current Next.js/Flutter baseline and still-valid source, security and operational constraints. Earlier proposals to retain Next.js as the final architecture are superseded by the V2 direction; V2 is under construction, not shipped or deployed. The sole authoritative execution queue is root [`TASKS.md`](../TASKS.md).
 
 ## Specifications
 
 | File | Purpose |
 | --- | --- |
 | [01 Product requirements](01-PRODUCT-REQUIREMENTS.md) | Product outcome, users, scope, non-goals, acceptance outcomes, open product inputs |
-| [02 System architecture](02-SYSTEM-ARCHITECTURE.md) | Existing components, boundaries, data flows, and proposed evolution |
+| [02 System architecture](02-SYSTEM-ARCHITECTURE.md) | Current components and flows, plus the approved `platform/` and `server/` V2 target |
 | [03 Data design](03-DATA-DESIGN.md) | Tables, source/derived data separation, lifecycle and migration facts |
 | [04 Interfaces and contracts](04-INTERFACES-AND-CONTRACTS.md) | Server actions, routes, mobile integration boundary, error behavior |
 | [05 Design system](05-DESIGN-SYSTEM.md) | Brand tokens, redesign principles, responsive and accessibility requirements |
@@ -35,6 +35,7 @@ For the user-requested **V2 target**, start with [`docs/v2/README.md`](v2/README
 
 ## Product references
 
+- [`docs/v2/BASELINE.md`](v2/BASELINE.md) records the inspected legacy `web/` behavior, schema, provider calls, gaps and check results that V2 slices must migrate or preserve.
 - [`docs/research/RESEARCH.md`](research/RESEARCH.md) is a concise product and algorithm brief. Use it as historical context, not as proof that a feature is currently deployed.
 - Root `RESEARCH.md` and `PLAN_RESEARCH.md` are preserved drafts. The organized and critiqued V2 versions are under [`docs/v2/`](v2/README.md); do not maintain parallel task statuses in them.
 - [`docs/research/rengera-system-research.md`](research/rengera-system-research.md) is a large architecture/security audit dated 2026-10-20. Its findings and status claims are a dated snapshot; re-check cited code before action. It contains proposals that are not automatically approved.

@@ -1,6 +1,6 @@
 # 11 — Release handoff
 
-> **Current application handoff.** V2 deployment and failure-isolation planning is in [`v2/06-OPERATIONS-AND-FAILURES.md`](v2/06-OPERATIONS-AND-FAILURES.md). No V2 deployment has been performed.
+> **Current application handoff.** V2 deployment and failure-isolation planning is in [`v2/06-OPERATIONS-AND-FAILURES.md`](v2/06-OPERATIONS-AND-FAILURES.md). The approved V2 build lives in `platform/` (React/Vite) and `server/` (FastAPI) with contracts under `contracts/`; no V2 deployment has been performed. The `web/` steps below describe the legacy application that remains the runnable baseline.
 
 ## Local setup
 
@@ -40,6 +40,10 @@ Never expose service-role/model/session secrets via `NEXT_PUBLIC_*` or the mobil
 ## Web deployment
 
 No tracked `vercel.json` was found in the current checkout. Confirm actual provider configuration, root-directory behavior and environment settings in the target project before release. A local build does not deploy or verify production routing or secrets.
+
+## V2 platform and server
+
+The approved V2 layout separates the new React/Vite frontend (`platform/`), FastAPI backend (`server/`) and versioned contracts (`contracts/`). Each subproject owns its manifest and lockfile; do not copy dependencies between `web/`, `platform/` and `server/`. V2 scaffolding exists in the worktree, but no V2 setup, build or deployment command was verified during this documentation slice. Follow each subproject's local manifest and the V2 operations guidance rather than the legacy Next.js deployment steps. Do not apply the existing `web/` hosting assumptions to the V2 frontend or server.
 
 ## Supabase migrations and data
 

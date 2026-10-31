@@ -12,9 +12,9 @@ Design implications: usable small screens and keyboard/screen-reader navigation;
 
 ## Baseline and transformation
 
-The existing `web/` is already React 19 on Next.js 15. It contains UI, server actions, authentication, retrieval, ingestion and model adapter code in a modular monolith. `mobile/` is a Flutter onboarding/login/shell prototype; its login does not establish a reusable native session. The existing corpus is in Supabase/Postgres and Storage, with local migrations 001–016. The deployed database, source inventory, performance, and traffic are unknown. See `docs/02-SYSTEM-ARCHITECTURE.md`, `docs/03-DATA-DESIGN.md` and actual source. A dedicated server and agent orchestration do not exist today.
+The existing `web/` is already React 19 on Next.js 15. It contains UI, server actions, authentication, retrieval, ingestion and model adapter code in a modular monolith. `mobile/` is a Flutter onboarding/login/shell prototype; its login does not establish a reusable native session. The existing corpus is in Supabase/Postgres and Storage, with local migrations 001–016. The deployed database, source inventory, performance, and traffic are unknown. See `docs/02-SYSTEM-ARCHITECTURE.md`, `docs/03-DATA-DESIGN.md` and actual source. The approved target directories are `platform/` (React/Vite) and `server/` (FastAPI); they were absent when the 2026-10-28 baseline inspection began and untracked V2 scaffolding now exists in the worktree. Agent orchestration exists only as a target design.
 
-The target is a React application using TanStack Router and TanStack Query, served separately from a dedicated API. Vite is the suggested browser build tool. Preserve the Flutter client and build both clients against the same versioned API contracts. Migrate capability by capability while the existing Next app remains available during transition; the completed frontend no longer depends on Next.js. Existing `web/lib/space-bunny.ts` remains the current model gateway until a documented cutover replaces its responsibility in the server; no duplicate, uncontrolled model access during migration.
+The target is a new React application in `platform/` using TanStack Router and TanStack Query, served separately from a dedicated API in `server/`. Vite is the suggested browser build tool. Preserve the Flutter client and build both clients against the same versioned API contracts. Migrate capability by capability while the existing Next app in `web/` remains available during transition; the completed frontend no longer depends on Next.js. Existing `web/lib/space-bunny.ts` remains the current model gateway until a documented cutover replaces its responsibility in the server; no duplicate, uncontrolled model access during migration.
 
 ## Target system
 
@@ -132,12 +132,12 @@ These are the implementation defaults selected in response to the user's request
 
 Use available hosting and Supabase regions with the lowest measured latency for Rwanda and the diaspora subject to the owner's data-location requirements. Choose region and actual capacity only after vendor availability and measurements; pretending to know an account's region, budget, traffic or legal requirements would make this design less reliable. Static public pages are prerendered at build time; public consultation share pages and their per-token social metadata are rendered by a dedicated server endpoint without Next.js. Never put private consultation contents in static output or a shared CDN cache.
 
-The user's request supersedes the older Next-only and admin-only architecture direction for the target design. Before implementation, update `AGENTS.md`, `docs/02-SYSTEM-ARCHITECTURE.md`, `docs/04-INTERFACES-AND-CONTRACTS.md`, `docs/06-SECURITY-OPERATIONS.md`, `docs/09-DECISIONS-AND-SOURCES.md` and `TASKS.md` to record the staff permission model and the new server authorization invariant. Until then the existing code's `getAdminSession()` requirement still applies. This research does not grant staff access in the current app.
+The user's request supersedes the older Next-only and admin-only architecture direction for the target design. The approved layout, staff permission model and server authorization invariant are recorded in `AGENTS.md`, `docs/02-SYSTEM-ARCHITECTURE.md`, `docs/06-SECURITY-OPERATIONS.md`, `docs/09-DECISIONS-AND-SOURCES.md` and `TASKS.md`, with the detailed policy in [API, auth and RBAC](05-API-AUTH-AND-RBAC.md). The existing code's `getAdminSession()` requirement still applies until a verified replacement exists; this research does not grant staff access in the current app.
 
 ## Target repository layout
 
 ```text
-web/                         # replace Next application incrementally with Vite React
+platform/                    # new V2 frontend (React/Vite); web/ remains the legacy baseline
   src/
     app/                     # providers, router context, query client, bootstrap
     routes/                  # TanStack Router file routes and route guards
@@ -180,7 +180,7 @@ contracts/
 web/supabase/migrations/     # remain the SQL migration owner until moved by decision
 ```
 
-This layout is a target, not an instruction to move all files at once. Avoid two active copies of a feature after its cutover. The API and web own their separate dependency manifests. Database migrations remain in the existing web location during transition to avoid splitting the migration history; move ownership only in a recorded migration decision.
+This layout is a target, not an instruction to move all files at once. Avoid two active copies of a feature after its cutover. The API and frontend own their separate dependency manifests. Database migrations remain in the existing web location during transition to avoid splitting the migration history; move ownership only in a recorded migration decision.
 
 ## End-to-end authorization and staff management
 
@@ -266,16 +266,16 @@ The names above are a contract design for implementation, not existing endpoints
 
 | Existing location | Target responsibility |
 | --- | --- |
-| `web/app/page.tsx`, `layout.tsx`, `components/app/AppShell.tsx`, `AppDashboard.tsx` | `web/src/app/` and typed route/layout files; replace state-only navigation with URLs. |
-| `web/components/app/ChatInterface.tsx`, `components/chat/` | `web/src/features/chat/`; generated answer and feedback clients. Preserve current uncommitted redesign. |
-| `web/components/app/LawLibrary.tsx`, `LawComparison.tsx` | `web/src/features/library/`; generated public law endpoints and deep links. |
-| `web/app/actions.ts`, `lib/safety.ts`, `lib/supabase-retrieval.ts` | server answer, safety and retrieval modules; preserve deterministic guards and evaluate parity. |
-| `web/app/legal-actions.ts`, `lib/legal-article-parser.ts`, `lib/legal-classification.ts`, `lib/legal-pdf.ts` | server ingestion/review and worker modules; port parsing with multilingual regression fixtures and atomic writes. |
-| `web/app/auth-actions.ts`, `lib/auth.ts` | identity/session bridge and API authorization; staged account migration, no silent cookie cutover. |
-| `web/app/product-actions.ts`, `share-actions.ts` | scoped server feature modules; fix user-supplied identity and service-role write gaps. |
-| `web/app/api/ussd/route.ts`, `api/mobile/auth/route.ts` | versioned USSD webhook and mobile identity/client contract; retire broken cookie/token bridge after mobile migration. |
-| `web/app/share/[token]/` | API share endpoint and server-rendered metadata response, plus React share route. |
-| `web/lib/space-bunny.ts` | Python provider adapter only at cutover; retain env-selected model, fallback, timeouts and redacted errors. |
+| `web/app/page.tsx`, `layout.tsx`, `components/app/AppShell.tsx`, `AppDashboard.tsx` | `platform/src/app/` and typed route/layout files; replace state-only navigation with URLs. |
+| `web/components/app/ChatInterface.tsx`, `components/chat/` | `platform/src/features/chat/`; generated answer and feedback clients. Preserve current uncommitted redesign. |
+| `web/components/app/LawLibrary.tsx`, `LawComparison.tsx` | `platform/src/features/library/`; generated public law endpoints and deep links. |
+| `web/app/actions.ts`, `lib/safety.ts`, `lib/supabase-retrieval.ts` | `server/` answer, safety and retrieval modules; preserve deterministic guards and evaluate parity. |
+| `web/app/legal-actions.ts`, `lib/legal-article-parser.ts`, `lib/legal-classification.ts`, `lib/legal-pdf.ts` | `server/` ingestion/review and worker modules; port parsing with multilingual regression fixtures and atomic writes. |
+| `web/app/auth-actions.ts`, `lib/auth.ts` | `server/` identity/session bridge and API authorization; staged account migration, no silent cookie cutover. |
+| `web/app/product-actions.ts`, `share-actions.ts` | `server/` scoped feature modules; fix user-supplied identity and service-role write gaps. |
+| `web/app/api/ussd/route.ts`, `api/mobile/auth/route.ts` | `server/` versioned USSD webhook and mobile identity/client contract; retire broken cookie/token bridge after mobile migration. |
+| `web/app/share/[token]/` | `server/` API share endpoint and server-rendered metadata response, plus React share route in `platform/`. |
+| `web/lib/space-bunny.ts` | `server/` Python provider adapter only at cutover; retain env-selected model, fallback, timeouts and redacted errors. |
 | `mobile/lib/app.dart`, `features/auth/login_screen.dart` | native session provider, secure persistence and generated API transport; extend shell only after auth works. |
 | `web/scripts/ingest_legal_pdf.py` and crawler tools | reusable worker extraction library or isolated operational scripts after parity review; no automatic corpus upload. |
 
@@ -467,10 +467,10 @@ Support keyboard-only operation, visible focus, semantic landmarks and form labe
 
 | Area | Existing starting points | Target files and key acceptance |
 | --- | --- | --- |
-| App shell, public landing and auth | `web/components/app/AppShell.tsx`, `AppDashboard.tsx`, `LoginScreen.tsx`, `web/components/landing/` | `web/src/app/`, `routes/`, `features/auth/`; real routes, preserved design, session/permission states and direct refresh. |
-| Chat and emergency | `web/components/app/ChatInterface.tsx`, `Emergency.tsx`, `web/components/chat/`, `web/lib/answer-language.ts` | `web/src/features/chat/`, `emergency/`; preserve in-progress work, sources, language and deterministic urgent path. |
-| Library and reader | `web/components/app/LawLibrary.tsx`, `LawComparison.tsx` | `web/src/features/library/`; exact cited article, source and review/status display. |
-| Admin and staff | `AdminDashboard.tsx`, `SupabaseLawClassifier.tsx`, `AdminEditLaw.tsx` | `web/src/features/admin/`; permission-gated drafts, admin review/publication and staff lifecycle. |
+| App shell, public landing and auth | `web/components/app/AppShell.tsx`, `AppDashboard.tsx`, `LoginScreen.tsx`, `web/components/landing/` | `platform/src/app/`, `routes/`, `features/auth/`; real routes, preserved design, session/permission states and direct refresh. |
+| Chat and emergency | `web/components/app/ChatInterface.tsx`, `Emergency.tsx`, `web/components/chat/`, `web/lib/answer-language.ts` | `platform/src/features/chat/`, `emergency/`; preserve in-progress work, sources, language and deterministic urgent path. |
+| Library and reader | `web/components/app/LawLibrary.tsx`, `LawComparison.tsx` | `platform/src/features/library/`; exact cited article, source and review/status display. |
+| Admin and staff | `AdminDashboard.tsx`, `SupabaseLawClassifier.tsx`, `AdminEditLaw.tsx` | `platform/src/features/admin/`; permission-gated drafts, admin review/publication and staff lifecycle. |
 | AI controls | Current provider status exists in `web/app/legal-actions.ts` | New workflow/model administration screens using API-managed permissions and secret references. |
 | Share, deadlines, settings, alerts | `web/app/share/`, `web/components/chat/DeadlinesPanel.tsx`, `Settings.tsx`, `NotificationsBell.tsx` | Route-based screens and generated clients; ownership, expiry, safe sharing and private cache isolation. |
 | Native Flutter | `mobile/lib/features/` and `mobile/lib/app.dart` | Native auth, chat, reader and account journeys; preserve brand semantics, not web runtime imports. |

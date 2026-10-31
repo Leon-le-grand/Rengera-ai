@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#09090b" />
+    <meta
+      name="description"
+      content="Rengera AI helps people find and understand Rwandan legal information from available source laws. Legal information, not legal advice."
+    />
+    <link rel="icon" type="image/png" href="/rengera-logo-favicon.png" />
+    <title>Rengera AI — Rwandan legal information</title>
+    <script>
+      // Apply the saved theme before first paint. Dark is the product default.
+      (function () {
+        try {
+          var stored = window.localStorage.getItem('rengera_theme_v1');
+          document.documentElement.dataset.theme = stored === 'light' ? 'light' : 'dark';
+        } catch (_error) {
+          document.documentElement.dataset.theme = 'dark';
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <p style="padding: 1.5rem; font-family: sans-serif">
+        Rengera AI needs JavaScript to run. If JavaScript is unavailable, use
+        official Rwandan legal sources and emergency services directly.
+      </p>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
