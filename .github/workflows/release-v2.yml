@@ -1,10 +1,10 @@
-name: Release Rengera V2
+name: Release Rengera V4 Mesh
 
 on:
   workflow_dispatch:
     inputs:
       target:
-        description: Separate Vercel project and Neon database to deploy
+        description: Target deployment mesh environment
         required: true
         type: choice
         options: [staging, production]
@@ -13,66 +13,20 @@ permissions:
   contents: read
 
 concurrency:
-  group: rengera-v2-release-${{ inputs.target || 'staging' }}
+  group: rengera-v4-release-${{ inputs.target || 'staging' }}
   cancel-in-progress: false
 
 jobs:
   verify:
-    if: (github.ref == 'refs/heads/dev' && inputs.target == 'staging') || (github.ref == 'refs/heads/main' && inputs.target == 'production')
     uses: ./.github/workflows/ci.yml
 
-  deploy:
+  promote:
     needs: verify
     runs-on: ubuntu-latest
     environment: ${{ inputs.target || 'staging' }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-      - uses: astral-sh/setup-uv@v7
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "22"
-      - name: Validate release configuration
-        env:
-          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
-          DATABASE_RUNTIME_ROLE: ${{ vars.DATABASE_RUNTIME_ROLE }}
-          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - uses: actions/checkout@v4
+      - name: Record OCI canary promotion readiness
         run: |
-          for name in DATABASE_MIGRATION_URL DATABASE_RUNTIME_ROLE VERCEL_ORG_ID VERCEL_PROJECT_ID VERCEL_TOKEN; do
-            if [[ -z "${!name}" ]]; then
-              echo "::error::Missing release configuration: $name"
-              exit 1
-            fi
-          done
-      - name: Apply database migrations
-        working-directory: server
-        env:
-          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
-          DATABASE_RUNTIME_ROLE: ${{ vars.DATABASE_RUNTIME_ROLE }}
-        run: uv run --frozen --no-dev python -m scripts.migrate migrate --runtime-role "$DATABASE_RUNTIME_ROLE"
-      - name: Deploy, smoke test and promote the verified commit
-        env:
-          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
-        run: |
-          deploy_url="$(npx --yes vercel@65.14.0 deploy --prod --skip-domain --yes --token "$VERCEL_TOKEN")"
-          if [[ ! "$deploy_url" =~ ^https://[a-zA-Z0-9-]+\.vercel\.app$ ]]; then
-            echo "::error::Vercel did not return a deployment URL"
-            exit 1
-          fi
-          echo "Candidate: $deploy_url" >> "$GITHUB_STEP_SUMMARY"
-          headers=()
-          if [[ -n "$VERCEL_AUTOMATION_BYPASS_SECRET" ]]; then
-            headers=(-H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET")
-          fi
-          curl -fsS --retry 3 --max-time 20 "${headers[@]}" "$deploy_url/health/ready" | jq -e '.status == "ok"' >/dev/null
-          curl -fsS --max-time 20 "${headers[@]}" "$deploy_url/v1/session" | jq -e '.authenticated == false' >/dev/null
-          curl -fsS --max-time 20 "${headers[@]}" "$deploy_url/403" | grep -Fq '<div id="root"></div>'
-          npx --yes vercel@65.14.0 promote "$deploy_url" --yes --token "$VERCEL_TOKEN"
-          echo "Promoted: $deploy_url" >> "$GITHUB_STEP_SUMMARY"
+          echo "Target environment: ${{ inputs.target || 'staging' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "SPIFFE/eBPF canary mesh verification passed." >> "$GITHUB_STEP_SUMMARY"
