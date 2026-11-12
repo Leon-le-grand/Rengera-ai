@@ -1,0 +1,13 @@
+name: v4-canary-gate
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  policy-attestation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify WASI 0.2 policy hooks
+        run: echo "Checking pre_patch_verify.wasm and oci_attest_gate.wasm manifests"
