@@ -1,6 +1,0 @@
-{
-  "name": "RENGERA AI",
-  "description": "AI-powered legal literacy platform for Rwanda.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_AI_API"]
-}

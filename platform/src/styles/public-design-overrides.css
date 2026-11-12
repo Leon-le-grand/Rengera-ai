@@ -1,0 +1,307 @@
+/* Small extensions for real app behaviour layered onto the ported design. */
+
+.rengera-site .site-footer__col button.site-footer__nav-link {
+  background: none;
+  border: 0;
+  color: rgba(247, 245, 239, .74);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 2;
+  padding: 0;
+  text-align: left;
+  transition: color .25s ease, transform .25s ease;
+  width: fit-content;
+}
+
+.rengera-site .site-footer__col button.site-footer__nav-link:hover {
+  color: var(--gold);
+  transform: translateX(3px);
+}
+
+.rengera-site .site-footer__col button.site-footer__nav-link:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.public-auth button.auth-brand,
+.public-auth button.auth-back {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+.public-auth button.auth-back {
+  border-bottom: 1px solid rgba(247, 245, 239, .3);
+  padding-bottom: 4px;
+}
+
+.public-auth button.auth-brand {
+  border-radius: 2px;
+}
+
+.public-auth button.auth-brand:focus-visible,
+.public-auth button.auth-back:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+
+.public-auth .auth-row--end {
+  justify-content: flex-end;
+}
+
+.public-auth .auth-status--error {
+  background: rgba(151, 36, 36, .07);
+  border-color: rgba(151, 36, 36, .32);
+  color: #7f1d1d;
+}
+
+.public-auth .auth-submit:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+  transform: none;
+}
+
+/* The landing stylesheet scopes the shared glossy button under .rengera-site.
+   Login lives under .public-auth, so give it the same base treatment there. */
+.public-auth .glossy-button {
+  --glossy-font: 12px;
+  --glossy-pad: 6px 7px 6px 16px;
+  --glossy-gap: 11px;
+  --glossy-orb: 28px;
+  --glossy-radius: 999px;
+  align-items: center;
+  background: linear-gradient(180deg, #37362f, #0b0b0b 56%);
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: var(--glossy-radius);
+  box-shadow: 0 12px 26px -12px rgba(11, 11, 11, .62), inset 0 1px 0 rgba(255, 255, 255, .24), inset 0 -1px 0 rgba(0, 0, 0, .72);
+  color: var(--paper);
+  display: inline-flex;
+  font-size: var(--glossy-font);
+  font-weight: 700;
+  gap: var(--glossy-gap);
+  isolation: isolate;
+  justify-content: space-between;
+  letter-spacing: -.01em;
+  overflow: hidden;
+  padding: var(--glossy-pad);
+  position: relative;
+  text-align: left;
+  text-decoration: none;
+  transition: background .35s ease, border-color .35s ease, box-shadow .35s ease, color .35s ease;
+}
+
+.public-auth .glossy-button:hover,
+.public-auth .glossy-button:focus-visible {
+  will-change: transform;
+}
+
+.public-auth .glossy-button::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .24), transparent 54%);
+  border-radius: inherit;
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.public-auth .glossy-button::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .3), transparent);
+  bottom: -30%;
+  content: "";
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: -30%;
+  transform: translateX(-220%) skewX(-18deg);
+  transition: transform .68s cubic-bezier(.3, .8, .3, 1);
+  width: 46%;
+  z-index: 0;
+}
+
+.public-auth .glossy-button:hover::after {
+  transform: translateX(360%) skewX(-18deg);
+}
+
+.public-auth .glossy-button__label {
+  position: relative;
+  z-index: 2;
+}
+
+.public-auth .glossy-button__orb {
+  align-items: center;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  border-radius: 50%;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 1px 2px rgba(0, 0, 0, .35);
+  color: var(--ink);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 17px;
+  font-weight: 400;
+  height: var(--glossy-orb);
+  justify-content: center;
+  line-height: 1;
+  position: relative;
+  transition: transform .35s cubic-bezier(.16, 1, .3, 1);
+  width: var(--glossy-orb);
+  z-index: 2;
+}
+
+.public-auth .glossy-button__orb svg {
+  display: block;
+  flex: 0 0 auto;
+  height: 14px;
+  width: 14px;
+}
+
+.public-auth .glossy-button:hover .glossy-button__orb {
+  transform: rotate(45deg);
+}
+
+.public-auth .glossy-button:focus-visible {
+  outline: 2px solid var(--gold-deep);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-auth .glossy-button,
+  .public-auth .glossy-button::after,
+  .public-auth .glossy-button__orb {
+    transition: none;
+  }
+}
+
+.rengera-site .rengera-skip {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  padding: .75rem 1rem;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.rengera-site .rengera-skip:focus { transform: none; }
+.rengera-site :target { scroll-margin-block-start: 8rem; }
+.rengera-site :focus-visible { outline: 2px solid var(--gold-deep); outline-offset: 4px; }
+.rengera-site .rengera-urgent { text-decoration: underline; text-underline-offset: .25em; }
+.rengera-site .news-ticker__track { animation: none; }
+
+.rengera-site .rengera-architecture {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, var(--paper), transparent 65%),
+    url("/rengera/architecture.webp") center / cover no-repeat;
+}
+
+.rengera-site .rengera-letter-art {
+  aspect-ratio: 4 / 5;
+  background: url("/rengera/architecture.webp") 82% 55% / cover no-repeat;
+  border-radius: 50% 50% 0 0;
+  border: 1px solid var(--line);
+}
+
+.rengera-site .monitor__frame,
+.public-auth .monitor__frame {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: linear-gradient(160deg, #3c362c, #161512) 0 0 / 100% 71% no-repeat,
+    linear-gradient(#a7997f, #564e41) center 90% / 20% 32% no-repeat,
+    linear-gradient(#b3a58d, #61574a) center 98% / 45% 4% no-repeat;
+  border-radius: 4% 4% 2% 2%;
+}
+
+.rengera-site:not([data-motion]) :is(.hero-page, .pain-scene, .join-section, .pricing-plan, .device-story) { height: auto; }
+.rengera-site:not([data-motion]) :is(.hero, .pain-stage, .join-stage, .pricing-stage, .device-stage) { position: relative; top: auto; }
+.rengera-site:not([data-motion]) .chapter-right { visibility: visible; }
+.rengera-site .device-story:not([data-device-motion]) { height: auto; }
+.rengera-site .device-story:not([data-device-motion]) .device-stage { display: block; height: auto; overflow: visible; position: relative; top: auto; }
+.rengera-site .device-story:not([data-device-motion]) .device-details { display: block; }
+.rengera-site .device-story:not([data-device-motion]) .device-detail { position: relative; margin-top: 1.75rem; opacity: 1; visibility: visible; }
+.rengera-site .device-story:not([data-device-motion]) .device-visual { height: auto; margin-top: 2rem; }
+.rengera-site .device-story:not([data-device-motion]) .device-visual__stage { position: static; display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; }
+.rengera-site .device-story:not([data-device-motion]) .device-scene { position: static; inset: auto; opacity: 1; visibility: visible; }
+.rengera-site .device-story:not([data-device-motion]) .device-scene--pc { flex-basis: 100%; }
+.rengera-site .device-story:not([data-device-motion]) .device-progress { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rengera-site *, .public-auth * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+.rengera-site .device-detail[data-detail="feature"] small { display: block; }
+
+.rengera-site .rengera-brand-mark {
+  display: block;
+  width: 26px;
+  height: 26px;
+  background: var(--ink);
+  mask: url("/rengera-logo.jpg") center / contain no-repeat luminance;
+}
+
+.public-auth .auth-brand__mark { mask-mode: luminance; }
+
+.public-auth, .rengera-site {
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --muted: #ede9de;
+  --muted-foreground: #584f40;
+  --border: #cfc5b0;
+  --input: #cfc5b0;
+  --ring: var(--gold-deep);
+}
+
+.public-auth .auth-skip {
+  position: absolute;
+  z-index: 20;
+  top: 1rem;
+  left: 1rem;
+  padding: .75rem 1rem;
+  background: var(--ink);
+  color: var(--paper);
+  transform: translateY(-200%);
+}
+
+.public-auth .auth-skip:focus { transform: none; }
+.public-auth .auth-mode button { box-shadow: none; background: transparent; z-index: 1; }
+.public-auth .auth-mode button[aria-pressed="true"] { color: var(--paper); }
+.public-auth .auth-field input { background: transparent; box-shadow: none; border: 0; }
+.public-auth .auth-field input:focus-visible { outline: none; box-shadow: none; }
+.public-auth .auth-reveal { flex: none; }
+.public-auth .auth-form h2 { margin-block-start: 1rem; }
+.public-auth .auth-form form { margin-block-start: 1.5rem; }
+
+.public-auth .auth-panel {
+  color: var(--ink);
+  --app-text-2: #332d24;
+  --app-warning-bg: #f4e6c8;
+  --app-warning-border: #b99145;
+  --app-warning-text: #4d350d;
+}
+
+.public-auth .auth-form h2 { color: var(--ink); }
+
+.rengera-site .site-footer__logo { mask-mode: luminance; }
+
+/* The public page sets its own text colors; dashboard headings use app tokens. */
+.rengera-site :is(h1, h2, h3, h4) { color: inherit; }
+/* Keep hover travel independent of the scroll timeline's transform. */
+.rengera-site .glossy-button {
+  --glossy-x: 0;
+  --glossy-y: 0;
+  translate: calc(var(--glossy-x) * 1px) calc(var(--glossy-y) * 1px);
+}
+.rengera-site .glossy-button__orb svg { flex: none; }
+
+@media (min-width: 761px) {
+  .rengera-site .hero-bottom { gap: clamp(16px, 2vw, 30px); }
+}
+.rengera-site .pricing-plan__head > .pricing-plan__preview {
+  font-size: 12px;
+  font-weight: 700;
+}

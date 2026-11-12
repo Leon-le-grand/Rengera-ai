@@ -1,0 +1,29 @@
+{
+  "version": "example-1",
+  "providers": [
+    {
+      "id": "primary",
+      "base_url": "https://provider.example.invalid/v1",
+      "secret_env": "RENGERA_AI_PROVIDER_PRIMARY"
+    }
+  ],
+  "models": [
+    {
+      "id": "answer-primary",
+      "provider": "primary",
+      "model": "replace-with-approved-model-id",
+      "tasks": ["answer"],
+      "timeout_seconds": 12,
+      "max_output_tokens": 700
+    }
+  ],
+  "workflows": [
+    {
+      "task": "answer",
+      "models": ["answer-primary"],
+      "allowed_tools": [],
+      "max_steps": 1,
+      "max_model_calls": 1
+    }
+  ]
+}

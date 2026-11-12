@@ -1,0 +1,17 @@
+.git
+**/.env*
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/dist
+**/*.log
+downloads
+mobile
+web
+.aws
+.agents
+.codex
+.impeccable
+server/app/data/**
+!server/app/data/*.py

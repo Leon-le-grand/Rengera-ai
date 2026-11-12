@@ -1,0 +1,351 @@
+/* Scoped to the citizen chat route; administration and other workspaces keep
+   the existing dark application theme. */
+.rengera-workspace {
+  --workspace-surface: #0b0b0b;
+  --workspace-surface-raised: #191713;
+  --workspace-surface-muted: #211e18;
+  --workspace-text: #f7f5ef;
+  --workspace-copy: #ddd6c8;
+  --workspace-muted: #b8ad9a;
+  --workspace-line: #393227;
+  --workspace-gold: #d9b45b;
+
+  --app-bg: var(--workspace-surface);
+  --app-panel: var(--workspace-surface-raised);
+  --app-panel-2: var(--workspace-surface-muted);
+  --app-header: rgba(11, 11, 11, .96);
+  --app-border: #373026;
+  --app-border-strong: #514633;
+  --app-text: var(--workspace-text);
+  --app-text-2: var(--workspace-copy);
+  --app-muted: var(--workspace-muted);
+  --app-faint: #a89c87;
+  --app-accent: var(--workspace-gold);
+  --app-accent-soft: rgba(217, 180, 91, .16);
+  --app-accent-border: rgba(217, 180, 91, .38);
+  --app-danger-text: #fecdd3;
+  --app-danger-bg: #30191b;
+  --app-danger-border: #7f3d42;
+  --app-warning-text: #f0d28c;
+  --app-warning-bg: #302516;
+  --app-warning-border: #795e31;
+  --app-skeleton: rgba(255, 255, 255, .07);
+  --app-skeleton-strong: rgba(255, 255, 255, .12);
+
+  --background: var(--workspace-surface);
+  --foreground: var(--workspace-text);
+  --card: var(--workspace-surface-raised);
+  --card-foreground: var(--workspace-text);
+  --popover: var(--workspace-surface-raised);
+  --popover-foreground: var(--workspace-text);
+  --primary: var(--workspace-gold);
+  --primary-foreground: var(--workspace-surface);
+  --secondary: var(--workspace-surface-muted);
+  --secondary-foreground: var(--workspace-text);
+  --muted: var(--workspace-surface-muted);
+  --muted-foreground: var(--workspace-muted);
+  --accent: #282218;
+  --accent-foreground: var(--workspace-text);
+  --border: var(--workspace-line);
+  --input: var(--workspace-line);
+  --ring: var(--workspace-gold);
+
+  background: var(--workspace-surface);
+  color: var(--workspace-text);
+  color-scheme: dark;
+}
+
+.rengera-workspace [data-slot="sidebar-inset"] {
+  background: var(--workspace-surface);
+  color: var(--workspace-text);
+}
+
+.rengera-workspace-brand-mark {
+  background: var(--workspace-gold);
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 22px;
+  mask: url("/rengera-logo.jpg") center / contain no-repeat luminance;
+  mask-mode: luminance;
+  width: 22px;
+}
+
+.workspace-mobile-header {
+  background: var(--workspace-surface);
+  border-bottom: 1px solid var(--workspace-line);
+}
+
+.workspace-mobile-trigger {
+  color: var(--workspace-text);
+}
+
+.workspace-mobile-trigger:hover {
+  background: #282218;
+  color: var(--workspace-text);
+}
+
+.workspace-mobile-trigger:focus-visible,
+.workspace-mobile-new:focus-visible {
+  outline: 2px solid var(--workspace-gold);
+  outline-offset: 2px;
+}
+
+.workspace-mobile-new {
+  background: var(--workspace-surface-raised);
+  border: 1px solid var(--workspace-line);
+  color: var(--workspace-text);
+}
+
+.workspace-mobile-new:hover {
+  background: #241f17;
+}
+
+.workspace-chat {
+  background: var(--workspace-surface);
+  color: var(--workspace-copy);
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+
+.workspace-chat--empty > div:first-child {
+  color: var(--workspace-text);
+}
+
+.workspace-chat--empty h1 {
+  color: var(--workspace-text);
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -.025em;
+}
+
+.workspace-chat--empty > div:first-child svg {
+  color: var(--workspace-gold);
+}
+
+.workspace-composer-shell {
+  background: var(--workspace-surface-raised);
+  border-color: var(--workspace-line);
+  border-radius: 12px;
+  box-shadow: 0 14px 30px -24px rgba(37, 28, 12, .42), 0 1px 2px rgba(37, 28, 12, .08);
+}
+
+.workspace-composer-shell:focus-within {
+  border-color: var(--workspace-gold);
+  box-shadow: 0 0 0 3px rgba(217, 180, 91, .12), 0 14px 30px -24px rgba(37, 28, 12, .42);
+}
+
+.workspace-composer-input {
+  color: var(--workspace-text);
+}
+
+.workspace-composer-input::placeholder {
+  color: #b8ad9a;
+  opacity: 1;
+}
+
+.workspace-language-trigger {
+  color: var(--workspace-muted);
+}
+
+.workspace-language-trigger:hover {
+  background: #282218;
+  color: var(--workspace-text);
+}
+
+.workspace-language-menu {
+  box-shadow: 0 12px 28px -16px rgba(37, 28, 12, .4);
+}
+
+.workspace-language-option[data-highlighted] {
+  background: #282218;
+  color: var(--workspace-text);
+}
+
+.workspace-validation {
+  color: #fecdd3;
+}
+
+.workspace-quick-prompt {
+  background: var(--workspace-surface-raised);
+  border-color: var(--workspace-line);
+  color: var(--workspace-muted);
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.workspace-quick-prompt:hover {
+  background: #241f17;
+  border-color: #b99145;
+  color: var(--workspace-text);
+}
+
+.workspace-quick-prompt:focus-visible {
+  outline: 2px solid var(--workspace-gold);
+  outline-offset: 2px;
+}
+
+.workspace-transcript {
+  background: var(--workspace-surface);
+  scrollbar-color: #655744 transparent;
+}
+
+.workspace-question {
+  background: #282218;
+  border: 1px solid #453927;
+  border-radius: 14px 4px 14px 14px;
+  color: var(--workspace-text);
+}
+
+.workspace-assistant-mark {
+  background: rgba(217, 180, 91, .2);
+  border: 1px solid rgba(217, 180, 91, .35);
+  color: var(--workspace-text);
+}
+
+.workspace-answer-brand-mark {
+  background: var(--workspace-gold);
+  height: 14px;
+  mask: url("/rengera-logo.jpg") center / contain no-repeat luminance;
+  mask-mode: luminance;
+  width: 14px;
+}
+
+.workspace-pending {
+  background: var(--workspace-surface-raised);
+  border-color: var(--workspace-line);
+  color: var(--workspace-muted);
+}
+
+.workspace-thinking-indicator {
+  border-color: #393227;
+  border-top-color: var(--workspace-gold);
+}
+
+.workspace-answer {
+  color: var(--workspace-copy);
+}
+
+.workspace-answer-markdown p,
+.workspace-answer-markdown li {
+  color: var(--workspace-copy);
+}
+
+.workspace-answer-markdown strong,
+.workspace-answer-markdown h3 {
+  color: var(--workspace-text);
+}
+
+.workspace-answer-markdown h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+}
+
+.workspace-answer-markdown span {
+  background: rgba(217, 180, 91, .24);
+  color: #f0d28c;
+}
+
+.workspace-answer-label {
+  color: var(--workspace-gold);
+}
+
+.workspace-answer .workspace-source-card {
+  background: var(--workspace-surface-raised);
+  border-color: var(--workspace-line);
+  box-shadow: 0 10px 24px -22px rgba(37, 28, 12, .45);
+}
+
+.workspace-source-card h4,
+.workspace-source-card p,
+.workspace-source-card blockquote {
+  color: var(--workspace-copy);
+}
+
+.workspace-source-card h4 {
+  color: var(--workspace-text);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.workspace-source-card blockquote {
+  border-left-width: 1px;
+  border-left-color: #b99145;
+}
+
+.workspace-source-card .workspace-article-chip {
+  background: #2a2217;
+  border-color: #514633;
+  color: #ecd398;
+}
+
+.workspace-source-card a {
+  color: var(--workspace-gold);
+}
+
+.workspace-source-card a:focus-visible,
+.workspace-answer a:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid var(--workspace-gold);
+  outline-offset: 3px;
+}
+
+.workspace-answer-abstention,
+.workspace-answer [role="alert"] {
+  background: var(--workspace-surface-raised);
+  border-color: var(--workspace-line);
+  color: var(--workspace-copy);
+}
+
+.workspace-answer-abstention p,
+.workspace-answer [role="alert"] p {
+  color: var(--workspace-copy);
+}
+
+.workspace-answer-abstention p:first-child,
+.workspace-answer [role="alert"] p:first-child {
+  color: var(--app-warning-text);
+}
+
+.workspace-citation-heading {
+  color: var(--workspace-muted);
+}
+
+.workspace-citation-heading svg {
+  color: var(--workspace-gold);
+}
+
+.workspace-answer .btn-danger {
+  background: var(--app-danger-bg);
+  border-color: var(--app-danger-border);
+  color: var(--app-danger-text);
+}
+
+.workspace-answer .btn-secondary {
+  background: var(--workspace-surface-raised);
+  border-color: var(--workspace-line);
+  color: var(--workspace-text);
+}
+
+.workspace-composer-dock {
+  background: linear-gradient(0deg, var(--workspace-surface) 70%, rgba(11, 11, 11, 0));
+}
+
+@media (max-width: 640px) {
+  .workspace-chat--active .workspace-transcript {
+    padding-block: 1rem;
+  }
+
+  .workspace-question {
+    max-width: min(88%, 26rem);
+  }
+
+  .workspace-composer-shell {
+    padding: .625rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-quick-prompt,
+  .workspace-composer-shell {
+    transition: none;
+  }
+}
