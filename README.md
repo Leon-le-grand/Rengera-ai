@@ -1,80 +1,115 @@
-# Rengera — Autonomous Coding Agent & Multi-Region Deployment Infrastructure
+# Rengera AI
 
-> **Unified control plane for deterministic code synthesis, ephemeral microVM verification, and zero-downtime global deployments.**
+Rengera AI is a Rwanda-focused legal-literacy platform designed to make Rwandan legislation, official gazettes, and civic rights accessible to citizens, businesses, and legal practitioners. The web application helps users ask legal questions, inspect indexed laws and article-level citations, compare legal provisions, track statutory deadlines, and receive law-change alerts, while giving authorized administrators structured tools to ingest, classify, and review official source material. A Flutter mobile application (`mobile/`) provides an on-the-go companion with onboarding, authenticated login, and a recent-chats navigation shell.
 
-Rengera is a distributed software engineering platform that combines an **AST-aware autonomous coding agent** with a **declarative multi-region deployment fabric**. It plans repository-wide refactors, synthesizes verified patches inside isolated Firecracker microVMs, and promotes immutable OCI artifacts across edge PoPs with automated canary rollback.
+> **Important Notice**: Rengera AI explains legal information strictly from retrieved and reviewed source material. It must always display its supporting sources, article citations, and review state, and must never be presented as formal legal advice or a guarantee of legal outcome.
 
 ---
 
-## Core Architecture
+## Core Capabilities & Product Vision
+
+- **Multilingual Legal Q&A & Grounded Citations**: Answers citizen and business questions in Kinyarwanda, English, and French using hybrid retrieval over indexed Rwandan statutes and official gazettes, returning verified article references and clear confidence/limitation boundaries.
+- **Interactive Law Library & Reader**: Browse, search, bookmark, and read full statutory texts with preserved exact article wording, key obligations, and amendment/status history.
+- **Law Comparison & Change Alerts**: Compare provisions across laws and notify subscribed accounts when relevant statutes or gazettes are updated.
+- **Citizen Legal Tools**: Dedicated workflows for emergency legal guidance, complaint drafting support, statutory deadlines/schedules, and shareable consultation views.
+- **USSD Accessibility Channel**: Lightweight Kinyarwanda USSD webhook (`/api/ussd`) for feature-phone access to emergency legal guidance and core statutory lookups without requiring smartphone or LLM overhead.
+- **Admin Ingestion & Review Console**: Role-gated operations console for uploading official PDFs/gazettes, running staging classification and OCR triage, reviewing AI-extracted metadata, and approving laws for public indexing.
+
+---
+
+## Repository Map
+
+```text
+platform/   V2 React/Vite web application (TanStack Router, TanStack Query, i18n, RBAC UI)
+server/     V2 Python/FastAPI backend (hybrid retrieval, auth/sessions, ingestion, USSD, tests)
+contracts/  Versioned OpenAPI contract generated from the FastAPI server
+mobile/     Flutter Android/iOS application (onboarding, server login, recent-chats shell)
+docs/       Requirements, V2 architecture, data/RAG pipeline, AI policy, security, and release docs
+data/       Local crawled gazette PDFs and manifests when present (gitignored)
+```
+
+The combined production image packages the Platform frontend and FastAPI backend using `Dockerfile.vercel`, backed by Neon PostgreSQL and Cloudflare R2 object storage for source PDFs.
+
+---
+
+## Architecture Overview
 
 ```mermaid
 flowchart LR
-    U["Developer / CI Trigger"] --> CP["Control Plane (Scheduler & Policy)"]
-    CP --> AG["Autonomous Coding Agent"]
-    AG --> AST["Semantic AST Graph & Patch Synthesizer"]
-    AST --> VM["Firecracker MicroVM Sandbox"]
-    VM -->|Verified Artifacts| REG["Content-Addressed OCI Registry"]
-    REG --> DEP["Deployment Infra Mesh"]
-    DEP --> EDGE["Global Edge PoPs & Canary Router"]
-    EDGE --> TEL["eBPF Telemetry & Auto-Rollback"]
-    TEL --> CP
+    U["Citizen / Mobile / USSD"] --> P["Platform (React/Vite) & Mobile (Flutter)"]
+    P -->|Typed API Client| S["FastAPI Server (server/)"]
+    S --> R["Hybrid Retrieval & Citation Grounding"]
+    R --> DB["Neon PostgreSQL (Laws, Articles, Sessions)"]
+    S --> R2["Cloudflare R2 (Source Gazette PDFs)"]
+    A["Admin / Reviewer"] -->|Ingestion & Review| S
 ```
 
-### 1. Autonomous Coding Agent (`agent-runtime`)
-- **Repository Graph Indexing**: Builds incremental symbol, call-graph, and type-constraint indices across polyglot monorepos (Rust, Go, TypeScript, Python).
-- **Speculative Patch Synthesis**: Generates candidate diffs in parallel, scores them against static invariants, and prunes non-compiling branches before touching the host workspace.
-- **Ephemeral MicroVM Execution**: Every agent tool call, test suite, and build runs inside a snapshot-backed Firecracker microVM with sub-150ms cold start and strict egress policies.
-- **Deterministic Replay**: Every reasoning step, AST edit, and sandbox stdout/stderr stream is content-addressed for bit-for-bit auditability.
-
-### 2. Deployment Infrastructure (`deploy-mesh`)
-- **Declarative Topology Engine**: Compiles service graphs into region-pinned Kubernetes operators, edge workers, and bare-metal Nomad allocations.
-- **Progressive Canary & Traffic Shifting**: Automated 1% -> 10% -> 50% -> 100% rollouts gated by p99 latency, error-budget burn rate, and eBPF syscall anomaly detection.
-- **Zero-Trust Workload Identity**: Issues short-lived SPIFFE/SPIRE mTLS certificates per deployment revision with automatic key rotation.
-- **Immutable Rollback**: Instant pointer-swap rollbacks across distributed state and edge routing tables in under 800ms.
-
-### 3. Unified Studio & Mobile Companion
-- **`platform/`**: Web-based Agent Mission Control, live AST diff inspector, deployment topology visualizer, and canary promotion console.
-- **`mobile/`**: On-call incident companion for approving production promotions, inspecting microVM logs, and triggering emergency rollbacks.
-- **`server/`**: High-throughput gRPC/HTTP2 orchestration daemon, artifact scheduler, and telemetry aggregator.
-
 ---
 
-## Repository Layout
+## Start Locally
 
-| Directory | Purpose |
-| :--- | :--- |
-| `server/` | Orchestration daemon, microVM pool manager, and deployment state machine |
-| `platform/` | Mission Control UI for agent runs, diff review, and rollout pipelines |
-| `mobile/` | Flutter on-call companion for deployment approvals and incident response |
-| `docs/` | Protocol specifications, scheduler RFCs, and operator runbooks |
-
----
-
-## Quickstart
+### V2 Platform (`platform/`)
 
 ```bash
-# 1. Initialize the local control plane & microVM snapshot pool
-rengera ctl init --cluster local-dev --vm-pool 8
-
-# 2. Dispatch an autonomous coding task against a target repository
-rengera agent run \
-  --repo ./workspace \
-  --goal "Migrate payment service to idempotent outbox pattern" \
-  --verify "pytest && cargo test"
-
-# 3. Promote the verified build to staging with 10% canary traffic
-rengera deploy promote \
-  --artifact oci://registry.rengera.internal/core:sha-9f81c2 \
-  --env staging \
-  --canary 10%
+cd platform
+pnpm install
+cp .env.example .env.local
+pnpm dev
 ```
+
+### V2 Server (`server/`)
+
+```bash
+cd server
+uv sync
+cp .env.example .env
+uv run uvicorn app.main:app --reload
+```
+
+Configure the environment values required by your workflow (`DATABASE_URL`, object storage settings, and provider keys). Never commit `.env`, `.env.local`, or live credentials.
+
+### Mobile (`mobile/`)
+
+```bash
+cd mobile
+flutter pub get
+flutter run
+```
+
+The Flutter app is a mobile companion scaffold (onboarding, login via server, and recent-chats shell) and is not yet at full feature-parity with the web platform.
 
 ---
 
-## Roadmap & Active Milestones
+## Useful Commands
 
-- [x] **v4.0 — Speculative AST Planner**: Parallel multi-branch patch generation with incremental type-checking.
-- [x] **v4.1 — Global Canary Mesh**: Cross-region traffic shifting with eBPF latency probes and automated rollback triggers.
-- [ ] **v4.2 — WASM Plugin Sandboxes**: User-defined policy hooks compiled to WASI 0.2 for custom pre-deploy compliance gates.
-- [ ] **v4.3 — Autonomous Incident Remediation**: Closed-loop pager-to-PR pipeline that reproduces production traces in microVMs and opens verified hotfix PRs.
+- **V2 Server (`server/`)**:
+  - `uv run ruff check .`
+  - `uv run pytest -q`
+  - `uv run python -m scripts.export_openapi --check`
+- **V2 Platform (`platform/`)**:
+  - `pnpm typecheck`
+  - `pnpm test`
+  - `pnpm build`
+
+---
+
+## Documentation & Specifications
+
+- [`docs/README.md`](docs/README.md) — Full documentation index.
+- [`docs/v2/README.md`](docs/v2/README.md) — V2 target architecture, UI design migration, ingestion/RAG pipeline, auth/RBAC, and deployment runbooks.
+
+---
+
+## Product & Security Boundaries
+
+- **Server-Only Secrets**: Database and object storage credentials are strictly server-only. Public access is read-only; privileged ingestion, review, and staff management writes require verified RBAC authorization and CSRF protection.
+- **Source Integrity**: Never overwrite `laws.raw_content`; reject invalid AI classifications before persistence.
+- **Citation Transparency**: Preserve exact article text and surface source provenance and review status on every answer.
+- **Safe Operations**: Do not run database migrations, upload corpus data, or deploy to hosted environments without explicit target-specific authorization.
+
+---
+
+## Branches
+
+- `main` — Production release branch.
+- `dev` — Active integration branch. Feature work starts from `dev` and returns through review.
