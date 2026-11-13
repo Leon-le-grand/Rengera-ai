@@ -2,17 +2,15 @@
 
 Rengera AI is a Rwanda-focused legal-literacy platform designed to make Rwandan legislation, official gazettes, and civic rights accessible to citizens, businesses, and legal practitioners. The web application helps users ask legal questions, inspect indexed laws and article-level citations, compare legal provisions, track statutory deadlines, and receive law-change alerts, while giving authorized administrators structured tools to ingest, classify, and review official source material. A Flutter mobile application (`mobile/`) provides an on-the-go companion with onboarding, authenticated login, and a recent-chats navigation shell.
 
-> **Important Notice**: Rengera AI explains legal information strictly from retrieved and reviewed source material. It must always display its supporting sources, article citations, and review state, and must never be presented as formal legal advice or a guarantee of legal outcome.
+> **Important Notice**: supporting sources, article citations, and review state, and must never be presented as formal legal advice or a guarantee of legal outcome.
 
 ---
 
 ## Core Capabilities & Product Vision
 
 - **Multilingual Legal Q&A & Grounded Citations**: Answers citizen and business questions in Kinyarwanda, English, and French using hybrid retrieval over indexed Rwandan statutes and official gazettes, returning verified article references and clear confidence/limitation boundaries.
-- **Interactive Law Library & Reader**: Browse, search, bookmark, and read full statutory texts with preserved exact article wording, key obligations, and amendment/status history.
-- **Law Comparison & Change Alerts**: Compare provisions across laws and notify subscribed accounts when relevant statutes or gazettes are updated.
+
 - **Citizen Legal Tools**: Dedicated workflows for emergency legal guidance, complaint drafting support, statutory deadlines/schedules, and shareable consultation views.
-- **USSD Accessibility Channel**: Lightweight Kinyarwanda USSD webhook (`/api/ussd`) for feature-phone access to emergency legal guidance and core statutory lookups without requiring smartphone or LLM overhead.
 - **Admin Ingestion & Review Console**: Role-gated operations console for uploading official PDFs/gazettes, running staging classification and OCR triage, reviewing AI-extracted metadata, and approving laws for public indexing.
 
 ---
@@ -22,26 +20,13 @@ Rengera AI is a Rwanda-focused legal-literacy platform designed to make Rwandan 
 ```text
 platform/   V2 React/Vite web application (TanStack Router, TanStack Query, i18n, RBAC UI)
 server/     V2 Python/FastAPI backend (hybrid retrieval, auth/sessions, ingestion, USSD, tests)
-contracts/  Versioned OpenAPI contract generated from the FastAPI server
-mobile/     Flutter Android/iOS application (onboarding, server login, recent-chats shell)
-docs/       Requirements, V2 architecture, data/RAG pipeline, AI policy, security, and release docs
-data/       Local crawled gazette PDFs and manifests when present (gitignored)
-```
+contracts/  Versioned OpenAPI contrac
 
 The combined production image packages the Platform frontend and FastAPI backend using `Dockerfile.vercel`, backed by Neon PostgreSQL and Cloudflare R2 object storage for source PDFs.
 
 ---
 
-## Architecture Overview
-
-```mermaid
-flowchart LR
-    U["Citizen / Mobile / USSD"] --> P["Platform (React/Vite) & Mobile (Flutter)"]
-    P -->|Typed API Client| S["FastAPI Server (server/)"]
-    S --> R["Hybrid Retrieval & Citation Grounding"]
-    R --> DB["Neon PostgreSQL (Laws, Articles, Sessions)"]
-    S --> R2["Cloudflare R2 (Source Gazette PDFs)"]
-    A["Admin / Reviewer"] -->|Ingestion & Review| S
+#
 ```
 
 ---
